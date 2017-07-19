@@ -4,6 +4,9 @@ laurent.lequievre@uca.fr
 Juan Antonio Corrales Ramon
 Juan-Antonio.Corrales-Ramon@sigma-clermont.fr
 
+Sébastien Lengagne
+sebastien.lengagne@univ-bpclermont.fr
+
 Youcef Mezouar
 youcef.mezouar@sigma-clermont.fr
 
@@ -102,5 +105,9 @@ rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_con
 
 -> How to Send cartesian position :
 rostopic pub -1 /kuka_lwr_right/kuka_one_task_inverse_kinematics/command kuka_lwr_controllers/PoseRPY '{id: 1, position: {x: -0.4, y: 0.3, z: 0.9}}'
+
+-> How to Stop 'cartesian inverse kinematic' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_one_task_inverse_kinematics'], strictness: 1}"
+
 
 
