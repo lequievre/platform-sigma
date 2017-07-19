@@ -1,0 +1,106 @@
+Laurent LEQUIEVRE
+laurent.lequievre@uca.fr
+
+Juan Antonio Corrales Ramon
+Juan-Antonio.Corrales-Ramon@sigma-clermont.fr
+
+Youcef Mezouar
+youcef.mezouar@sigma-clermont.fr
+
+Institut Pascal
+MACCS Team (http://ip.univ-bpclermont.fr/index.php/fr/maccs)
+UMR6602 Clermont Ferrand
+
+In Real Mode
+============
+In real mode, the controllers are launched in separate computers.
+
+-> On arms computer
+(FRI - Fast Research Interface need to be run in sudo)
+sudo -s su
+source devel/setup.bash
+roslaunch double_lwr_robot double_arms.launch
+
+-> On pantilt computer
+source devel/setup.bash
+roslaunch pan_tilt_real pan_tilt_real.launch
+
+You can move/control the robots like in simulation mode, so let's have a look to the simulation part.
+
+
+In Simulation/Gazebo Mode
+=========================
+
+How to launch the simulation of Sigma Platform (arms + pantilt) :
+---------------------------------------------------------------
+source devel/setup.bash
+roslaunch platform_gazebo platform_gazebo.launch
+
+If you don't need the pantilt -> roslaunch platform_gazebo platform_gazebo.launch use_pantilt:=false
+
+
+How to move the pantilt in position :
+-----------------------------------
+rostopic pub -1 /pantilt/pantilt_group_position_controller/command std_msgs/Float64MultiArray "data: [1.5,-0.5,0.5,0.5]"
+
+
+How to move the right or left kuka lwr arm :
+------------------------------------------
+
+The namespace 'kuka_lwr_right' is used to control the right arm.
+The namespace 'kuka_lwr_left' id used to control the left arm.
+
+-> Get a list of ros services (ros controllers) available for the right arm (so need to use the 'kuka_lwr_right' namespace) :
+rosservice call /kuka_lwr_right/controller_manager/list_controllers
+
+you can do the same for the left arm -> rosservice call /kuka_lwr_left/controller_manager/list_controllers
+
+An example of available controllers (loaded but stopped by default): (of course you can write your own controller !)
+
+controller: 
+  - 
+    name: joint_state_controller
+    state: running
+    type: joint_state_controller/JointStateController
+    hardware_interface: hardware_interface::JointStateInterface
+    resources: []
+  - 
+    name: kuka_group_command_controller_fri
+    state: stopped
+    type: kuka_lwr_controllers/GroupCommandControllerFRI
+    hardware_interface: hardware_interface::PositionJointInterface
+    resources: ['kuka_lwr_right_0_joint', 'kuka_lwr_right_1_joint', 'kuka_lwr_right_2_joint', 'kuka_lwr_right_3_joint', 'kuka_lwr_right_4_joint', 'kuka_lwr_right_5_joint', 'kuka_lwr_right_6_joint']
+  - 
+    name: kuka_one_task_inverse_kinematics
+    state: stopped
+    type: kuka_lwr_controllers/OneTaskInverseKinematics
+    hardware_interface: hardware_interface::PositionJointInterface
+    resources: ['kuka_lwr_right_0_joint', 'kuka_lwr_right_1_joint', 'kuka_lwr_right_2_joint', 'kuka_lwr_right_3_joint', 'kuka_lwr_right_4_joint', 'kuka_lwr_right_5_joint', 'kuka_lwr_right_6_joint']
+  - 
+    name: cartesian_velocity_control
+    state: stopped
+    type: kuka_lwr_controllers/CartesianVelocityControl
+    hardware_interface: hardware_interface::PositionJointInterface
+    resources: ['kuka_lwr_right_0_joint', 'kuka_lwr_right_1_joint', 'kuka_lwr_right_2_joint', 'kuka_lwr_right_3_joint', 'kuka_lwr_right_4_joint', 'kuka_lwr_right_5_joint', 'kuka_lwr_right_6_joint']
+
+-> How to Start the position controller 'kuka_group_command_controller_fri' for the 'kuka_lwr_right' arm :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_group_command_controller_fri'], stop_controllers: [], strictness: 2}"
+
+The same for the left arm -> rosservice call /kuka_lwr_left/controller_manager/switch_controller "{start_controllers: ['kuka_group_command_controller_fri'], stop_controllers: [], strictness: 2}"
+
+
+-> How to Send positions with the controller 'kuka_group_command_controller_fri' for the 'kuka_lwr_right' arm :
+rostopic pub -1 /kuka_lwr_right/kuka_group_command_controller_fri/command std_msgs/Float64MultiArray "data: [0.9,0.9,0.5,0.5,0.3,0.5,0.8]"
+
+The same for the left arm -> rostopic pub -1 /kuka_lwr_left/kuka_group_command_controller_fri/command std_msgs/Float64MultiArray "data: [0.9,0.9,0.5,0.5,0.3,0.5,0.8]"
+
+-> How to Stop the position controller 'kuka_group_command_controller_fri' for the 'kuka_lwr_right' arm :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_group_command_controller_fri'], strictness: 1}"
+
+-> How to Start 'cartesian inverse kinematic' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_one_task_inverse_kinematics'], stop_controllers: [], strictness: 2}"
+
+-> How to Send cartesian position :
+rostopic pub -1 /kuka_lwr_right/kuka_one_task_inverse_kinematics/command kuka_lwr_controllers/PoseRPY '{id: 1, position: {x: -0.4, y: 0.3, z: 0.9}}'
+
+
