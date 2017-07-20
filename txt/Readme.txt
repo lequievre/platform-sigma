@@ -109,5 +109,11 @@ rostopic pub -1 /kuka_lwr_right/kuka_one_task_inverse_kinematics/command kuka_lw
 -> How to Stop 'cartesian inverse kinematic' controller :
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_one_task_inverse_kinematics'], strictness: 1}"
 
+RVIZ only
+=========
+
+roslaunch platform_rviz platform_rviz.launch
+
+
 
 
