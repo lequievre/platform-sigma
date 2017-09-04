@@ -362,15 +362,17 @@ namespace lwr_hw
               << " segments." << std::endl;
 
     ROS_INFO("LWRHW::initKDLdescription");
-    std::cout<< "get_param: " <<std::string("/") + robot_namespace_ + std::string("/root_name") << std::endl;
+    
+    std::cout<< "get_param: " <<std::string("/") + robot_namespace_ + std::string("/root") << std::endl;
     // Get the info from parameters
     std::string root_name;
-    ros::param::get(std::string("/") + robot_namespace_ + std::string("/root_name"), root_name);
+    ros::param::get(std::string("/") + robot_namespace_ + std::string("/root"), root_name);
     if( root_name.empty() )
       root_name = kdl_tree.getRootSegment()->first; // default
-    
+      
+    std::cout<< "get_param: " <<std::string("/") + robot_namespace_ + std::string("/tip") << std::endl;
     std::string tip_name;
-    if(!ros::param::get(std::string("/") + robot_namespace_ + std::string("/tip_name"), tip_name))
+    if(!ros::param::get(std::string("/") + robot_namespace_ + std::string("/tip"), tip_name))
     {
         std::cout<< "Failed to get tip_name" << std::endl;
     }
