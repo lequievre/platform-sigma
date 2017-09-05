@@ -109,6 +109,13 @@ rostopic pub -1 /kuka_lwr_right/kuka_one_task_inverse_kinematics/command kuka_lw
 -> How to Stop 'cartesian inverse kinematic' controller :
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_one_task_inverse_kinematics'], strictness: 1}"
 
+
+-> How to start 'kuka_gravity_compensation_controller' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_gravity_compensation_controller'], stop_controllers: [], strictness: 2}"
+
+-> How to stop 'kuka_gravity_compensation_controller' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_gravity_compensation_controller'], strictness: 2}"
+
 RVIZ only
 =========
 
