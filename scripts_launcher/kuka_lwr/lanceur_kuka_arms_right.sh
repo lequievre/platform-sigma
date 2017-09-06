@@ -6,4 +6,4 @@
 
 cd /home/ifma/git_project/platform-sigma
 source devel/setup.bash
-roslaunch double_lwr_robot double_arms.launch
+roslaunch double_lwr_robot double_arms.launch use_left_arm:=false

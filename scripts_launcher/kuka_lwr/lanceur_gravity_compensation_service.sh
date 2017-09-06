@@ -6,27 +6,39 @@
 
 do_start()
 {
-	cd /home/ifma/git_project/kuka-lwr-ros-sigma
+	cd /home/ifma/git_project/platform-sigma
 	source devel/setup.bash
-	rosservice call /lwr/controller_manager/switch_controller "{start_controllers: ['kuka_gravity_compensation_controller'], stop_controllers: [], strictness: 2}"
+	if [ $1 = "left" ]
+	then
+		namespace="kuka_lwr_left"
+	else
+		namespace="kuka_lwr_right"
+	fi
+	rosservice call /$namespace/controller_manager/switch_controller "{start_controllers: ['kuka_gravity_compensation_controller'], stop_controllers: [], strictness: 2}"
 }
 
 do_stop()
 {
-	cd /home/ifma/git_project/kuka-lwr-ros-sigma
+	cd /home/ifma/git_project/platform-sigma
 	source devel/setup.bash
-	rosservice call /lwr/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_gravity_compensation_controller'], strictness: 1}"
+	if [ $1 = "left" ]
+	then
+		namespace="kuka_lwr_left"
+	else
+		namespace="kuka_lwr_right"
+	fi
+	rosservice call /$namespace/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_gravity_compensation_controller'], strictness: 1}"
 }
 
 case "$1" in
    start)
-      do_start
+      do_start $2
       ;;
    stop)
-      do_stop
+      do_stop $2
       ;;
    *)
-      echo "--> Usage: $0 {start|stop}"
+      echo "--> Usage: $0 {start|stop} {left|right}"
       exit 1
 esac
 
