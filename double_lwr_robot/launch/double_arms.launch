@@ -18,7 +18,7 @@
 
 	<arg name="controllers" default="kuka_group_command_controller_fri kuka_gravity_compensation_controller kuka_one_task_inverse_kinematics cartesian_velocity_control" />
 	
-	<arg name="use_rviz" default="true"/>
+	<arg name="use_rviz" default="false"/>
 
 	<arg name="use_left_arm" default="true"/>
 	<arg name="use_right_arm" default="true"/>
