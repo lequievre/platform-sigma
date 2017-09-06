@@ -21,6 +21,12 @@ kuka_lwr_left:
      type: kuka_lwr_controllers/GravityCompensationController
      root_name: kuka_lwr_left_base_link
      tip_name: kuka_lwr_left_7_link
+     
+  # Torque Based Position Controller  
+  torque_based_position_controller:
+     type: kuka_lwr_controllers/TorqueBasedPositionController
+     root_name: kuka_lwr_left_base_link
+     tip_name: kuka_lwr_left_7_link   
 
   # One Task Inverse Kinematics
   kuka_one_task_inverse_kinematics:
@@ -61,6 +67,12 @@ kuka_lwr_right:
   # Gravity Compensation Controller  
   kuka_gravity_compensation_controller:
      type: kuka_lwr_controllers/GravityCompensationController
+     root_name: kuka_lwr_right_base_link
+     tip_name: kuka_lwr_right_7_link
+     
+  # Torque Based Position Controller  
+  torque_based_position_controller:
+     type: kuka_lwr_controllers/TorqueBasedPositionController
      root_name: kuka_lwr_right_base_link
      tip_name: kuka_lwr_right_7_link
 

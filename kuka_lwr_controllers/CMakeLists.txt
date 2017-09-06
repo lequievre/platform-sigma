@@ -80,6 +80,7 @@ add_library(${PROJECT_NAME}
   src/one_task_inverse_kinematics.cpp
   src/cartesian_velocity_control.cpp
   src/one_task_inverse_kinematics_fri.cpp
+  src/torque_based_position.cpp
 )
 
 # Link a target to given libraries.

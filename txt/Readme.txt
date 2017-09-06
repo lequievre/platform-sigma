@@ -24,6 +24,12 @@ sudo -s su
 source devel/setup.bash
 roslaunch double_lwr_robot double_arms.launch
 
+-> For left arm only
+(FRI - Fast Research Interface need to be run in sudo)
+sudo -s su
+source devel/setup.bash
+roslaunch double_lwr_robot double_arms.launch use_right_arm:=false
+
 -> On pantilt computer
 source devel/setup.bash
 roslaunch pan_tilt_real pan_tilt_real.launch
@@ -116,10 +122,48 @@ rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_con
 -> How to stop 'kuka_gravity_compensation_controller' controller :
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_gravity_compensation_controller'], strictness: 2}"
 
+-> How to start 'torque_based_position_controller' controller :
+rosservice call /kuka_lwr_left/controller_manager/switch_controller "{start_controllers: ['torque_based_position_controller'], stop_controllers: [], strictness: 2}"
+
+-> How to stop 'torque_based_position_controller' controller :
+rosservice call /kuka_lwr_left/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['torque_based_position_controller'], strictness: 2}"
+
+
 RVIZ only
 =========
 
 roslaunch platform_rviz platform_rviz.launch
+
+
+Kamal only
+==========
+-> For left arm only
+(FRI - Fast Research Interface need to be run in sudo)
+sudo -s su
+cd ~/git_project/platform_sigma
+source devel/setup.bash
+roslaunch double_lwr_robot double_arms.launch use_right_arm:=false
+
+
+-> How to start 'torque_based_position_controller' controller :
+rosservice call /kuka_lwr_left/controller_manager/switch_controller "{start_controllers: ['torque_based_position_controller'], stop_controllers: [], strictness: 2}"
+
+-> How to stop 'torque_based_position_controller' controller :
+rosservice call /kuka_lwr_left/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['torque_based_position_controller'], strictness: 2}"
+
+-> How to Send positions with the controller 'torque_based_position_controller' for the 'kuka_lwr_left' arm :
+rostopic pub -1 /kuka_lwr_left/torque_based_position_controller/command std_msgs/Float64MultiArray "data: [0.9,0.9,0.5,0.5,0.3,0.5,0.8]"
+rostopic pub -1 /kuka_lwr_left/torque_based_position_controller/command std_msgs/Float64MultiArray "data: [0.0,0.0,0.0,0.0,0.0,0.0,0.5]"
+
+-> Get list of active services
+rosservice call /kuka_lwr_left/controller_manager/list_controllers
+
+-> To work from pantilt computer (set ros uri in every terminal window)
+export ROS_MASTER_URI=http://ifma-kuka-test:11311
+
+
+
+
 
 
 
