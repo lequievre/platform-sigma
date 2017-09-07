@@ -41,7 +41,11 @@ namespace kuka_lwr_controllers
 			
 		private:
 			void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg); // function associate to a subscribe command topic
-			ros::Subscriber sub_command_;
+			
+			void setKp(const std_msgs::Float64MultiArrayConstPtr& msg); // function associate to a subscribe setKp topic
+			void setKd(const std_msgs::Float64MultiArrayConstPtr& msg); // function associate to a subscribe setKd topic
+			
+			ros::Subscriber sub_command_, sub_kp_, sub_kd_;
 			int cmd_flag_;  // flag set only to 1 when the controller receive a message to the command topic	
 			std::string robot_namespace_;
 			

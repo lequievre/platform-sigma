@@ -34,16 +34,24 @@ namespace kuka_lwr_controllers
         }
         
         sub_command_ = n.subscribe("command", 1, &TorqueBasedPositionController::commandCB, this);
+        sub_kp_ = n.subscribe("setKp", 1, &TorqueBasedPositionController::setKp, this);
+        sub_kd_ = n.subscribe("setKd", 1, &TorqueBasedPositionController::setKd, this);
 
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
 		
 		Kp_.resize(joint_handles_.size());
 		Kd_.resize(joint_handles_.size());
 		
-		for (std::size_t i=0; i<joint_handles_.size(); i++)
+		for (std::size_t i=0; i<joint_handles_.size()-3; i++)
 		{
 			Kp_(i) = 100.0;
 			Kd_(i) = 50.0;
+		}
+		
+		for (std::size_t i=4; i<joint_handles_.size(); i++)
+		{
+			Kp_(i) = 50.0;
+			Kd_(i) = 10.0;
 		}
 		
 		#if TRACE_Torque_Based_Position_ACTIVATED
@@ -119,6 +127,46 @@ namespace kuka_lwr_controllers
 		}
 		
 		cmd_flag_ = 1;
+		
+	}
+	
+	void TorqueBasedPositionController::setKp(const std_msgs::Float64MultiArrayConstPtr& msg)
+    {
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: Start setKp of robot %s!",robot_namespace_.c_str());
+		#endif
+
+		if(msg->data.size()!=joint_handles_.size())
+		{ 
+			ROS_ERROR_STREAM("TorqueBasedPositionController: setKp Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+		
+		Kp_.resize(joint_handles_.size());
+		for (std::size_t i=0; i<msg->data.size(); i++)
+		{
+			Kp_(i) = (double)msg->data[i];
+		}
+		
+	}
+	
+	void TorqueBasedPositionController::setKd(const std_msgs::Float64MultiArrayConstPtr& msg)
+    {
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: Start setKd of robot %s!",robot_namespace_.c_str());
+		#endif
+
+		if(msg->data.size()!=joint_handles_.size())
+		{ 
+			ROS_ERROR_STREAM("TorqueBasedPositionController: setKd Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+		
+		Kd_.resize(joint_handles_.size());
+		for (std::size_t i=0; i<msg->data.size(); i++)
+		{
+			Kd_(i) = (double)msg->data[i];
+		}
 		
 	}
 	
