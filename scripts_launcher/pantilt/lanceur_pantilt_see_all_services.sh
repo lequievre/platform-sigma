@@ -7,7 +7,13 @@
 
 source /opt/ros/indigo/setup.bash
 export ROS_MASTER_URI=http://ifma-kuka-test:11311
-rosservice call /lwr/controller_manager/list_controllers
+if [ $1 = "left" ]
+	then
+		namespace="kuka_lwr_left"
+	else
+		namespace="kuka_lwr_right"
+	fi
+rosservice call /$namespace/controller_manager/list_controllers
 
 echo "Appuyer la touche <Entrée> pour continuer..."
 read touche
