@@ -140,7 +140,7 @@ Kamal only
 -> For left arm only
 (FRI - Fast Research Interface need to be run in sudo)
 sudo -s su
-cd ~/git_project/platform_sigma
+cd ~/git_project/platform-sigma
 source devel/setup.bash
 roslaunch double_lwr_robot double_arms.launch use_right_arm:=false
 
@@ -159,8 +159,16 @@ rostopic pub -1 /kuka_lwr_left/torque_based_position_controller/command std_msgs
 rosservice call /kuka_lwr_left/controller_manager/list_controllers
 
 -> To work from pantilt computer (set ros uri in every terminal window)
+-> Inside each terminal window :
 export ROS_MASTER_URI=http://ifma-kuka-test:11311
+cd ~/git_project/platform-sigma
+source devel/setup.bash
 
+
+-> set kp and kd
+rostopic pub -1 /kuka_lwr_left/torque_based_position_controller/setKp std_msgs/Float64MultiArray "data: [100,200,100,100,50,50,50]"
+
+rostopic pub -1 /kuka_lwr_left/torque_based_position_controller/setKd std_msgs/Float64MultiArray "data: [50,50,50,50,10,10,10]"
 
 
 
