@@ -50,7 +50,7 @@ If you don't need the pantilt -> roslaunch platform_gazebo platform_gazebo.launc
 
 How to move the pantilt in position :
 -----------------------------------
-rostopic pub -1 /pantilt/pantilt_group_position_controller/command std_msgs/Float64MultiArray "data: [1.5,-0.5,0.5,0.5]"
+rostopic pub -1 /pantilt/pan_tilt_position_controller/command std_msgs/Float64MultiArray "data: [1.5,-0.5,0.5,0.5]"
 
 
 How to move the right or left kuka lwr arm :
