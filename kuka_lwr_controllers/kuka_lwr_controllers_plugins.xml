@@ -41,5 +41,11 @@
 			Info...
 		</description>
 	</class> 
+	
+	<class name="kuka_lwr_controllers/TorqueBasedPositionControllerGazebo" type="kuka_lwr_controllers::TorqueBasedPositionControllerGazebo" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Info...
+		</description>
+	</class> 
 
 </library>
