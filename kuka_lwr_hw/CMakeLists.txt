@@ -22,6 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+find_package(gazebo REQUIRED)
+
 add_definitions (-fpermissive -std=c++11)
 
 catkin_package(
@@ -48,10 +50,19 @@ catkin_package(
 ###########
 ## Build ##
 ###########
+MESSAGE( STATUS "--> GAZEBO_INCLUDE_DIRS : " ${GAZEBO_INCLUDE_DIRS} )
+MESSAGE( STATUS "--> GAZEBO_LIBRARY_DIRS : " ${GAZEBO_LIBRARY_DIRS} )
+MESSAGE( STATUS "--> GAZEBO_LIBRARIES : " ${GAZEBO_LIBRARIES} )
 
 include_directories(include
+  ${GAZEBO_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
+)
+
+# LWR HW GAZEBO BASE CLASS 
+add_library(${PROJECT_NAME}_gazebo
+ src/lwr_hw_gazebo.cpp
 )
 
 ## LWR HW BASE CLASS TO RULE'EM ALL
@@ -60,10 +71,21 @@ add_library(${PROJECT_NAME}
   include/${PROJECT_NAME}/lwr_hw_fril.hpp
   include/${PROJECT_NAME}/lwr_kuka_interface.h
   src/lwr_hw.cpp
+  
 )
+
+link_directories(${GAZEBO_LIBRARY_DIRS})
+#list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
+
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
+
+target_link_libraries(${PROJECT_NAME}_gazebo
+  ${catkin_LIBRARIES}
+  ${GAZEBO_LIBRARIES}
+)
+ 
 
 # Standford FRILibrary support in PROGRESS
 
