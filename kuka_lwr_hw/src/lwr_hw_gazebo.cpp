@@ -30,6 +30,10 @@ namespace lwr_hw
 					}
 					sim_joints_.push_back(joint);
 				}
+				
+				setControlStrategy(NONE);
+			
+				hasSwitched_ = false;
 
 				return true;
 			}
@@ -111,5 +115,97 @@ namespace lwr_hw
 							break;
 				}
 			}
+			
+			void LWRHWGazebo::printInterfaces(const std::list<hardware_interface::ControllerInfo> &start_list, const std::list<hardware_interface::ControllerInfo> &stop_list)
+			{
+				
+				ROS_INFO("\nStart Interfaces :");
+				
+				for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = start_list.begin(); it != start_list.end(); ++it )
+				{
+					ROS_INFO("\n%s",it->hardware_interface.c_str());
+				}
+				
+				ROS_INFO("\nStop Interfaces :");
+				
+				for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = stop_list.begin(); it != stop_list.end(); ++it )
+				{
+					ROS_INFO("\n%s",it->hardware_interface.c_str());
+				}
+				
+			}
+			
+			LWRHW::ControlStrategy LWRHWGazebo::getNewControlStrategy(const std::list< hardware_interface::ControllerInfo >& start_list, const std::list< hardware_interface::ControllerInfo >& stop_list, ControlStrategy default_control_strategy)
+			{
+				ControlStrategy desired_strategy = default_control_strategy;
+
+				// If any of the controllers in the start list works on a velocity interface, the switch can't be done.
+				for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = start_list.begin(); it != start_list.end(); ++it )
+				{
+					if( it->hardware_interface.compare( std::string("hardware_interface::PositionJointInterface") ) == 0 )
+					{
+						std::cout << "Request to switch to hardware_interface::PositionJointInterface (JOINT_POSITION)" << std::endl;
+						desired_strategy = JOINT_POSITION;
+						break;
+					}
+					else if( it->hardware_interface.compare( std::string("hardware_interface::KUKAJointInterface") ) == 0 )
+					{
+						std::cout << "Request to switch to hardware_interface::KUKAJointInterface (JOINT_IMPEDANCE)" << std::endl;
+						desired_strategy = JOINT_IMPEDANCE;
+						break;
+					}
+					else if( it->hardware_interface.compare( std::string("hardware_interface::PositionCartesianInterface") ) == 0 )
+					{
+						std::cout << "Request to switch to hardware_interface::PositionCartesianInterface (CARTESIAN_IMPEDANCE)" << std::endl;
+						desired_strategy = CARTESIAN_IMPEDANCE;
+						break;
+					}
+				}
+
+				return desired_strategy;
+			}
+			
+		  void LWRHWGazebo::doSwitch(const std::list<hardware_interface::ControllerInfo> &start_list, const std::list<hardware_interface::ControllerInfo> &stop_list)
+		  {
+				ROS_INFO("doSwitch !");
+				
+				printInterfaces(start_list,stop_list);
+				
+				hasSwitched_=false;
+				
+				ControlStrategy desired_strategy;
+				
+				desired_strategy = getNewControlStrategy(start_list,stop_list,NONE);
+
+				if (desired_strategy != NONE)
+				{
+				
+					ROS_INFO("doSwitch current strategy=%d, desired_strategy=%d", current_strategy_ , desired_strategy);
+
+					for (int j = 0; j < n_joints_; ++j)
+					{
+					  ///semantic Zero
+					  joint_position_command_[j] = joint_position_[j];
+					  joint_effort_command_[j] = 0.0;
+
+					  ///call setCommand once so that the JointLimitsInterface receive the correct value on their getCommand()!
+					  try{  position_interface_.getHandle(joint_names_[j]).setCommand(joint_position_command_[j]);  }
+					  catch(const hardware_interface::HardwareInterfaceException&){}
+					  try{  effort_interface_.getHandle(joint_names_[j]).setCommand(joint_effort_command_[j]);  }
+					  catch(const hardware_interface::HardwareInterfaceException&){}
+
+					  ///reset joint_limit_interfaces
+					  pj_sat_interface_.reset();
+					  pj_limits_interface_.reset();
+					}
+
+					// if sucess during the switch in FRI, set the ROS strategy
+					setControlStrategy(desired_strategy);
+
+					hasSwitched_=true;
+
+					std::cout << "The ControlStrategy changed to: " << getControlStrategy() << std::endl;
+				}
+		  }
 	
 }

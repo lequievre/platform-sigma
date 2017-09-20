@@ -35,11 +35,18 @@ namespace lwr_hw {
 			
 			void write(ros::Time time, ros::Duration period);
 			
+			void printInterfaces(const std::list<hardware_interface::ControllerInfo> &start_list, const std::list<hardware_interface::ControllerInfo> &stop_list);
+			
+			ControlStrategy getNewControlStrategy(const std::list< hardware_interface::ControllerInfo >& start_list, const std::list< hardware_interface::ControllerInfo >& stop_list, ControlStrategy default_control_strategy);
+			
+			void doSwitch(const std::list<hardware_interface::ControllerInfo> &start_list, const std::list<hardware_interface::ControllerInfo> &stop_list);
+			
 		private:
 			// Gazebo stuff
 			std::vector<gazebo::physics::JointPtr> sim_joints_;
 			gazebo::physics::ModelPtr parent_model_;
 			bool parent_set_ = false;
+			bool hasSwitched_;
 	};
 }
 
