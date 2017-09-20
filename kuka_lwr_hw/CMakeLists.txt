@@ -62,16 +62,16 @@ include_directories(include
 
 # LWR HW GAZEBO BASE CLASS 
 add_library(${PROJECT_NAME}_gazebo
+ src/lwr_hw.cpp
  src/lwr_hw_gazebo.cpp
 )
 
 ## LWR HW BASE CLASS TO RULE'EM ALL
 add_library(${PROJECT_NAME}
-  include/${PROJECT_NAME}/lwr_hw.h
-  include/${PROJECT_NAME}/lwr_hw_fril.hpp
-  include/${PROJECT_NAME}/lwr_kuka_interface.h
+  #include/${PROJECT_NAME}/lwr_hw.h
+  #include/${PROJECT_NAME}/lwr_hw_fril.hpp
+  #include/${PROJECT_NAME}/lwr_kuka_interface.h
   src/lwr_hw.cpp
-  
 )
 
 link_directories(${GAZEBO_LIBRARY_DIRS})

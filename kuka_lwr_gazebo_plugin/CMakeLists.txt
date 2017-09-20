@@ -133,11 +133,11 @@ include_directories(
   ${kuka_lwr_hw_INCLUDE_DIRS}
 )
 
-link_directories(${GAZEBO_LIBRARY_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS} ${catkin_LIBRARY_DIRS} ${CATKIN_DEVEL_PREFIX}/lib)
 
 add_library(${PROJECT_NAME} src/lwr_gazebo_plugin.cpp)
 
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${kuka_lwr_hw_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} kuka_lwr_hw_gazebo )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

@@ -157,11 +157,13 @@ namespace lwr_plugin
 			
 			// Load the LWRHWsim abstraction to interface the controllers with the gazebo model
 			ROS_INFO("\n****************************\n");
-			ROS_INFO("Create Robot Sim !");
+			ROS_INFO("Create Robot Sim ! namespace = %s", robot_namespace_.c_str());
 			ROS_INFO("\n****************************\n");
 			
 			robot_hw_sim_.reset( new lwr_hw::LWRHWGazebo() );
+			ROS_INFO("Robot Sim after new !");
 			robot_hw_sim_->create(robot_namespace_, urdf_string);
+			ROS_INFO("Robot Sim after create !");
 			robot_hw_sim_->setParentModel(parent_model_);
 			if(!robot_hw_sim_->init())
 			{

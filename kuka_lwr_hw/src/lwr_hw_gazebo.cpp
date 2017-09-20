@@ -107,6 +107,7 @@ namespace lwr_hw
 							  //double damping_effort = joint_damping_command_[j]*( joint_velocity_[j] );
 							  const double effort = stiffness_effort + joint_effort_command_[j] + gravity_effort_(j);
 							  sim_joints_[j]->SetForce(0, effort);
+							  //ROS_INFO("LWRHWGazebo -> write,  JOINT_IMPEDANCE effort =%f",effort);
 							}
 							break;
 
@@ -148,7 +149,7 @@ namespace lwr_hw
 						desired_strategy = JOINT_POSITION;
 						break;
 					}
-					else if( it->hardware_interface.compare( std::string("hardware_interface::KUKAJointInterface") ) == 0 )
+					else if( (it->hardware_interface.compare( std::string("hardware_interface::KUKAJointInterface") ) == 0) || (it->hardware_interface.compare( std::string("hardware_interface::EffortJointInterface") ) == 0) )
 					{
 						std::cout << "Request to switch to hardware_interface::KUKAJointInterface (JOINT_IMPEDANCE)" << std::endl;
 						desired_strategy = JOINT_IMPEDANCE;

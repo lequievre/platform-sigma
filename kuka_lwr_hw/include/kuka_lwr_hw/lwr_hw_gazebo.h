@@ -23,7 +23,7 @@ namespace lwr_hw {
 	{
 		public:
 
-			LWRHWGazebo() : LWRHWGazebo() {}
+			LWRHWGazebo() : LWRHW() { ROS_INFO("LWRHWGazebo Contructor !"); }
 			~LWRHWGazebo() {}
 			
 			void setParentModel(gazebo::physics::ModelPtr parent_model);
