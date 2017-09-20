@@ -28,7 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
 # not only for catkin but also for all the components required.
 
 set(FRIL_DEFS -D__LINUX__)
-add_definitions(${FRIL_DEFS})
+add_definitions(${FRIL_DEFS} -std=c++11) #The -std=c++11 tells the compiler to consider C++11
 
 # Add the given directories to those the compiler uses to search for include files.
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${CATKIN_DEVEL_PREFIX}/include/fril ${CATKIN_DEVEL_PREFIX}/include/RML)
