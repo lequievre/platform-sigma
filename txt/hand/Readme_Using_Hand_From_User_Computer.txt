@@ -6,7 +6,7 @@ laurent.lequievre@uca.fr
 192.168.100.105 HP-8570w
 (In that case the name of my laptop is 'HP-8570w' and its IP address is always 192.168.100.105)
 
-1- Launch the network configuration from the pan tilt computer :
+1- Launch the network configuration from hand computer :
 Menu Applications/ Network / Start Network Config
 
 2- Launch the network configuration from the user's laptop :
