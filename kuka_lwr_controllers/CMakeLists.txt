@@ -45,6 +45,7 @@ add_message_files(
    PoseRPY.msg
    RPY.msg
    MultiPriorityTask.msg
+   TrajPathPoint.msg
 )
 
 # Generate source files from your msg definition.

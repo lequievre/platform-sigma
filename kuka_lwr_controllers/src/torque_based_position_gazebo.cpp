@@ -6,19 +6,19 @@
 */
 
 #include <torque_based_position_gazebo.h>
-
+#include "math.h"
 // For plugin
 #include <pluginlib/class_list_macros.h>
 
 #include <algorithm>
-
-
+#include <Eigen/Dense>
+#include <utils/pseudo_inversion.h>
 namespace kuka_lwr_controllers 
 {
     TorqueBasedPositionControllerGazebo::TorqueBasedPositionControllerGazebo() {}
     TorqueBasedPositionControllerGazebo::~TorqueBasedPositionControllerGazebo() {}
 
-    bool TorqueBasedPositionControllerGazebo::init(hardware_interface::EffortJointInterface *robot, ros::NodeHandle &n)
+   bool TorqueBasedPositionControllerGazebo::init(hardware_interface::KUKAJointInterface *robot, ros::NodeHandle &n)
     {
 		
 		robot_namespace_ = n.getNamespace();
@@ -27,32 +27,92 @@ namespace kuka_lwr_controllers
 			ROS_INFO("TorqueBasedPositionController: Start init of robot %s !",robot_namespace_.c_str());
 		#endif
 			
-        if( !(KinematicChainControllerBase<hardware_interface::EffortJointInterface>::init(robot, n)) )
+        if( !(KinematicChainControllerBase<hardware_interface::KUKAJointInterface>::init(robot, n)) )
         {
             ROS_ERROR("TorqueBasedPositionController: Couldn't initilize TorqueBasedPositionController controller of robot %s!",robot_namespace_.c_str());
             return false;
         }
-        
-        sub_command_ = n.subscribe("command", 1, &TorqueBasedPositionControllerGazebo::commandCB, this);
-        sub_kp_ = n.subscribe("setKp", 1, &TorqueBasedPositionControllerGazebo::setKp, this);
-        sub_kd_ = n.subscribe("setKd", 1, &TorqueBasedPositionControllerGazebo::setKd, this);
-
+        //initializes the solvers
+        jnt_to_jac_solver_.reset(new KDL::ChainJntToJacSolver(kdl_chain_));
+        id_solver_.reset(new KDL::ChainDynParam( kdl_chain_, gravity_));
+		fk_pos_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
+		fk_vel_solver_.reset(new KDL::ChainFkSolverVel_recursive(kdl_chain_));
+		
+		
+        sub_command_ 		= n.subscribe("command"			,1, &TorqueBasedPositionControllerGazebo::commandCB			, this);
+        sub_kp_cartesian_ 	= n.subscribe("setcartesianKp"	,1, &TorqueBasedPositionControllerGazebo::setcartesianKp	, this);
+        sub_kd_cartesian_ 	= n.subscribe("setcartesianKd"	,1, &TorqueBasedPositionControllerGazebo::setcartesianKd	, this);
+		sub_traj_			= n.subscribe("/traj_cmd"		,1, &TorqueBasedPositionControllerGazebo::TrajPathPointCB	, this);
+		sub_ft_ 			= n.subscribe("sensor_readings"	,1, &TorqueBasedPositionControllerGazebo::ft_readingsCB		, this);
+		sub_kp_joints_  	= n.subscribe("setjointsKp"		,1, &TorqueBasedPositionControllerGazebo::setjointsKp		, this); 
+		sub_kd_joints_  	= n.subscribe("setjointsKd"		,1, &TorqueBasedPositionControllerGazebo::setjointsKd		, this); 
+		sub_kp_force_		= n.subscribe("setforceKp"		,1, &TorqueBasedPositionControllerGazebo::setforceKp		, this); 
+		
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
 		
-		Kp_.resize(joint_handles_.size());
-		Kd_.resize(joint_handles_.size());
+	
+
+		//resizing the used vectors
+		M_.resize(kdl_chain_.getNrOfJoints());
+		C_.resize(kdl_chain_.getNrOfJoints());
+		G_.resize(kdl_chain_.getNrOfJoints());
+		Jkdl_.resize(kdl_chain_.getNrOfJoints());
+		Jnt_vel_.resize(kdl_chain_.getNrOfJoints());
+		//Creating Jnt_vel_ object of type JntArrayVel as attribute for the fk_vel_solver_->JntToCart(Jnt_vel_, V_current_);
+		Jnt_vel_.q=joint_msr_states_.q;
+		Jnt_vel_.qdot=joint_msr_states_.qdot;
+		
+		Kp_joints_.resize(kdl_chain_.getNrOfJoints());
+		Kd_joints_.resize(kdl_chain_.getNrOfJoints());
 		
 		for (std::size_t i=0; i<joint_handles_.size()-3; i++)
 		{
-			Kp_(i) = 100.0;
-			Kd_(i) = 50.0;
+			Kp_joints_(i) = 200.0;
+			Kd_joints_(i) = 50.0;
 		}
 		
 		for (std::size_t i=4; i<joint_handles_.size(); i++)
 		{
-			Kp_(i) = 50.0;
-			Kd_(i) = 10.0;
+			Kp_joints_(i) = 50.0;
+			Kd_joints_(i) = 10.0;
 		}
+		
+		Kp_cartesian_ .resize(6);
+		Kd_cartesian_ .resize(6);
+		
+		KDv_ 		= MatrixXd::Zero(6,6);
+		KPv_ 		= MatrixXd::Zero(6,6);
+		KPf_ 		= MatrixXd::Zero(6,6);
+		
+ 		for (std::size_t i=0; i<3; i++)
+		{
+			Kp_cartesian_(i) = 1000.0;
+			Kd_cartesian_(i) = 200.0;
+			
+			KPv_(i,i )=Kp_cartesian_(i);
+			KDv_(i,i )=Kd_cartesian_(i);
+		}    
+		
+		S_v_    	= MatrixXd::Identity(6,6);				// selection matrix for position controlled direction
+		
+		S_v_.bottomRightCorner(3,3) = MatrixXd::Zero(3, 3);
+		S_f_    	= MatrixXd::Zero(6,6);					// selection matrix for velocity controlled direction
+		
+		traj_des_.resize(6);
+		SetToZero (traj_des_);
+
+		q_des_.resize(kdl_chain_.getNrOfJoints());
+		SetToZero (q_des_);
+		
+
+	
+		LAMDA_.resize(6,6);
+		Alpha_v_ 	= MatrixXd::Zero(6, 1);
+		FT_sensor_	= VectorXd::Zero(6);
+		F_des_		= VectorXd::Zero(6);
+		
+		for (std::size_t i=0; i<3; i++)
+		F_des_(i) = 50;
 		
 		#if TRACE_Torque_Based_Position_ACTIVATED
 			ROS_INFO("TorqueBasedPositionController: End of Start init of robot %s !",robot_namespace_.c_str());
@@ -69,6 +129,7 @@ namespace kuka_lwr_controllers
 		#endif
 		
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
+		count = 0;
     }
     
     void TorqueBasedPositionControllerGazebo::stopping(const ros::Time& time)
@@ -83,7 +144,7 @@ namespace kuka_lwr_controllers
 	
     void TorqueBasedPositionControllerGazebo::update(const ros::Time& time, const ros::Duration& period)
     {	
-		
+		 ros::Time begin = ros::Time::now();
 		double torque;
 		
 		if (cmd_flag_)
@@ -94,17 +155,183 @@ namespace kuka_lwr_controllers
 			// is raised again
 			for(size_t i=0; i<joint_handles_.size(); i++) 
 			{
-				//ROS_INFO("joint 0 Position -> %f",joint_handles_[0].getPosition());
-				//ROS_INFO("joint 0 Velocity -> %f",joint_handles_[0].getVelocity());
-				torque = (Kp_(i)*(q_des_(i)-joint_handles_[i].getPosition()))+(Kd_(i)*(-joint_handles_[i].getVelocity()));
-				
-				joint_handles_[i].setCommand(torque); // Set a value of torque to 0.0 for each joint.
-				
+				joint_msr_states_.q(i) = joint_handles_[i].getPosition();
+				joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();		
 			}
+			// position control
+			/*for(size_t i=0; i<joint_handles_.size(); i++) 
+			{
+			
+			torque = (Kp_(i)*(q_des_(i)-joint_handles_[i].getPosition()))+(Kd_(i)*(-joint_handles_[i].getVelocity())) +G_.data(i);
+			joint_handles_[i].setCommand(torque); // Set a value of redundant joint.
+			}*/
+			
+			
+			 for(size_t i=0; i<joint_handles_.size(); i++) 
+			{
+				joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
+				//joint_handles_[i].setCommandTorque(0.0); // Set a value of torque to 0.0 for each joint.
+				//joint_handles_[i].setCommandStiffness(200.0);
+				//joint_handles_[i].setCommandDamping(0.7);
+			}
+			
+			//-------------------------------------------------------------------------------// 
+			//-------------------------------------computing by solvers----------------------//   
+			//-------------------------------------------------------------------------------// 
+			
+            jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, Jkdl_);						// computing Jacobian with KDL
+            id_solver_->JntToMass(joint_msr_states_.q, M_);									// computing Inertia matrix		
+			id_solver_->JntToCoriolis(joint_msr_states_.q, joint_msr_states_.qdot, C_);		// computing Coriolis torques	
+			id_solver_->JntToGravity(joint_msr_states_.q, G_);								// computing Gravity torques
+		
+			//fcn->JntToCart(const JntArray& q_in, Frame& p_out, int seg_nr) 
+            fk_pos_solver_->JntToCart(joint_msr_states_.q, P_current_); 					// computing forward kinematics
+           
+            //fcn->JntToCart(const JntArrayVel& q_in,FrameVel& out,int segmentNr=-1);
+            Jnt_vel_.q=joint_msr_states_.q;													
+			Jnt_vel_.qdot=joint_msr_states_.qdot;
+            fk_vel_solver_->JntToCart(Jnt_vel_, V_current_);								// computing velocities
+			
+			
+			//ROS_INFO("***** joint velocity **************");
+			//ROS_INFO("q%d_dot=%lf",0+1,joint_handles_[0].getVelocity());
+			//ROS_INFO("***** joint position **************");
+			//ROS_INFO("q5=%lf q6=%lf q7=%lf",joint_msr_states_.q(4),joint_msr_states_.q(5),joint_msr_states_.q(6));
+			//ROS_INFO("***** Current velocity **************");
+			//ROS_INFO("vx=%lf vy=%lf vz=%lf ",V_current_.GetTwist ().vel.x(),V_current_.GetTwist ().vel.y(),V_current_.GetTwist ().vel.z());
+			        
+            //------------------------------------------------------------------------------------------------------------------------------------// 
+            //-------------------------------------------Hybrid Control Calculation---------------------------------------------------------------//   
+            //------------------------------------------------------------------------------------------------------------------------------------//     
+            
+            J6x6_ =   Jkdl_.data;        // save the KDL jacoian to the 6x6 one to modify it
+            removeColumn(J6x6_, 2);      // removing the column corresponding to the redundant joint and resising the matrix
+            J_trans_= J6x6_.transpose();
+            //J_inv_  = J6x6_.inverse();
+            //J_inv_trans_ = J_inv_.transpose();
+           
+            I6x6_= M_.data;             // save the KDL Inertia matrix to the 6x6 one to modify it
+			removeColumn(I6x6_, 2);     // removing the column corresponding to the redundant joint and resising the matrix
+			removeRow(I6x6_, 2);        // removing the row corresponding to the redundant joint and resising the matrix
+			
+			
+			//calculatePsuedoInertia(J6x6_, I6x6_, LAMDA_ );
+			calculatePsuedoInertia(Jkdl_.data, M_.data, LAMDA_ );	
+			//LAMDA_ = ((Jkdl_.data)*(M_.data.inverse())*(Jkdl_.data.transpose())).inverse();							// calculate inertia matrix in workspace
+		    calculateAccelerationCommand(P_current_, V_current_,traj_des_,Alpha_v_ );								// calculate the acceleration command 
+		    calculateForceCommand(FT_sensor_, F_des_, F_cmd_);
+			calculateJointTorques(J6x6_,Alpha_v_, Tau_cmd_);																// calculate the joint torques
+			
+	        joint_handles_[0].setCommandTorque(Tau_cmd_(0)) ;
+			joint_handles_[1].setCommandTorque(Tau_cmd_(1));
+			torque = (Kp_joints_(2)*(0-joint_handles_[2].getPosition()))+(Kd_joints_(2)*(-joint_handles_[2].getVelocity()));
+			joint_handles_[2].setCommandTorque(torque); // Set a value of redundant joint.
+			joint_handles_[3].setCommandTorque(Tau_cmd_(2));
+			joint_handles_[4].setCommandTorque((Kp_joints_(4)*(0-joint_handles_[4].getPosition()))+(Kd_joints_(4)*(-joint_handles_[4].getVelocity())));
+			joint_handles_[5].setCommandTorque((Kp_joints_(5)*((-joint_handles_[1].getPosition()+joint_handles_[3].getPosition())- joint_handles_[5].getPosition()
+											))+(Kd_joints_(5)*((-joint_handles_[1].getVelocity()+joint_handles_[3].getVelocity())-joint_handles_[5].getVelocity())));
+			joint_handles_[6].setCommandTorque((Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity())));
+			
+			count++;
+			/*Eigen::MatrixXd maxtorques  = MatrixXd::Zero(6, 1);
+			maxtorques (0,0) = 176;
+			maxtorques (0,0) = 176;
+			maxtorques (0,0) = 100;
+			maxtorques (0,0) = 100;
+			maxtorques (0,0) = 38;
+			maxtorques (0,0) = 38;*/
+	 ros::Time end = ros::Time::now();
+			if(count%100==0)
+			{	std::cout << "time"<<end-begin<< "\n";
+				//std::cout << "Here is the Jkdl_:\n" << Jkdl_.data<< "\n";
+				//std::cout << "Here is the J6x6_:\n" << ((J6x6_.transpose()).inverse())*maxtorques<< "\n";
+				//std::cout << "Here is the J_trans_:\n" << J_trans_<< "\n";
+				//std::cout << "Here is the J_inv_:\n" << J_inv_<< "\n";
+				//std::cout << "Here is the M_.data:\n" << M_.data<< "\n";
+				//std::cout << "Here is the I6x6_:\n" << I6x6_<< "\n";
+				//std::cout << "out:\n" << LAMDA_<< "\n";
+				//ROS_INFO("trajectory-> x=%lf y=%lf z=%lf \n",traj_des_.q.data(1),traj_des_.q.data(2),traj_des_.q.data(3));
+				//ROS_INFO("Current position x=%lf y=%lf z=%lf ",P_current_.p.x(),P_current_.p.y(),P_current_.p.z());
+				 //ROS_INFO("Current position q1=%lf,q2=%lf, q1+q2 = %lf, q3=%lf  ",joint_handles_[1].getPosition(),joint_handles_[3].getPosition(),joint_handles_[1].getPosition()+joint_handles_[3].getPosition(),joint_handles_[5].getPosition() );
+				//ROS_INFO("q5=%lf q6=%lf q7=%lf",joint_msr_states_.q(4),joint_msr_states_.q(5),joint_msr_states_.q(6));
+
+				/*ROS_INFO("***** Current velocity **************");
+				ROS_INFO("x=%lf y=%lf z=%lf ",V_current_.GetTwist ().vel.x(),V_current_.GetTwist ().vel.y(),V_current_.GetTwist ().vel.z());*/
+				
+				/*ROS_INFO("***** dimentions M  **************");
+				ROS_INFO("r=%ld c=%ld",M_.data.rows(),M_.data.cols());*/
+			}				
+
 		}
         
 	}
 	
+	
+	void TorqueBasedPositionControllerGazebo:: calculatePsuedoInertia(const Eigen::MatrixXd  & j, const Eigen::MatrixXd & i, Eigen::MatrixXd & lamda ){
+		
+		//lamda = j6x6*(i6x6.inverse())*j6x6;
+		lamda = ((j)*(i.inverse())*(j.transpose())).inverse();
+	}
+	
+	void TorqueBasedPositionControllerGazebo::transformKDLToEigen_(const KDL::Frame  & frame, Eigen::MatrixXd & matrix) const
+	{
+		//matrix.resize(6,1);
+		
+		for (size_t i=0; i<3; ++i)
+			matrix(i,0) = frame.p(i);
+		
+		for (size_t i=3; i<6; ++i)
+			matrix(i,0) = 0.0;
+		
+	}
+	void TorqueBasedPositionControllerGazebo:: calculateAccelerationCommand(const KDL::Frame  & p_current, const KDL::FrameVel & v_current, const KDL::JntArrayAcc & traj_des, Eigen::MatrixXd & alpha_v )
+	{
+		
+		MatrixXd p_resp(6,1);
+		MatrixXd v_resp(6,1);
+		p_resp = MatrixXd::Zero(6, 1);
+		v_resp = MatrixXd::Zero(6, 1);
+		
+		for (size_t i=0; i<3; ++i)
+		{
+			p_resp(i,0) = p_current.p(i);
+			v_resp(i,0) = v_current.p.v(i);
+		}
+	
+		alpha_v = (traj_des_.qdotdot.data + KDv_*(traj_des.qdot.data - v_resp)  + KPv_*(traj_des.q.data - p_resp));
+	}
+	
+	void TorqueBasedPositionControllerGazebo ::calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & F_des, Eigen::MatrixXd & F_cmd )
+	{
+		F_cmd_ = F_des + KPf_*(F_des - FT_sensor);  // pay attention to the sign of the force sensor
+	}
+	
+	void TorqueBasedPositionControllerGazebo :: calculateJointTorques(const Eigen::MatrixXd & j6x6,const Eigen::MatrixXd & alpha_v, Eigen::MatrixXd & Tau_cmd_  )
+	{
+		//Tau_cmd_ = Jkdl_.data.transpose()*(LAMDA_*S_v_*alpha_v);
+		Tau_cmd_ = J6x6_.transpose()*((LAMDA_*S_v_*alpha_v)+(S_f_*F_cmd_));
+	}
+	void TorqueBasedPositionControllerGazebo :: removeColumn(Eigen::MatrixXd& matrix_in, unsigned int colToRemove)
+	{
+		unsigned int numRows = matrix_in.rows();
+		unsigned int numCols = matrix_in.cols()-1;
+
+		if( colToRemove < numCols )
+			matrix_in.block(0,colToRemove,numRows,numCols-colToRemove) = matrix_in.block(0,colToRemove+1,numRows,numCols-colToRemove);
+			
+		matrix_in.conservativeResize(numRows,numCols);
+	}
+	
+	void TorqueBasedPositionControllerGazebo::removeRow(Eigen::MatrixXd& matrix, unsigned int rowToRemove)
+	{
+		unsigned int numRows = matrix.rows()-1;
+		unsigned int numCols = matrix.cols();
+
+		if( rowToRemove < numRows )
+			matrix.block(rowToRemove,0,numRows-rowToRemove,numCols) = matrix.block(rowToRemove+1,0,numRows-rowToRemove,numCols);
+
+		matrix.conservativeResize(numRows,numCols);
+	}
 	
 	void TorqueBasedPositionControllerGazebo::commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
     {
@@ -122,53 +349,157 @@ namespace kuka_lwr_controllers
 		q_des_.resize(msg->data.size());
 		for (std::size_t i=0; i<msg->data.size(); i++)
 		{
-			q_des_(i) = (double)msg->data[i];
+			q_des_(i) = (double)msg->data[i]*0;
 		}
 		
 		cmd_flag_ = 1;
 		
 	}
 	
-	void TorqueBasedPositionControllerGazebo::setKp(const std_msgs::Float64MultiArrayConstPtr& msg)
+	
+	void TorqueBasedPositionControllerGazebo::TrajPathPointCB(const kuka_lwr_controllers::TrajPathPoint::ConstPtr & msg)
+    {
+		/*
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: Start trajCB of robot %s!",robot_namespace_.c_str());
+		#endif
+		*/
+		traj_des_.resize(6);
+
+			traj_des_.q.data(0) = (double)msg->pos.x;
+			traj_des_.q.data(1) = (double)msg->pos.y;
+			traj_des_.q.data(2) = (double)msg->pos.z;
+					
+			traj_des_.qdot.data(0) = (double)msg->vel.x;
+			traj_des_.qdot.data(1) = (double)msg->vel.y;
+			traj_des_.qdot.data(2) = (double)msg->vel.z;
+			
+			traj_des_.qdotdot.data(0) = (double)msg->acc.x;
+			traj_des_.qdotdot.data(1) = (double)msg->acc.y;
+			traj_des_.qdotdot.data(2) = (double)msg->acc.z;
+			
+		//	ROS_INFO("TorqueBasedPositionController: TrajPathPointCB  msg->pos.x = %f !",(double)msg->pos.x);
+
+		for (std::size_t i=3; i<6; i++)
+		{
+			traj_des_.q(i) = 0;
+			traj_des_.qdot(i) = 0;
+			traj_des_.qdotdot(i) = 0;
+		}
+		cmd_flag_ = 1;
+	}
+	void TorqueBasedPositionControllerGazebo::ft_readingsCB(const geometry_msgs::WrenchStamped& msg)
     {
 		#if TRACE_Torque_Based_Position_ACTIVATED
-			ROS_INFO("TorqueBasedPositionController: Start setKp of robot %s!",robot_namespace_.c_str());
+			ROS_INFO("TorqueBasedPositionController: Start ft_readingsCB of robot %s!",robot_namespace_.c_str());
+		#endif
+		FT_sensor_[0] = msg.wrench.force.x ;
+		FT_sensor_[1] = msg.wrench.force.y ;
+		FT_sensor_[2] = msg.wrench.force.z ;
+		FT_sensor_[3] = msg.wrench.torque.x ;
+		FT_sensor_[4] = msg.wrench.torque.y ;
+		FT_sensor_[5] = msg.wrench.torque.z ;
+
+		cmd_flag_ = 1;
+	}
+	
+	void TorqueBasedPositionControllerGazebo:: setjointsKp(const std_msgs::Float64MultiArrayConstPtr& msg)
+	{
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: Start setjointsKp of robot %s!",robot_namespace_.c_str());
 		#endif
 
-		if(msg->data.size()!=joint_handles_.size())
+		if(msg->data.size()!=joint_handles_.size() )
 		{ 
-			ROS_ERROR_STREAM("TorqueBasedPositionController: setKp Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			ROS_ERROR_STREAM("TorqueBasedPositionController: setjointsKp Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
 			return; 
 		}
 		
-		Kp_.resize(joint_handles_.size());
+		Kp_joints_.resize(joint_handles_.size());
+		
 		for (std::size_t i=0; i<msg->data.size(); i++)
 		{
-			Kp_(i) = (double)msg->data[i];
+			Kp_joints_(i) = (double)msg->data[i];
+		}
+	}
+	void TorqueBasedPositionControllerGazebo:: setjointsKd(const std_msgs::Float64MultiArrayConstPtr& msg)
+	{
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: setjointsKd setjointsKp of robot %s!",robot_namespace_.c_str());
+		#endif
+
+		if(msg->data.size()!=joint_handles_.size() )
+		{ 
+			ROS_ERROR_STREAM("TorqueBasedPositionController: setjointsKd Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+		
+		Kd_joints_.resize(joint_handles_.size());
+		
+		for (std::size_t i=0; i<msg->data.size(); i++)
+		{
+			Kd_joints_(i) = (double)msg->data[i];
+		}
+	}
+	void TorqueBasedPositionControllerGazebo::setcartesianKp(const std_msgs::Float64MultiArrayConstPtr& msg)
+    {
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: Start setcartesianKp of robot %s!",robot_namespace_.c_str());
+		#endif
+
+		if(msg->data.size()!=6)
+		{ 
+			ROS_ERROR_STREAM("TorqueBasedPositionController: setcartesianKp Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+		
+		Kp_cartesian_.resize(6);
+		
+		for (std::size_t i=0; i<msg->data.size(); i++)
+		{
+			Kp_cartesian_(i) = (double)msg->data[i];
+			KPv_(i,i) = (double)msg->data[i];
 		}
 		
 	}
 	
-	void TorqueBasedPositionControllerGazebo::setKd(const std_msgs::Float64MultiArrayConstPtr& msg)
+	void TorqueBasedPositionControllerGazebo::setcartesianKd(const std_msgs::Float64MultiArrayConstPtr& msg)
     {
 		#if TRACE_Torque_Based_Position_ACTIVATED
-			ROS_INFO("TorqueBasedPositionController: Start setKd of robot %s!",robot_namespace_.c_str());
+			ROS_INFO("TorqueBasedPositionController: Start setcartesianKd of robot %s!",robot_namespace_.c_str());
 		#endif
 
-		if(msg->data.size()!=joint_handles_.size())
+		if(msg->data.size()!=6)
 		{ 
-			ROS_ERROR_STREAM("TorqueBasedPositionController: setKd Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			ROS_ERROR_STREAM("TorqueBasedPositionController: setcartesianKd Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
 			return; 
 		}
 		
-		Kd_.resize(joint_handles_.size());
+		Kd_cartesian_.resize(6);
 		for (std::size_t i=0; i<msg->data.size(); i++)
 		{
-			Kd_(i) = (double)msg->data[i];
+			Kd_cartesian_(i) = (double)msg->data[i];
+			KDv_(i,i) = (double)msg->data[i];
 		}
-		
 	}
 	
+	void TorqueBasedPositionControllerGazebo::setforceKp(const std_msgs::Float64MultiArrayConstPtr& msg)
+    {
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: Start setforceKp of robot %s!",robot_namespace_.c_str());
+		#endif
+
+		if(msg->data.size()!=6)
+		{ 
+			ROS_ERROR_STREAM("TorqueBasedPositionController: setforceKp Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+
+		for (std::size_t i=0; i<msg->data.size(); i++)
+		{
+			KPf_(i,i) = (double)msg->data[i];
+		}
+	}	
 }
 
 PLUGINLIB_EXPORT_CLASS(kuka_lwr_controllers::TorqueBasedPositionControllerGazebo, controller_interface::ControllerBase)
