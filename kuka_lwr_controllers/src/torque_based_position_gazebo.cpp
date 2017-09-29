@@ -67,7 +67,7 @@ namespace kuka_lwr_controllers
 		
 		for (std::size_t i=0; i<joint_handles_.size()-3; i++)
 		{
-			Kp_joints_(i) = 200.0;
+			Kp_joints_(i) = 100.0;
 			Kd_joints_(i) = 50.0;
 		}
 		
@@ -86,8 +86,8 @@ namespace kuka_lwr_controllers
 		
  		for (std::size_t i=0; i<3; i++)
 		{
-			Kp_cartesian_(i) = 1000.0;
-			Kd_cartesian_(i) = 200.0;
+			Kp_cartesian_(i) = 100.0;
+			Kd_cartesian_(i) = 50.0;
 			
 			KPv_(i,i )=Kp_cartesian_(i);
 			KDv_(i,i )=Kd_cartesian_(i);
@@ -171,8 +171,8 @@ namespace kuka_lwr_controllers
 			{
 				joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
 				//joint_handles_[i].setCommandTorque(0.0); // Set a value of torque to 0.0 for each joint.
-				//joint_handles_[i].setCommandStiffness(200.0);
-				//joint_handles_[i].setCommandDamping(0.7);
+				joint_handles_[i].setCommandStiffness(200.0);
+				joint_handles_[i].setCommandDamping(0.7);
 			}
 			
 			//-------------------------------------------------------------------------------// 
