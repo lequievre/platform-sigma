@@ -20,7 +20,7 @@ for example : hw_ethX_associate_switch="2c:44:fd:68:fb:58"
 192.168.100.123 ????
 
 4- On each new terminal window on user's laptop, set the ROS MASTER URI :
-export ROS_MASTER_URI=http://????:11311
+export ROS_MASTER_URI=http://ifma-kuka-test:11311
 
 rostopic list
 rostopic pub ....
