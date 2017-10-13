@@ -46,6 +46,7 @@ add_message_files(
    RPY.msg
    MultiPriorityTask.msg
    TrajPathPoint.msg
+   StiffnessDamping.msg
 )
 
 # Generate source files from your msg definition.

@@ -17,6 +17,11 @@
 // msgs Float64MultiArray
 #include <std_msgs/Float64MultiArray.h>
 
+#include <kuka_lwr_controllers/StiffnessDamping.h>
+
+// KDL JntArray
+#include <kdl/jntarray.hpp>
+
 #include <string>
 
 #define TRACE_ACTIVATED 0
@@ -34,9 +39,13 @@ namespace kuka_lwr_controllers
 			void starting(const ros::Time& time);  // Start the controller
 			void stopping(const ros::Time& time);  // Stop the controller
 			void update(const ros::Time& time, const ros::Duration& period);  // Update the controller
+			void setStiffnessDamping(const kuka_lwr_controllers::StiffnessDamping::ConstPtr & msg);
+			void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg); // function associate to a subscribe command topic
 			
 		private:
 			std::string robot_namespace_;
+			KDL::JntArray  stiff_, damp_, q_des_; // stiffness and damping values got from topic
+			ros::Subscriber sub_stiffness_damping_, sub_command_; // subscribers of stiffness and damping and command position
 	};
 }
 

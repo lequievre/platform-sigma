@@ -165,12 +165,30 @@ cd ~/git_project/platform-sigma
 source devel/setup.bash
 
 
+-> How to start 'torque_based_position_controller_gazebo' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['torque_based_position_controller_gazebo'], stop_controllers: [], strictness: 2}"
+
+-> How to stop 'torque_based_position_controller_gazebo' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['torque_based_position_controller_gazebo'], strictness: 2}"
+
+
+-> How to start 'kuka_gravity_compensation_controller' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_gravity_compensation_controller'], stop_controllers: [], strictness: 2}"
+
+-> How to stop 'kuka_gravity_compensation_controller' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_gravity_compensation_controller'], strictness: 2}"
+
+
 -> set kp and kd
 rostopic pub -1 /kuka_lwr_left/torque_based_position_controller/setKp std_msgs/Float64MultiArray "data: [100,200,100,100,50,50,50]"
 
 rostopic pub -1 /kuka_lwr_left/torque_based_position_controller/setKd std_msgs/Float64MultiArray "data: [50,50,50,50,10,10,10]"
 
+rostopic pub -1 /kuka_lwr_right/torque_based_position_controller_gazebo/setStiffnessDamping kuka_lwr_controllers/StiffnessDamping '{ stiffness: { data: [200.0,200.0,200.0,200.0,200.0,200.0,200.0] } , damping: { data: [0.7,0.7,0.7,0.7,0.7,0.7,0.7] } }'
 
+rostopic pub -1 /kuka_lwr_right/kuka_gravity_compensation_controller/setStiffnessDamping kuka_lwr_controllers/StiffnessDamping '{ stiffness: { data: [200.0,200.0,200.0,200.0,200.0,200.0,200.0] } , damping: { data: [0.7,0.7,0.7,0.7,0.7,0.7,0.7] } }'
+
+rostopic pub -1 /kuka_lwr_right/kuka_gravity_compensation_controller/command std_msgs/Float64MultiArray "data: [0.0,0.0,0.0,0.0,0.0,0.0,0.0]"
 
 
 
