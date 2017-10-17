@@ -1,7 +1,9 @@
 <launch>
     
 	<!-- set some ros tools -->
-	<arg name="use_pantilt" default="true"/>
+	<arg name="use_pantilt" default="false"/>
+
+	<arg name="load_moveit" default="false"/>
 
 	<arg name="robot_name" default="platform_robot"/>
 	<arg name="robot_urdf_file" default="$(find platform_gazebo)/robot/$(arg robot_name).urdf.xacro"/>
@@ -44,7 +46,7 @@
 	<group if="$(arg use_left_arm)">
 		<!-- namespace of left arm -->
 		<group ns="kuka_lwr_left">
-			<node name="controller_spawner_joint_left" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
+			<node name="controller_spawner_joint_left" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller joint_trajectory_controller"/>
 			<node name="controller_spawner_left" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="--stopped $(arg controllers)"/>
 		</group>
 	
@@ -58,7 +60,7 @@
 	<group if="$(arg use_right_arm)">
 		<!-- namespace of right arm -->
 		<group ns="kuka_lwr_right">
-			<node name="controller_spawner_joint_right" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
+			<node name="controller_spawner_joint_right" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller joint_trajectory_controller"/>
 			<node name="controller_spawner_right" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="--stopped $(arg controllers)"/>
 		</group>
 
@@ -94,6 +96,47 @@
 		<!-- ***************************************************************************************************************************************************  -->
 	</group>
 
-	
+
+	<!-- load moveit configuration -->
+	<group if="$(arg load_moveit)">
+		<group ns="kuka_lwr_left">
+			<include file="$(find kuka_lwr_moveit)/launch/move_group.launch">
+				<arg name="allow_trajectory_execution" value="true"/>  
+				<arg name="fake_execution" value="false"/>
+				<arg name="info" value="true"/>
+				<arg name="debug" value="false"/>
+				<remap from="/joint_states" to="/kuka_lwr_left/joint_states" />
+			</include>
+
+			<!-- run Rviz and load the default config to see the state of the move_group node -->
+			<include file="$(find kuka_lwr_moveit)/launch/moveit_rviz.launch">
+				<arg name="config" value="true"/>
+				<arg name="debug" value="false"/>
+			</include>	
+
+		</group>
+
+		<group ns="kuka_lwr_right">
+			<include file="$(find kuka_lwr_moveit)/launch/move_group.launch">
+				<arg name="allow_trajectory_execution" value="true"/>  
+				<arg name="fake_execution" value="false"/>
+				<arg name="info" value="true"/>
+				<arg name="debug" value="false"/>
+				<remap from="/joint_states" to="/kuka_lwr_right/joint_states" />
+			</include>
+
+			<!-- run Rviz and load the default config to see the state of the move_group node -->
+			<include file="$(find kuka_lwr_moveit)/launch/moveit_rviz.launch">
+				<arg name="config" value="true"/>
+				<arg name="debug" value="false"/>
+			</include>	
+
+		</group>
+
+
+		
+
+		
+	</group>
 	
 </launch>
