@@ -17,7 +17,9 @@
 // msgs 
 #include <std_msgs/Float64MultiArray.h>
 #include <geometry_msgs/WrenchStamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <kuka_lwr_controllers/TrajPathPoint.h>
+#include <kuka_lwr_controllers/StiffnessDamping.h>
 
 // KDL JntArray
 #include <kdl/jntarray.hpp>
@@ -66,16 +68,18 @@ namespace kuka_lwr_controllers
 			void setforceKp(const std_msgs::Float64MultiArrayConstPtr& msg); 				// function associate to a subscribe setforceKp topic
 			void TrajPathPointCB(const kuka_lwr_controllers::TrajPathPoint::ConstPtr & msg);// function associate to a subscribe traj_cmd topic
 			void ft_readingsCB(const geometry_msgs::WrenchStamped& msg);
+			void setRollPitchYaw(const  geometry_msgs::PoseStamped& msg);
+			void setStiffnessDamping(const kuka_lwr_controllers::StiffnessDamping::ConstPtr & msg);
 			
 			ros::Subscriber sub_command_  , sub_traj_      , sub_ft_;
-			ros::Subscriber sub_kp_joints_, sub_kd_joints_ , sub_kp_cartesian_ , sub_kd_cartesian_, sub_kp_force_; // subscribers of gains
-			
+			ros::Subscriber sub_kp_joints_, sub_kd_joints_ , sub_kp_cartesian_ , sub_kd_cartesian_, sub_kp_force_,sub_ee_pos_, sub_stiffness_damping_; // subscribers of gains
+			ros::Publisher pub_traj_resp_,pub_tau_cmd_, pub_F_des_;              
 			int cmd_flag_; // flag set only to 1 when the controller receive a message to the command topic	
 			
 			std::string robot_namespace_;
 			
 			KDL::JntArray 				Kp_joints_, Kd_joints_, Kp_cartesian_ , Kd_cartesian_;	// gain arrays
-			KDL::JntArray 				q_des_ ;			// desired joint value
+			KDL::JntArray 				q_des_ , stiff_, damp_;			// desired joint value
 			KDL::Jacobian 				Jkdl_;
 			KDL::JntSpaceInertiaMatrix 	M_; 				//Inertia matrix
 			KDL::JntArray 				C_, G_;        		//Coriolis and Gravitational matrices
@@ -85,10 +89,11 @@ namespace kuka_lwr_controllers
 			KDL::FrameVel 				V_current_; 		// current end-effector velocity
 			KDL::JntArrayVel 			Jnt_vel_;
 			
-			Eigen::MatrixXd 			J6x6_, J_inv_, J_trans_, J_inv_trans_, I6x6_, LAMDA_, S_v_,S_f_, Alpha_v_, KDv_, KPv_,KPf_,Tau_cmd_, F_cmd_;
-			Eigen::VectorXd				FT_sensor_, F_des_;
+			Eigen::MatrixXd 			J6x6_, J_inv_, J_trans_, J_inv_trans_, I6x6_, LAMDA_, S_v_,S_f_, Alpha_v_, KDv_, KPv_,KPf_, F_cmd_;
+			Eigen::VectorXd				FT_sensor_, F_des_,Tau_cmd_;
 
 			int count =0;
+			double roll_, pitch_, yaw_, d_wall_;
 			
 			boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;	
 			boost::scoped_ptr<KDL::ChainDynParam> id_solver_;		
@@ -101,7 +106,7 @@ namespace kuka_lwr_controllers
 			void calculatePsuedoInertia(const Eigen::MatrixXd  & j6x6, const Eigen::MatrixXd & i6x6, Eigen::MatrixXd & lamda );
 			void calculateAccelerationCommand(const KDL::Frame  & p_current, const KDL::FrameVel & v_current, const KDL::JntArrayAcc & traj_des, Eigen::MatrixXd & alpha_v );
 			void calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & f_des, Eigen::MatrixXd & F_cmd );
-			void calculateJointTorques(const Eigen::MatrixXd & j6x6, const Eigen::MatrixXd & alpha_v,Eigen::MatrixXd & Tau_cmd_ );
+			void calculateJointTorques(const Eigen::MatrixXd & j6x6, const Eigen::MatrixXd & alpha_v,Eigen::VectorXd & Tau_cmd_ );
 	};
 }
 

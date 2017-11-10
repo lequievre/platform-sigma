@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <Eigen/Dense>
 #include <utils/pseudo_inversion.h>
+
 namespace kuka_lwr_controllers 
 {
     TorqueBasedPositionControllerGazebo::TorqueBasedPositionControllerGazebo() {}
@@ -39,17 +40,22 @@ namespace kuka_lwr_controllers
 		fk_vel_solver_.reset(new KDL::ChainFkSolverVel_recursive(kdl_chain_));
 		
 		
-        sub_command_ 		= n.subscribe("command"			,1, &TorqueBasedPositionControllerGazebo::commandCB			, this);
-        sub_kp_cartesian_ 	= n.subscribe("setcartesianKp"	,1, &TorqueBasedPositionControllerGazebo::setcartesianKp	, this);
-        sub_kd_cartesian_ 	= n.subscribe("setcartesianKd"	,1, &TorqueBasedPositionControllerGazebo::setcartesianKd	, this);
-		sub_traj_			= n.subscribe("/traj_cmd"		,1, &TorqueBasedPositionControllerGazebo::TrajPathPointCB	, this);
-		sub_ft_ 			= n.subscribe("sensor_readings"	,1, &TorqueBasedPositionControllerGazebo::ft_readingsCB		, this);
-		sub_kp_joints_  	= n.subscribe("setjointsKp"		,1, &TorqueBasedPositionControllerGazebo::setjointsKp		, this); 
-		sub_kd_joints_  	= n.subscribe("setjointsKd"		,1, &TorqueBasedPositionControllerGazebo::setjointsKd		, this); 
-		sub_kp_force_		= n.subscribe("setforceKp"		,1, &TorqueBasedPositionControllerGazebo::setforceKp		, this); 
-		
+        sub_command_ 		= n.subscribe("command"				,1, &TorqueBasedPositionControllerGazebo::commandCB			, this);
+        sub_kp_cartesian_ 	= n.subscribe("setcartesianKp"		,1, &TorqueBasedPositionControllerGazebo::setcartesianKp	, this);
+        sub_kd_cartesian_ 	= n.subscribe("setcartesianKd"		,1, &TorqueBasedPositionControllerGazebo::setcartesianKd	, this);
+		sub_traj_			= n.subscribe("/traj_cmd"			,1, &TorqueBasedPositionControllerGazebo::TrajPathPointCB	, this);
+		sub_ft_ 			= n.subscribe("sensor_readings"		,1, &TorqueBasedPositionControllerGazebo::ft_readingsCB		, this);
+		sub_kp_joints_  	= n.subscribe("setjointsKp"			,1, &TorqueBasedPositionControllerGazebo::setjointsKp		, this); 
+		sub_kd_joints_  	= n.subscribe("setjointsKd"			,1, &TorqueBasedPositionControllerGazebo::setjointsKd		, this); 
+		sub_kp_force_		= n.subscribe("setforceKp"			,1, &TorqueBasedPositionControllerGazebo::setforceKp		, this); 
+		sub_ee_pos_			= n.subscribe("/aruco_single/pose"	,1, &TorqueBasedPositionControllerGazebo::setRollPitchYaw	, this); 
+		sub_stiffness_damping_ = n.subscribe("setStiffnessDamping"		,1, &TorqueBasedPositionControllerGazebo::setStiffnessDamping	, this); 
+
+		pub_traj_resp_		= n.advertise<kuka_lwr_controllers::TrajPathPoint>("traj_resp", 1000);
+		pub_tau_cmd_		= n.advertise<std_msgs::Float64MultiArray>("tau_cmd", 1000);
+		pub_F_des_			= n.advertise<geometry_msgs::WrenchStamped>("F_des", 1000);
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
-		
+		d_wall_ = 1.0;
 	
 
 		//resizing the used vectors
@@ -64,13 +70,20 @@ namespace kuka_lwr_controllers
 		
 		Kp_joints_.resize(kdl_chain_.getNrOfJoints());
 		Kd_joints_.resize(kdl_chain_.getNrOfJoints());
+		stiff_.resize(kdl_chain_.getNrOfJoints());
+		damp_.resize(kdl_chain_.getNrOfJoints());
+
 		
 		for (std::size_t i=0; i<joint_handles_.size()-3; i++)
 		{
 			Kp_joints_(i) = 100.0;
 			Kd_joints_(i) = 50.0;
 		}
-		
+		for (std::size_t i=0; i<joint_handles_.size(); i++)
+		{
+			stiff_(i) = 200.0;
+			damp_(i) = 0.7;
+		}
 		for (std::size_t i=4; i<joint_handles_.size(); i++)
 		{
 			Kp_joints_(i) = 50.0;
@@ -110,6 +123,8 @@ namespace kuka_lwr_controllers
 		Alpha_v_ 	= MatrixXd::Zero(6, 1);
 		FT_sensor_	= VectorXd::Zero(6);
 		F_des_		= VectorXd::Zero(6);
+		Tau_cmd_	= VectorXd::Zero(6);
+		
 		
 		for (std::size_t i=0; i<3; i++)
 		F_des_(i) = 50;
@@ -144,12 +159,17 @@ namespace kuka_lwr_controllers
 	
     void TorqueBasedPositionControllerGazebo::update(const ros::Time& time, const ros::Duration& period)
     {	
-		 ros::Time begin = ros::Time::now();
+		ros::Time begin = ros::Time::now();
+		/****** messages to be published for analyses *****/
+		kuka_lwr_controllers::TrajPathPoint traj_resp_msg;
+		std_msgs::Float64MultiArray tau_cmd_msg;	 tau_cmd_msg.data.resize(7);	
+        geometry_msgs::WrenchStamped  F_des_msg;
+        	
 		double torque;
 		
 		if (cmd_flag_)
 		{
-		
+
 			// update the commanded position to the actual, so that the robot doesn't 
 			// go back at full speed to the last commanded position when the stiffness 
 			// is raised again
@@ -171,8 +191,8 @@ namespace kuka_lwr_controllers
 			{
 				joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
 				//joint_handles_[i].setCommandTorque(0.0); // Set a value of torque to 0.0 for each joint.
-				joint_handles_[i].setCommandStiffness(200.0);
-				joint_handles_[i].setCommandDamping(0.7);
+				joint_handles_[i].setCommandStiffness(stiff_(i));
+				joint_handles_[i].setCommandDamping(damp_(i));
 			}
 			
 			//-------------------------------------------------------------------------------// 
@@ -222,6 +242,25 @@ namespace kuka_lwr_controllers
 		    calculateForceCommand(FT_sensor_, F_des_, F_cmd_);
 			calculateJointTorques(J6x6_,Alpha_v_, Tau_cmd_);																// calculate the joint torques
 			
+			
+			tau_cmd_msg.data[0] = Tau_cmd_(0)+C_(0)+G_(0);
+			tau_cmd_msg.data[1] = Tau_cmd_(1)+C_(1)+G_(1);
+			tau_cmd_msg.data[2] = (Kp_joints_(2)*(0-joint_handles_[2].getPosition()))+(Kd_joints_(2)*(-joint_handles_[2].getVelocity()))+C_(2)+G_(2);
+			tau_cmd_msg.data[3] = Tau_cmd_(2)+C_(3)+G_(3);
+			tau_cmd_msg.data[4] = (Kp_joints_(4)*(0-joint_handles_[4].getPosition()))+(Kd_joints_(4)*(-joint_handles_[4].getVelocity()))+C_(4)+G_(4);
+			tau_cmd_msg.data[5] = ((Kp_joints_(5)*((-joint_handles_[1].getPosition()+joint_handles_[3].getPosition())- joint_handles_[5].getPosition()
+								))+(Kd_joints_(5)*((-joint_handles_[1].getVelocity()+joint_handles_[3].getVelocity())-joint_handles_[5].getVelocity())))+C_(5)+G_(4);
+			tau_cmd_msg.data[6] = (Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity()))+C_(6)+G_(6);
+				
+			joint_handles_[0].setCommandTorque(tau_cmd_msg.data[0]) ;
+			joint_handles_[1].setCommandTorque(tau_cmd_msg.data[1]);
+			joint_handles_[2].setCommandTorque(tau_cmd_msg.data[2]); // Set a value of redundant joint.
+			joint_handles_[3].setCommandTorque(tau_cmd_msg.data[3]);
+			joint_handles_[4].setCommandTorque(tau_cmd_msg.data[4]);
+			joint_handles_[5].setCommandTorque(tau_cmd_msg.data[5]);
+			joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]);
+			
+			/*	
 	        joint_handles_[0].setCommandTorque(Tau_cmd_(0)) ;
 			joint_handles_[1].setCommandTorque(Tau_cmd_(1));
 			torque = (Kp_joints_(2)*(0-joint_handles_[2].getPosition()))+(Kd_joints_(2)*(-joint_handles_[2].getVelocity()));
@@ -231,18 +270,44 @@ namespace kuka_lwr_controllers
 			joint_handles_[5].setCommandTorque((Kp_joints_(5)*((-joint_handles_[1].getPosition()+joint_handles_[3].getPosition())- joint_handles_[5].getPosition()
 											))+(Kd_joints_(5)*((-joint_handles_[1].getVelocity()+joint_handles_[3].getVelocity())-joint_handles_[5].getVelocity())));
 			joint_handles_[6].setCommandTorque((Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity())));
-			
+			*/
 			count++;
-			/*Eigen::MatrixXd maxtorques  = MatrixXd::Zero(6, 1);
-			maxtorques (0,0) = 176;
-			maxtorques (0,0) = 176;
-			maxtorques (0,0) = 100;
-			maxtorques (0,0) = 100;
-			maxtorques (0,0) = 38;
-			maxtorques (0,0) = 38;*/
-	 ros::Time end = ros::Time::now();
+			// publishing data 
+				traj_resp_msg.pos.x = P_current_.p.x();
+				traj_resp_msg.pos.y = P_current_.p.y();
+				traj_resp_msg.pos.z = P_current_.p.z();
+				traj_resp_msg.vel.x = V_current_.GetTwist ().vel.x();
+				traj_resp_msg.vel.y = V_current_.GetTwist ().vel.y();
+				traj_resp_msg.vel.z = V_current_.GetTwist ().vel.z();
+				traj_resp_msg.acc.x = 0.0;
+				traj_resp_msg.acc.y = 0.0;
+				traj_resp_msg.acc.z = 0.0;
+				pub_traj_resp_.publish(traj_resp_msg);
+				
+				/*tau_cmd_msg.data[0] = Tau_cmd_(0);
+				tau_cmd_msg.data[1] = Tau_cmd_(1);
+				tau_cmd_msg.data[2] = torque;
+				tau_cmd_msg.data[3] = Tau_cmd_(2);
+				tau_cmd_msg.data[4] = Tau_cmd_(3);
+				tau_cmd_msg.data[5] = Tau_cmd_(4);
+				tau_cmd_msg.data[6] = Tau_cmd_(5);
+				*/
+				pub_tau_cmd_.publish(tau_cmd_msg);
+				
+				F_des_msg.wrench.force.x = F_des_[0];
+				F_des_msg.wrench.force.y = F_des_[1];
+				F_des_msg.wrench.force.z = F_des_[2];
+				F_des_msg.wrench.torque.x = 0;
+				F_des_msg.wrench.torque.y = 0;
+				F_des_msg.wrench.torque.z = 0;
+				pub_F_des_.publish(F_des_msg);
+						
+				
+				
+			ros::Time end = ros::Time::now();
 			if(count%100==0)
-			{	std::cout << "time"<<end-begin<< "\n";
+			{	//std::cout << "time"<<end-begin<< "\n";
+				std::cout << "d_wall="<<d_wall_<<" roll="<<roll_<<" pitch="<<pitch_<<" yaw="<<yaw_<< "\n";
 				//std::cout << "Here is the Jkdl_:\n" << Jkdl_.data<< "\n";
 				//std::cout << "Here is the J6x6_:\n" << ((J6x6_.transpose()).inverse())*maxtorques<< "\n";
 				//std::cout << "Here is the J_trans_:\n" << J_trans_<< "\n";
@@ -257,9 +322,8 @@ namespace kuka_lwr_controllers
 
 				/*ROS_INFO("***** Current velocity **************");
 				ROS_INFO("x=%lf y=%lf z=%lf ",V_current_.GetTwist ().vel.x(),V_current_.GetTwist ().vel.y(),V_current_.GetTwist ().vel.z());*/
-				
-				/*ROS_INFO("***** dimentions M  **************");
-				ROS_INFO("r=%ld c=%ld",M_.data.rows(),M_.data.cols());*/
+							
+				//ROS_INFO("x=%lf",traj_resp_msg.pos.x);
 			}				
 
 		}
@@ -269,14 +333,12 @@ namespace kuka_lwr_controllers
 	
 	void TorqueBasedPositionControllerGazebo:: calculatePsuedoInertia(const Eigen::MatrixXd  & j, const Eigen::MatrixXd & i, Eigen::MatrixXd & lamda ){
 		
-		//lamda = j6x6*(i6x6.inverse())*j6x6;
 		lamda = ((j)*(i.inverse())*(j.transpose())).inverse();
 	}
 	
 	void TorqueBasedPositionControllerGazebo::transformKDLToEigen_(const KDL::Frame  & frame, Eigen::MatrixXd & matrix) const
 	{
-		//matrix.resize(6,1);
-		
+	
 		for (size_t i=0; i<3; ++i)
 			matrix(i,0) = frame.p(i);
 		
@@ -304,9 +366,10 @@ namespace kuka_lwr_controllers
 	void TorqueBasedPositionControllerGazebo ::calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & F_des, Eigen::MatrixXd & F_cmd )
 	{
 		F_cmd_ = F_des + KPf_*(F_des - FT_sensor);  // pay attention to the sign of the force sensor
+
 	}
 	
-	void TorqueBasedPositionControllerGazebo :: calculateJointTorques(const Eigen::MatrixXd & j6x6,const Eigen::MatrixXd & alpha_v, Eigen::MatrixXd & Tau_cmd_  )
+	void TorqueBasedPositionControllerGazebo :: calculateJointTorques(const Eigen::MatrixXd & j6x6,const Eigen::MatrixXd & alpha_v, Eigen::VectorXd & Tau_cmd_  )
 	{
 		//Tau_cmd_ = Jkdl_.data.transpose()*(LAMDA_*S_v_*alpha_v);
 		Tau_cmd_ = J6x6_.transpose()*((LAMDA_*S_v_*alpha_v)+(S_f_*F_cmd_));
@@ -500,6 +563,47 @@ namespace kuka_lwr_controllers
 			KPf_(i,i) = (double)msg->data[i];
 		}
 	}	
+	void TorqueBasedPositionControllerGazebo::setRollPitchYaw(const  geometry_msgs::PoseStamped& msg)
+	{
+		d_wall_ = msg.pose.position.z;
+		
+		double sinr = +2.0 * (msg.pose.orientation.w * msg.pose.orientation.x + msg.pose.orientation.y * msg.pose.orientation.z);
+		double cosr = +1.0 - 2.0 * (msg.pose.orientation.x * msg.pose.orientation.x + msg.pose.orientation.y * msg.pose.orientation.y);
+		roll_ = atan2(sinr, cosr);
+
+		// pitch (y-axis rotation)
+		double sinp = +2.0 * (msg.pose.orientation.w * msg.pose.orientation.y - msg.pose.orientation.z * msg.pose.orientation.x);
+		if (fabs(sinp) >= 1)
+			pitch_ = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+		else
+		pitch_ = asin(sinp);
+
+		// yaw (z-axis rotation)
+		double siny = +2.0 * (msg.pose.orientation.w * msg.pose.orientation.z + msg.pose.orientation.x * msg.pose.orientation.y);
+		double cosy = +1.0 - 2.0 * (msg.pose.orientation.y * msg.pose.orientation.y + msg.pose.orientation.z * msg.pose.orientation.z);  
+		yaw_ = atan2(siny, cosy);
+	}
+
+void TorqueBasedPositionControllerGazebo::setStiffnessDamping(const kuka_lwr_controllers::StiffnessDamping::ConstPtr & msg){
+		
+		
+		if(msg->stiffness.data.size()!=joint_handles_.size()  )
+		{ 
+			ROS_ERROR_STREAM("TorqueBasedPositionController: stiffness Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->stiffness.data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+			if(msg->damping.data.size()!=joint_handles_.size()  )
+		{ 
+			ROS_ERROR_STREAM("TorqueBasedPositionController: Damping Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->damping.data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+		
+		for (std::size_t i=0; i<msg->stiffness.data.size(); i++)
+		{
+			stiff_(i) = (double)msg->stiffness.data[i];
+			damp_(i) = (double)msg->damping.data[i];
+		}
+	}
 }
 
 PLUGINLIB_EXPORT_CLASS(kuka_lwr_controllers::TorqueBasedPositionControllerGazebo, controller_interface::ControllerBase)
