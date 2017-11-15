@@ -48,4 +48,16 @@
 		</description>
 	</class> 
 
+	<class name="kuka_lwr_controllers/ComputedTorqueController" type="kuka_lwr_controllers::ComputedTorqueController" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Info...
+		</description>
+	</class> 
+
+	<class name="kuka_lwr_controllers/CartesianComputedTorqueController" type="kuka_lwr_controllers::CartesianComputedTorqueController" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Info...
+		</description>
+	</class> 
+
 </library>

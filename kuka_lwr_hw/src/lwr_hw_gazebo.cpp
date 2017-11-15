@@ -103,9 +103,10 @@ namespace lwr_hw
 							{
 							  // replicate the joint impedance control strategy
 							  // tau = k (q_FRI - q_msr) + tau_FRI + D(q_msr) + f_dyn(q_msr)
-							  const double stiffness_effort = 0.0;//10.0*( joint_position_command_[j] - joint_position_[j] ); // joint_stiffness_command_[j]*( joint_position_command_[j] - joint_position_[j] );
+							  //const double stiffness_effort = 0.0;//10.0*( joint_position_command_[j] - joint_position_[j] ); // joint_stiffness_command_[j]*( joint_position_command_[j] - joint_position_[j] );
 							  //double damping_effort = joint_damping_command_[j]*( joint_velocity_[j] );
-							  const double effort = stiffness_effort + joint_effort_command_[j] + gravity_effort_(j);
+							  //const double effort = stiffness_effort + joint_effort_command_[j] + gravity_effort_(j);
+							  const double effort = joint_effort_command_[j];
 							  sim_joints_[j]->SetForce(0, effort);
 							  //ROS_INFO("LWRHWGazebo -> write,  JOINT_IMPEDANCE effort =%f",effort);
 							  #if GAZEBO_MAJOR_VERSION >= 4
