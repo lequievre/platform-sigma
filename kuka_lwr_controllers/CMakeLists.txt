@@ -31,10 +31,10 @@ set(FRIL_DEFS -D__LINUX__)
 add_definitions(${FRIL_DEFS} -std=c++11) #The -std=c++11 tells the compiler to consider C++11
 
 # Add the given directories to those the compiler uses to search for include files.
-include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${CATKIN_DEVEL_PREFIX}/include/fril ${CATKIN_DEVEL_PREFIX}/include/RML)
+include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${CATKIN_DEVEL_PREFIX}/include/fril ${CATKIN_DEVEL_PREFIX}/include/RML  ${CATKIN_DEVEL_PREFIX}/include/reflexxes)
 
 # Specify the paths in which the linker should search for libraries.
-link_directories(${catkin_LIBRARY_DIRS} ${CATKIN_DEVEL_PREFIX}/lib/x86_64-linux-gnu)
+link_directories(${catkin_LIBRARY_DIRS} ${CATKIN_DEVEL_PREFIX}/lib/x86_64-linux-gnu  ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/shared)
 
 # Add messages files defined in the 'msg' folder.
 # il faut ajouter ceci dans le fichier package.xml :
@@ -72,7 +72,7 @@ catkin_package(
     geometry_msgs
     kuka_lwr_hw
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME} TypeIRML
+  LIBRARIES ${PROJECT_NAME} TypeIRML ReflexxesTypeII
 )
 
 # The add_library() CMake function is used to specify libraries to build. By default catkin builds shared libraries.
@@ -89,10 +89,10 @@ add_library(${PROJECT_NAME}
 )
 
 # Link a target to given libraries.
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} TypeIRML)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} TypeIRML ReflexxesTypeII)
 
 # Add a dependencies of generation message, to be sure that all headers files of all messages are generated before !
-add_dependencies(kuka_lwr_controllers ${PROJECT_NAME}_generate_messages_cpp  FRILibrary)
+add_dependencies(kuka_lwr_controllers ${PROJECT_NAME}_generate_messages_cpp  FRILibrary reflexxes)
 
 #install(DIRECTORY include/${PROJECT_NAME}/
 #  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})

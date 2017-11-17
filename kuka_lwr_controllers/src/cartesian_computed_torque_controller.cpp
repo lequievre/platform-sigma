@@ -44,9 +44,9 @@ namespace kuka_lwr_controllers
 
 		cycleTime_ = 0.002;
         
-		RML_ = new TypeIRML(joint_handles_.size(),cycleTime_);
-		IP_ = new TypeIRMLInputParameters(joint_handles_.size());
-		OP_ = new TypeIRMLOutputParameters(joint_handles_.size());
+		RML_ = new ReflexxesAPI(joint_handles_.size(),cycleTime_);
+		IP_ = new RMLPositionInputParameters(joint_handles_.size());
+		OP_ = new RMLPositionOutputParameters(joint_handles_.size());
 
 		return true;		
 	}
@@ -101,18 +101,19 @@ namespace kuka_lwr_controllers
 
 	  for (size_t i=0; i<joint_handles_.size(); ++i)
 	  {
-			IP_->CurrentPosition->VecData[i] = (double)DEG(joint_handles_[i].getPosition());  // set current position (transfrom to degrees) with current position of joint handles
-			IP_->TargetPosition->VecData[i]	= (double)DEG(cmd_states_(i)); // set desired position (get it from msg data of topic)
-			IP_->MaxVelocity->VecData[i] = (double)20.0;
-			IP_->MaxAcceleration->VecData[i] = (double)50.0;
+			IP_->CurrentPositionVector->VecData[i] = (double)DEG(joint_handles_[i].getPosition());  // set current position (transfrom to degrees) with current position of joint handles
+			IP_->TargetPositionVector->VecData[i]	= (double)DEG(cmd_states_(i)); // set desired position (get it from msg data of topic)
+			IP_->MaxVelocityVector->VecData[i] = (double)20.0;
+			IP_->MaxAccelerationVector->VecData[i] = (double)50.0;
+			IP_->MaxJerkVector->VecData[i] = (double)50.0;
 			IP_->SelectionVector->VecData[i] = true;
 	    }
 
-	    if (resultValue_ != TypeIRML::RML_FINAL_STATE_REACHED)
+	    if (resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
 	    {
-				resultValue_ = RML_->GetNextMotionState_Position(*IP_,OP_);
+				 resultValue_  =   RML_->RMLPosition(*IP_,OP_,Flags_);
 				
-				if ((resultValue_ != TypeIRML::RML_WORKING) && (resultValue_ != TypeIRML::RML_FINAL_STATE_REACHED))
+				if (resultValue_ < 0)
 				{
 					ROS_INFO("GroupCommandControllerFRI::update : ERROR during trajectory generation err n°%d",resultValue_);
 				}
@@ -123,13 +124,14 @@ namespace kuka_lwr_controllers
 
 				for (int i = 0; i < joint_handles_.size(); i++)
 				{
-					joint_des_states_.q(i) = RAD((double)(OP_->NewPosition->VecData[i]));
-		        		joint_des_states_.qdot(i) = RAD((double)(OP_->NewVelocity->VecData[i]));
-		        		joint_des_states_.qdotdot(i) = 2.0;
+					joint_des_states_.q(i) = RAD((double)(OP_->NewPositionVector->VecData[i]));
+		        		joint_des_states_.qdot(i) = RAD((double)(OP_->NewVelocityVector->VecData[i]));
+		        		joint_des_states_.qdotdot(i) = RAD((double)(OP_->NewAccelerationVector->VecData[i]));
 				}
 
-				*(IP_->CurrentPosition) = *(OP_->NewPosition);
-				*(IP_->CurrentVelocity) = *(OP_->NewVelocity);
+				*IP_->CurrentPositionVector      =   *OP_->NewPositionVector      ;
+        			*IP_->CurrentVelocityVector      =   *OP_->NewVelocityVector      ;
+        			*IP_->CurrentAccelerationVector  =   *OP_->NewAccelerationVector  ;
 
 
 	   }
@@ -275,7 +277,7 @@ namespace kuka_lwr_controllers
         }
 
         x_des_ = frame_des;
-	resultValue_ = TypeIRML::RML_WORKING;
+	resultValue_ = ReflexxesAPI::RML_WORKING;
         cmd_flag_ = 1;
  	// when a new command is set, steps should be reset to avoid jumps in the update
         step_ = 0;

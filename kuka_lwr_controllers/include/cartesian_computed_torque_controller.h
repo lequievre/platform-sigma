@@ -23,7 +23,12 @@
 #include <kuka_lwr_controllers/PoseRPY.h>
 
 // FRI Type IRML
-#include <TypeIRML.h>
+//#include <TypeIRML.h>
+#include <ReflexxesAPI.h>
+#include <RMLPositionFlags.h>
+#include <RMLPositionInputParameters.h>
+#include <RMLPositionOutputParameters.h>
+
 
 #ifndef PI
 	#define PI 3.1415926535897932384626433832795
@@ -86,9 +91,12 @@ namespace kuka_lwr_controllers
 		KDL::Jacobian J_;	//Jacobian
 		Eigen::MatrixXd J_pinv_; // Pseudo Inverse Matrix
 
-		TypeIRML *RML_;
-		TypeIRMLInputParameters *IP_;
-		TypeIRMLOutputParameters *OP_;
+		ReflexxesAPI *RML_;
+		RMLPositionInputParameters  	*IP_;
+		RMLPositionOutputParameters *	OP_;
+		RMLPositionFlags            	Flags_;
+
+		
 		double cycleTime_;
 		int resultValue_;
 
