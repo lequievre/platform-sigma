@@ -148,6 +148,7 @@ public:
   joint_position_,
   joint_position_prev_,
   joint_velocity_,
+  joint_velocity_prev_,
   joint_acceleration_,
   joint_effort_,
   joint_stiffness_,

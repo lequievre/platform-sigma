@@ -53,8 +53,11 @@ namespace lwr_hw
 				  
 				
 				  joint_position_kdl_(j) = joint_position_[j];
+
+				  joint_velocity_prev_[j] = joint_velocity_[j];
 				  // derivate velocity as in the real hardware instead of reading it from simulation
 				  joint_velocity_[j] = filters::exponentialSmoothing((joint_position_[j] - joint_position_prev_[j])/period.toSec(), joint_velocity_[j], 0.2);
+				  joint_acceleration_[j] = filters::exponentialSmoothing((joint_velocity_[j]-joint_velocity_prev_[j])/period.toSec(), joint_acceleration_[j], 0.2);
 				  joint_effort_[j] = sim_joints_[j]->GetForce((int)(0));
 				  joint_stiffness_[j] = joint_stiffness_command_[j];
 				}

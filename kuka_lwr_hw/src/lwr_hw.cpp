@@ -26,6 +26,7 @@ namespace lwr_hw
     joint_position_.resize(n_joints_);
     joint_position_prev_.resize(n_joints_);
     joint_velocity_.resize(n_joints_);
+    joint_velocity_prev_.resize(n_joints_);
     joint_acceleration_.resize(n_joints_);
     joint_effort_.resize(n_joints_);
     joint_stiffness_.resize(n_joints_);
@@ -75,6 +76,8 @@ namespace lwr_hw
       joint_position_[j] = 0.0;
       joint_position_prev_[j] = 0.0;
       joint_velocity_[j] = 0.0;
+      joint_velocity_prev_[j] = 0.0;
+      joint_acceleration_[j] = 0.0;
       joint_effort_[j] = 0.0;
       joint_stiffness_[j] = 0.0;
       joint_damping_[j] = 0.0;

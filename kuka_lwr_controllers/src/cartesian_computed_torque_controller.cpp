@@ -61,7 +61,7 @@ namespace kuka_lwr_controllers
   			Kv_(i) = 100.0;
     			joint_msr_states_.q(i) = joint_handles_[i].getPosition();
     			joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
-    			joint_msr_states_.qdotdot(i) = 0.0;
+    			joint_msr_states_.qdotdot(i) = joint_handles_[i].getAcceleration();
     			joint_des_states_.q(i) = joint_msr_states_.q(i);
     		}
 
@@ -76,12 +76,12 @@ namespace kuka_lwr_controllers
     void CartesianComputedTorqueController::update(const ros::Time& time, const ros::Duration& period)
     {
     	// get joint positions
-  		for(size_t i=0; i<joint_handles_.size(); i++) 
-  		{
-    			joint_msr_states_.q(i) = joint_handles_[i].getPosition();
-    			joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
-    			joint_msr_states_.qdotdot(i) = 0.0;
-    		}
+	for(size_t i=0; i<joint_handles_.size(); i++) 
+	{
+		joint_msr_states_.q(i) = joint_handles_[i].getPosition();
+		joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
+		joint_msr_states_.qdotdot(i) = joint_handles_[i].getAcceleration();
+	}
 
 	//ROS_INFO("-> msr values : %f, %f, %f, %f, %f, %f, %f!",joint_msr_states_.q(0), joint_msr_states_.q(1), joint_msr_states_.q(2), joint_msr_states_.q(3), joint_msr_states_.q(4), joint_msr_states_.q(5), joint_msr_states_.q(6));
 
@@ -90,18 +90,17 @@ namespace kuka_lwr_controllers
 
 	    ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
 
-	
-
             if(step_ == 0)
             {
                 joint_initial_states_ = joint_msr_states_.q;
 		ROS_INFO("Step 0 !\n");
+		step_++;
             }
 
 
-	  for (size_t i=0; i<joint_handles_.size(); ++i)
-	  {
-			IP_->CurrentPositionVector->VecData[i] = (double)DEG(joint_handles_[i].getPosition());  // set current position (transfrom to degrees) with current position of joint handles
+  	    for (size_t i=0; i<joint_handles_.size(); ++i)
+	    {
+			IP_->CurrentPositionVector->VecData[i] = (double)DEG(joint_msr_states_.q(i));  // set current position (transfrom to degrees) with current position of joint handles
 			IP_->TargetPositionVector->VecData[i]	= (double)DEG(cmd_states_(i)); // set desired position (get it from msg data of topic)
 			IP_->MaxVelocityVector->VecData[i] = (double)20.0;
 			IP_->MaxAccelerationVector->VecData[i] = (double)50.0;
@@ -118,16 +117,20 @@ namespace kuka_lwr_controllers
 					ROS_INFO("GroupCommandControllerFRI::update : ERROR during trajectory generation err n°%d",resultValue_);
 				}
 				
-				// set control command for joints
-				//for (int i = 0; i < joint_handles_.size(); i++)
-				//	joint_handles_[i].setCommand(RAD((double)(OP_->NewPosition->VecData[i])));
-
+				// set desired states
 				for (int i = 0; i < joint_handles_.size(); i++)
 				{
 					joint_des_states_.q(i) = RAD((double)(OP_->NewPositionVector->VecData[i]));
 		        		joint_des_states_.qdot(i) = RAD((double)(OP_->NewVelocityVector->VecData[i]));
 		        		joint_des_states_.qdotdot(i) = RAD((double)(OP_->NewAccelerationVector->VecData[i]));
 				}
+
+				// computing forward kinematics
+        			fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
+
+				// computing distance between measure (x_) to desired (x_des_)
+				double distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
+				ROS_INFO("distance = %f\n",distance);
 
 				*IP_->CurrentPositionVector      =   *OP_->NewPositionVector      ;
         			*IP_->CurrentVelocityVector      =   *OP_->NewVelocityVector      ;
@@ -139,45 +142,7 @@ namespace kuka_lwr_controllers
 	   {
 	      	cmd_flag_=0;
 		ROS_INFO("On target");
-	   }
-	
-
-         /*   // reaching desired joint position using a hyperbolic tangent function
-            double th = tanh(M_PI-lambda*step_);
-            double ch = cosh(M_PI-lambda*step_);
-            double sh2 = 1.0/(ch*ch);
-            
-            for(size_t i=0; i<joint_handles_.size(); i++)
-            {
-                // TODO: take into account also initial/final velocity and acceleration
-                current_cmd_(i) = cmd_states_(i) - joint_initial_states_(i);
-                joint_des_states_.q(i) = current_cmd_(i)*0.5*(1.0-th) + joint_initial_states_(i);
-                joint_des_states_.qdot(i) = current_cmd_(i)*0.5*lambda*sh2;
-                joint_des_states_.qdotdot(i) = current_cmd_(i)*lambda*lambda*sh2*th;
-            }
-            ++step_;
-	    //ROS_INFO("Step %d !\n", step_);
-
-    		/*if(joint_des_states_.q == cmd_states_)
-    		{
-    			cmd_flag_ = 0;	//reset command flag
-    			step_ = 0;
-    			ROS_INFO("Posture OK");
-    		}*/
-
-		// computing forward kinematics
-        	fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
-
-		double distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
-
-		ROS_INFO("distance = %f\n",distance);
-
-         	/*if (Equal(x_, x_des_, 0.015))
-    	 	{
-                	ROS_INFO("On target");
-                	cmd_flag_ = 0;
-        	 }*/
-
+	   }	
 
     	}
 
@@ -210,30 +175,7 @@ namespace kuka_lwr_controllers
         }
     }
 
-   /* void CartesianComputedTorqueController::command(const std_msgs::Float64MultiArray::ConstPtr &msg)
-    {
-    	if(msg->data.size() == 0)
-    		ROS_INFO("Desired configuration must be of dimension %lu", joint_handles_.size());
-    	else if(msg->data.size() != joint_handles_.size())
-    	{
-    		ROS_ERROR("Posture message had the wrong size: %u", (unsigned int)msg->data.size());
-    		return;
-    	}
-    	else
-    	{
-    		for (unsigned int i = 0; i<joint_handles_.size(); i++)
-    			cmd_states_(i) = msg->data[i];
-
-		ROS_INFO("-> command values : %f, %f, %f, %f, %f, %f, %f!",cmd_states_(0), cmd_states_(1), cmd_states_(2), cmd_states_(3), cmd_states_(4), cmd_states_(5), cmd_states_(6));
-
-    		cmd_flag_ = 1;
-            // when a new command is set, steps should be reset to avoid jumps in the update
-            step_ = 0;
-    	}
-
-	}*/
-
-
+ 
 
     void CartesianComputedTorqueController::command(const kuka_lwr_controllers::PoseRPY::ConstPtr &msg)
     {

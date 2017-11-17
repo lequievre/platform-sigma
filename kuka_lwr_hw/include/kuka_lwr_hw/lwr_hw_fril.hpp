@@ -67,7 +67,10 @@ namespace lwr_hw
 			  joint_position_[j] = (double)msrJntPos[j];
 			  joint_position_kdl_(j) = joint_position_[j];
 			  joint_effort_[j] = (double)msrJntTrq[j];
+			  joint_velocity_prev_[j] = joint_velocity_[j];
 			  joint_velocity_[j] = filters::exponentialSmoothing((joint_position_[j]-joint_position_prev_[j])/period.toSec(), joint_velocity_[j], 0.2);
+			  
+			  joint_acceleration_[j] = filters::exponentialSmoothing((joint_velocity_[j]-joint_velocity_prev_[j])/period.toSec(), joint_acceleration_[j], 0.2);
 			  joint_stiffness_[j] = joint_stiffness_command_[j];
 			}
 			return;
