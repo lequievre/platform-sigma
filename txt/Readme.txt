@@ -195,14 +195,26 @@ Cartesian computed torque controller
 ====================================
 
 roslaunch platform_gazebo platform_gazebo.launch
+
+
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_group_command_controller_fri'], stop_controllers: [], strictness: 2}"
+
+rostopic pub -1 /kuka_lwr_right/kuka_group_command_controller_fri/command std_msgs/Float64MultiArray "data: [0.9,0.9,0.5,0.5,0.3,0.5,0.8]"
+
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_group_command_controller_fri'], strictness: 2}"
+
+
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['cartesian_computed_torque_controller'], stop_controllers: [], strictness: 2}"
 
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['cartesian_computed_torque_controller'], strictness: 2}"
 
 
-rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/setgains std_msgs/Float64MultiArray "data: [500,500,500,500,500,500,500,100,100,100,100,100,100,100]"
+rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/set_gains std_msgs/Float64MultiArray "data: [500,500,500,500,500,500,500,100,100,100,100,100,100,100]"
 
 rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/command kuka_lwr_controllers/PoseRPY '{id: 1, position: {x: -0.5, y: 0.0, z: 0.9}}'
+
+
+rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/command kuka_lwr_controllers/PoseRPY '{id: 0, position: {x: -0.5, y: 0.0, z: 0.9}, orientation: {roll: ?, pitch: ?, yaw: ?}}'
 
 
 

@@ -57,8 +57,8 @@ namespace kuka_lwr_controllers
   		for(size_t i=0; i<joint_handles_.size(); i++) 
   		{
 
-  			Kp_(i) = 500.0;
-  			Kv_(i) = 100.0;
+  			Kp_(i) = 1000.0;
+  			Kv_(i) = 300.0;
     			joint_msr_states_.q(i) = joint_handles_[i].getPosition();
     			joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
     			joint_msr_states_.qdotdot(i) = joint_handles_[i].getAcceleration();
@@ -100,16 +100,26 @@ namespace kuka_lwr_controllers
 
   	    for (size_t i=0; i<joint_handles_.size(); ++i)
 	    {
-			IP_->CurrentPositionVector->VecData[i] = (double)DEG(joint_msr_states_.q(i));  // set current position (transfrom to degrees) with current position of joint handles
-			IP_->TargetPositionVector->VecData[i]	= (double)DEG(cmd_states_(i)); // set desired position (get it from msg data of topic)
-			IP_->MaxVelocityVector->VecData[i] = (double)20.0;
-			IP_->MaxAccelerationVector->VecData[i] = (double)50.0;
-			IP_->MaxJerkVector->VecData[i] = (double)50.0;
+			/*IP_->CurrentPositionVector->VecData[i] = (double)DEG((double)(joint_msr_states_.q(i)));  // set current position (transfrom to degrees) with current position of joint handles
+			IP_->TargetPositionVector->VecData[i]	= (double)DEG((double)(cmd_states_(i))); // set desired position (get it from msg data of topic)
+			IP_->MaxVelocityVector->VecData[i] = (double)10.0;
+			IP_->MaxAccelerationVector->VecData[i] = (double)10.0;
+			IP_->MaxJerkVector->VecData[i] = (double)10.0;
+			IP_->SelectionVector->VecData[i] = true;*/
+
+			IP_->CurrentPositionVector->VecData[i] = joint_msr_states_.q(i);  // set current position (transfrom to degrees) with current position of joint handles
+			IP_->TargetPositionVector->VecData[i]	= cmd_states_(i); // set desired position (get it from msg data of topic)
+			IP_->MaxVelocityVector->VecData[i] = (double)1.0;
+			IP_->MaxAccelerationVector->VecData[i] = (double)4.0;
+			IP_->MaxJerkVector->VecData[i] = (double)8.0;
 			IP_->SelectionVector->VecData[i] = true;
+
+
+
 	    }
 
-	    if (resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
-	    {
+	   // if (resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
+	    //{
 				 resultValue_  =   RML_->RMLPosition(*IP_,OP_,Flags_);
 				
 				if (resultValue_ < 0)
@@ -120,29 +130,42 @@ namespace kuka_lwr_controllers
 				// set desired states
 				for (int i = 0; i < joint_handles_.size(); i++)
 				{
-					joint_des_states_.q(i) = RAD((double)(OP_->NewPositionVector->VecData[i]));
-		        		joint_des_states_.qdot(i) = RAD((double)(OP_->NewVelocityVector->VecData[i]));
-		        		joint_des_states_.qdotdot(i) = RAD((double)(OP_->NewAccelerationVector->VecData[i]));
+					/*joint_des_states_.q(i) = (double)RAD((double)(OP_->NewPositionVector->VecData[i]));
+		        		joint_des_states_.qdot(i) = (double)RAD((double)(OP_->NewVelocityVector->VecData[i]));
+		        		joint_des_states_.qdotdot(i) = (double)RAD((double)(OP_->NewAccelerationVector->VecData[i]));*/
+
+					joint_des_states_.q(i) = OP_->NewPositionVector->VecData[i];
+		        		joint_des_states_.qdot(i) = OP_->NewVelocityVector->VecData[i];
+		        		joint_des_states_.qdotdot(i) = OP_->NewAccelerationVector->VecData[i];
+
 				}
 
 				// computing forward kinematics
         			fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
 
-				// computing distance between measure (x_) to desired (x_des_)
-				double distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
-				ROS_INFO("distance = %f\n",distance);
+				
 
 				*IP_->CurrentPositionVector      =   *OP_->NewPositionVector      ;
         			*IP_->CurrentVelocityVector      =   *OP_->NewVelocityVector      ;
         			*IP_->CurrentAccelerationVector  =   *OP_->NewAccelerationVector  ;
 
 
-	   }
+	  /* }
 	   else
 	   {
 	      	cmd_flag_=0;
 		ROS_INFO("On target");
-	   }	
+	   }	*/
+
+
+	    if (Equal(x_, x_des_, 0.005))
+            {
+                ROS_INFO("On target");
+		// computing distance between measure (x_) to desired (x_des_)
+		double distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
+		ROS_INFO("distance = %f\n",distance);
+                cmd_flag_ = 0;
+            }
 
     	}
 
@@ -159,6 +182,8 @@ namespace kuka_lwr_controllers
         {
             // control law
             pid_cmd_(i) = joint_des_states_.qdotdot(i) + Kv_(i)*(joint_des_states_.qdot(i) - joint_msr_states_.qdot(i)) + Kp_(i)*(joint_des_states_.q(i) - joint_msr_states_.q(i));
+
+	     //pid_cmd_(i) =  Kv_(i)*(joint_des_states_.qdot(i) - joint_msr_states_.qdot(i)) + Kp_(i)*(joint_des_states_.q(i) - joint_msr_states_.q(i));
             //cg_cmd_(i) = C_(i)*joint_msr_states_.qdot(i) + G_(i);
             cg_cmd_(i) = C_(i) + G_(i);
         }
@@ -171,7 +196,9 @@ namespace kuka_lwr_controllers
         for(size_t i=0; i<joint_handles_.size(); i++)
         {
             joint_handles_[i].setCommandTorque(tau_cmd_(i));
-	    joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
+	    //joint_handles_[i].setCommandPosition(joint_msr_states_.q(i));
+	     //joint_handles_[i].setCommandPosition(pid_cmd_(i));
+		//joint_handles_[i].setCommandPosition(joint_des_states_.q(i));
         }
     }
 
