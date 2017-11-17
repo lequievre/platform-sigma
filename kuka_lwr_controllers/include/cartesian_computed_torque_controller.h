@@ -22,8 +22,7 @@
 // Ros messages generated
 #include <kuka_lwr_controllers/PoseRPY.h>
 
-// FRI Type IRML
-//#include <TypeIRML.h>
+// Reflexxes type II
 #include <ReflexxesAPI.h>
 #include <RMLPositionFlags.h>
 #include <RMLPositionInputParameters.h>
