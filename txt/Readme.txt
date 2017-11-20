@@ -194,25 +194,29 @@ rostopic pub -1 /kuka_lwr_right/kuka_gravity_compensation_controller/command std
 Cartesian computed torque controller
 ====================================
 
+-> Launch ros controllers and gazebo
 roslaunch platform_gazebo platform_gazebo.launch
 
-
+-> Go to a specific position to avoid singularity :
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_group_command_controller_fri'], stop_controllers: [], strictness: 2}"
 
-rostopic pub -1 /kuka_lwr_right/kuka_group_command_controller_fri/command std_msgs/Float64MultiArray "data: [0.9,0.9,0.5,0.5,0.3,0.5,0.8]"
+rostopic pub -1 /kuka_lwr_right/kuka_group_command_controller_fri/command std_msgs/Float64MultiArray "data: [0.0, 0.0, 0.0, 1.5, 0.0, 0.0, 0.0]"
 
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_group_command_controller_fri'], strictness: 2}"
 
+-> You can do the same actions with a specific bash script (launch from the workspace root) :
+./src/platform_gazebo/start_specific_position.sh right "[0.0, 0.0, 0.0, 1.5, 0.0, 0.0, 0.0]"
 
+-> Start/Stop 'cartesian_computed_torque_controller' :
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['cartesian_computed_torque_controller'], stop_controllers: [], strictness: 2}"
 
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['cartesian_computed_torque_controller'], strictness: 2}"
 
-
+-> Set PID gains :
 rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/set_gains std_msgs/Float64MultiArray "data: [500,500,500,500,500,500,500,100,100,100,100,100,100,100]"
 
+-> Publish Pose :
 rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/command kuka_lwr_controllers/PoseRPY '{id: 1, position: {x: -0.5, y: 0.0, z: 0.9}}'
-
 
 rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/command kuka_lwr_controllers/PoseRPY '{id: 0, position: {x: -0.5, y: 0.0, z: 0.9}, orientation: {roll: ?, pitch: ?, yaw: ?}}'
 

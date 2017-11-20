@@ -32,15 +32,14 @@ namespace kuka_lwr_controllers
 		M_.resize(kdl_chain_.getNrOfJoints());
 		C_.resize(kdl_chain_.getNrOfJoints());
 		G_.resize(kdl_chain_.getNrOfJoints());
-        	joint_initial_states_.resize(kdl_chain_.getNrOfJoints());
-        	current_cmd_.resize(kdl_chain_.getNrOfJoints());
+        current_cmd_.resize(kdl_chain_.getNrOfJoints());
 
 		sub_posture_ = nh_.subscribe("command", 1, &CartesianComputedTorqueController::command, this);
 		sub_gains_ = nh_.subscribe("set_gains", 1, &CartesianComputedTorqueController::set_gains, this);
 
 		fk_pos_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
-        	ik_vel_solver_.reset(new KDL::ChainIkSolverVel_pinv(kdl_chain_));
-        	ik_pos_solver_.reset(new KDL::ChainIkSolverPos_NR_JL(kdl_chain_,joint_limits_.min,joint_limits_.max,*fk_pos_solver_,*ik_vel_solver_));
+		ik_vel_solver_.reset(new KDL::ChainIkSolverVel_pinv(kdl_chain_));
+		ik_pos_solver_.reset(new KDL::ChainIkSolverPos_NR_JL(kdl_chain_,joint_limits_.min,joint_limits_.max,*fk_pos_solver_,*ik_vel_solver_));
 
 		cycleTime_ = 0.002;
         
@@ -66,8 +65,7 @@ namespace kuka_lwr_controllers
     		}
 
     		lambda = 0.1;	// lower values: flatter
-    		cmd_flag_ = 0;	
-    		step_ = 0;
+    		cmd_flag_ = 0;
 
     		ROS_INFO(" Number of joints in handle = %lu", joint_handles_.size() );
 
@@ -76,96 +74,66 @@ namespace kuka_lwr_controllers
     void CartesianComputedTorqueController::update(const ros::Time& time, const ros::Duration& period)
     {
     	// get joint positions
-	for(size_t i=0; i<joint_handles_.size(); i++) 
-	{
-		joint_msr_states_.q(i) = joint_handles_[i].getPosition();
-		joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
-		joint_msr_states_.qdotdot(i) = joint_handles_[i].getAcceleration();
-	}
+		for(size_t i=0; i<joint_handles_.size(); i++) 
+		{
+			joint_msr_states_.q(i) = joint_handles_[i].getPosition();
+			joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
+			joint_msr_states_.qdotdot(i) = joint_handles_[i].getAcceleration();
+		}
 
-	//ROS_INFO("-> msr values : %f, %f, %f, %f, %f, %f, %f!",joint_msr_states_.q(0), joint_msr_states_.q(1), joint_msr_states_.q(2), joint_msr_states_.q(3), joint_msr_states_.q(4), joint_msr_states_.q(5), joint_msr_states_.q(6));
+		//ROS_INFO("-> msr values : %f, %f, %f, %f, %f, %f, %f!",joint_msr_states_.q(0), joint_msr_states_.q(1), joint_msr_states_.q(2), joint_msr_states_.q(3), joint_msr_states_.q(4), joint_msr_states_.q(5), joint_msr_states_.q(6));
 
     	if(cmd_flag_)
     	{
+				// Calculates the joint values 'cmd_states_' that correspond to the input pose 'x_des_' 
+				// given an initial guess 'joint_msr_states_.q'. 
+				ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
 
-	    ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
+				// Use reflexxes type 2 library that help to generate a 'smooth' movement. 
+				for (size_t i=0; i<joint_handles_.size(); ++i)
+				{
+					IP_->CurrentPositionVector->VecData[i] = joint_msr_states_.q(i);  // set current position with current position of joint handles
+					IP_->TargetPositionVector->VecData[i]	= cmd_states_(i); // set desired position (get from inverse kin solver)
+					IP_->MaxVelocityVector->VecData[i] = (double)1.0;
+					IP_->MaxAccelerationVector->VecData[i] = (double)4.0;
+					IP_->MaxJerkVector->VecData[i] = (double)8.0;
+					IP_->SelectionVector->VecData[i] = true;
+				}
 
-            if(step_ == 0)
-            {
-                joint_initial_states_ = joint_msr_states_.q;
-		ROS_INFO("Step 0 !\n");
-		step_++;
-            }
-
-
-  	    for (size_t i=0; i<joint_handles_.size(); ++i)
-	    {
-			/*IP_->CurrentPositionVector->VecData[i] = (double)DEG((double)(joint_msr_states_.q(i)));  // set current position (transfrom to degrees) with current position of joint handles
-			IP_->TargetPositionVector->VecData[i]	= (double)DEG((double)(cmd_states_(i))); // set desired position (get it from msg data of topic)
-			IP_->MaxVelocityVector->VecData[i] = (double)10.0;
-			IP_->MaxAccelerationVector->VecData[i] = (double)10.0;
-			IP_->MaxJerkVector->VecData[i] = (double)10.0;
-			IP_->SelectionVector->VecData[i] = true;*/
-
-			IP_->CurrentPositionVector->VecData[i] = joint_msr_states_.q(i);  // set current position (transfrom to degrees) with current position of joint handles
-			IP_->TargetPositionVector->VecData[i]	= cmd_states_(i); // set desired position (get it from msg data of topic)
-			IP_->MaxVelocityVector->VecData[i] = (double)1.0;
-			IP_->MaxAccelerationVector->VecData[i] = (double)4.0;
-			IP_->MaxJerkVector->VecData[i] = (double)8.0;
-			IP_->SelectionVector->VecData[i] = true;
-
-
-
-	    }
-
-	   // if (resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
-	    //{
-				 resultValue_  =   RML_->RMLPosition(*IP_,OP_,Flags_);
+				// Get next 'smooth' position in 'OP_' object. 
+				resultValue_  =   RML_->RMLPosition(*IP_,OP_,Flags_);
 				
 				if (resultValue_ < 0)
 				{
 					ROS_INFO("GroupCommandControllerFRI::update : ERROR during trajectory generation err n°%d",resultValue_);
 				}
 				
-				// set desired states
+				// set next desired 'smooth' states : position, velocity, acceleration
 				for (int i = 0; i < joint_handles_.size(); i++)
 				{
-					/*joint_des_states_.q(i) = (double)RAD((double)(OP_->NewPositionVector->VecData[i]));
-		        		joint_des_states_.qdot(i) = (double)RAD((double)(OP_->NewVelocityVector->VecData[i]));
-		        		joint_des_states_.qdotdot(i) = (double)RAD((double)(OP_->NewAccelerationVector->VecData[i]));*/
-
 					joint_des_states_.q(i) = OP_->NewPositionVector->VecData[i];
-		        		joint_des_states_.qdot(i) = OP_->NewVelocityVector->VecData[i];
-		        		joint_des_states_.qdotdot(i) = OP_->NewAccelerationVector->VecData[i];
+					joint_des_states_.qdot(i) = OP_->NewVelocityVector->VecData[i];
+					joint_des_states_.qdotdot(i) = OP_->NewAccelerationVector->VecData[i];
 
 				}
 
-				// computing forward kinematics
-        			fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
-
-				
+				// computing forward kinematics. Transform 'q' angle position to 3D pose in 'x_'.
+				// It is necessary to get the 'euler' distance from 'x_des_' to 'x_'.
+				fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
 
 				*IP_->CurrentPositionVector      =   *OP_->NewPositionVector      ;
-        			*IP_->CurrentVelocityVector      =   *OP_->NewVelocityVector      ;
-        			*IP_->CurrentAccelerationVector  =   *OP_->NewAccelerationVector  ;
+				*IP_->CurrentVelocityVector      =   *OP_->NewVelocityVector      ;
+				*IP_->CurrentAccelerationVector  =   *OP_->NewAccelerationVector  ;
 
-
-	  /* }
-	   else
-	   {
-	      	cmd_flag_=0;
-		ROS_INFO("On target");
-	   }	*/
-
-
-	    if (Equal(x_, x_des_, 0.005))
-            {
-                ROS_INFO("On target");
-		// computing distance between measure (x_) to desired (x_des_)
-		double distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
-		ROS_INFO("distance = %f\n",distance);
-                cmd_flag_ = 0;
-            }
+				// Is the distance from 'x_des_' to 'x_' is close to 0.005 meter ?
+				if (Equal(x_, x_des_, 0.005))
+				{
+						ROS_INFO("On target");
+						// Computing 'euler' distance between measure (x_) to desired (x_des_).
+						double distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
+						ROS_INFO("distance = %f\n",distance);  // Show the distance only for information.
+						cmd_flag_ = 0;
+				}
 
     	}
 
@@ -176,33 +144,36 @@ namespace kuka_lwr_controllers
 
         // PID controller
         KDL::JntArray pid_cmd_(joint_handles_.size());
-        // compensation of Coriolis and Gravity
+        
+        // Compensation of Coriolis and Gravity
         KDL::JntArray cg_cmd_(joint_handles_.size());
+        
         for(size_t i=0; i<joint_handles_.size(); i++)
         {
-            // control law
+            // PID control law.
             pid_cmd_(i) = joint_des_states_.qdotdot(i) + Kv_(i)*(joint_des_states_.qdot(i) - joint_msr_states_.qdot(i)) + Kp_(i)*(joint_des_states_.q(i) - joint_msr_states_.q(i));
 
-	     //pid_cmd_(i) =  Kv_(i)*(joint_des_states_.qdot(i) - joint_msr_states_.qdot(i)) + Kp_(i)*(joint_des_states_.q(i) - joint_msr_states_.q(i));
+			//pid_cmd_(i) =  Kv_(i)*(joint_des_states_.qdot(i) - joint_msr_states_.qdot(i)) + Kp_(i)*(joint_des_states_.q(i) - joint_msr_states_.q(i));
             //cg_cmd_(i) = C_(i)*joint_msr_states_.qdot(i) + G_(i);
+            
+            // Global control law
             cg_cmd_(i) = C_(i) + G_(i);
         }
+        
+        // Torque command : 'tau_cmd_'.
         tau_cmd_.data = M_.data * pid_cmd_.data;
         KDL::Add(tau_cmd_,cg_cmd_,tau_cmd_);
         
-	//ROS_INFO("-> tau cmd values : %f, %f, %f, %f, %f, %f, %f!",tau_cmd_(0), tau_cmd_(1), tau_cmd_(2), tau_cmd_(3), tau_cmd_(4),tau_cmd_(5), tau_cmd_(6));
-
+		//ROS_INFO("-> tau cmd values : %f, %f, %f, %f, %f, %f, %f!",tau_cmd_(0), tau_cmd_(1), tau_cmd_(2), tau_cmd_(3), tau_cmd_(4),tau_cmd_(5), tau_cmd_(6));
 
         for(size_t i=0; i<joint_handles_.size(); i++)
         {
             joint_handles_[i].setCommandTorque(tau_cmd_(i));
-	    joint_handles_[i].setCommandPosition(joint_msr_states_.q(i));
-	     //joint_handles_[i].setCommandPosition(pid_cmd_(i));
-		//joint_handles_[i].setCommandPosition(joint_des_states_.q(i));
+			joint_handles_[i].setCommandPosition(joint_msr_states_.q(i));
+			//joint_handles_[i].setCommandPosition(pid_cmd_(i));
+			//joint_handles_[i].setCommandPosition(joint_des_states_.q(i));
         }
     }
-
- 
 
     void CartesianComputedTorqueController::command(const kuka_lwr_controllers::PoseRPY::ConstPtr &msg)
     {
@@ -213,8 +184,8 @@ namespace kuka_lwr_controllers
         switch(msg->id)
         {
             case 0:
-			ROS_INFO("***** OneTaskInverseKinematics::command position and orientation ************");
-			//ROS_INFO("position desired -> x = %f, y = %f, z = %f", msg->position.x, msg->position.y, msg->position.z);
+				ROS_INFO("***** CartesianComputedTorqueController::command position and orientation ************");
+				//ROS_INFO("position desired -> x = %f, y = %f, z = %f", msg->position.x, msg->position.y, msg->position.z);
 				frame_des = KDL::Frame(
                     KDL::Rotation::RPY(msg->orientation.roll,
                                       msg->orientation.pitch,
@@ -225,7 +196,7 @@ namespace kuka_lwr_controllers
             break;
 
             case 1: // position only
-		ROS_INFO("***** OneTaskInverseKinematics::command position only ************");
+				ROS_INFO("***** CartesianComputedTorqueController::command position only ************");
 				frame_des = KDL::Frame(
                 KDL::Vector(msg->position.x,
                             msg->position.y,
@@ -233,7 +204,7 @@ namespace kuka_lwr_controllers
             break;
 
             case 2: // orientation only
-		ROS_INFO("***** OneTaskInverseKinematics::command orientation only ************");
+				ROS_INFO("***** CartesianComputedTorqueController::command orientation only ************");
 				frame_des = KDL::Frame(
                 KDL::Rotation::RPY(msg->orientation.roll,
                                    msg->orientation.pitch,
@@ -246,12 +217,10 @@ namespace kuka_lwr_controllers
         }
 
         x_des_ = frame_des;
-	resultValue_ = ReflexxesAPI::RML_WORKING;
+		resultValue_ = ReflexxesAPI::RML_WORKING;
         cmd_flag_ = 1;
- 	// when a new command is set, steps should be reset to avoid jumps in the update
-        step_ = 0;
         
-        ROS_INFO("***** FINISH OneTaskInverseKinematics::command ************");
+        ROS_INFO("***** FINISH CartesianComputedTorqueController::command ************");
     }
 
 	void CartesianComputedTorqueController::set_gains(const std_msgs::Float64MultiArray::ConstPtr &msg)

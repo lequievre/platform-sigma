@@ -14,7 +14,6 @@
 #include <kdl/chaindynparam.hpp> //this to compute the gravity vector
 #include <kdl/chainjnttojacsolver.hpp>
 
-
 #include <std_msgs/Float64MultiArray.h>
 
 #include <boost/scoped_ptr.hpp>
@@ -28,7 +27,6 @@
 #include <RMLPositionInputParameters.h>
 #include <RMLPositionOutputParameters.h>
 
-
 #ifndef PI
 	#define PI 3.1415926535897932384626433832795
 #endif
@@ -40,8 +38,6 @@
 #ifndef DEG
 	#define DEG(A)	((A) * 180.0 / PI )
 #endif
-
-
 
 namespace kuka_lwr_controllers
 {
@@ -55,7 +51,6 @@ namespace kuka_lwr_controllers
 		bool init(hardware_interface::KUKAJointInterface *robot, ros::NodeHandle &n);
 		void starting(const ros::Time& time);
 		void update(const ros::Time& time, const ros::Duration& period);
-		//void command(const std_msgs::Float64MultiArray::ConstPtr &msg);
 		void command(const kuka_lwr_controllers::PoseRPY::ConstPtr &msg);
 		void set_gains(const std_msgs::Float64MultiArray::ConstPtr &msg);
 
@@ -67,8 +62,7 @@ namespace kuka_lwr_controllers
 		KDL::JntArray cmd_states_;
 		int cmd_flag_;	// discriminate if a user command arrived
 		double lambda;	// flattening coefficient of tanh
-		int step_;		// step used in tanh for reaching gradually the desired posture
-		KDL::JntArray joint_initial_states_; // joint as measured at the beginning of the control action
+
 		KDL::JntArray current_cmd_; // command value as delta to be added to joint_initial_states_
 
 		KDL::JntArray tau_cmd_;
@@ -95,7 +89,6 @@ namespace kuka_lwr_controllers
 		RMLPositionOutputParameters *	OP_;
 		RMLPositionFlags            	Flags_;
 
-		
 		double cycleTime_;
 		int resultValue_;
 
