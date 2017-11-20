@@ -52,12 +52,29 @@ namespace kuka_lwr_controllers
 
 	void CartesianComputedTorqueController::starting(const ros::Time& time)
 	{
+
+		Kp_(0) = 3000;
+		Kp_(1) = 1800;
+		Kp_(2) = 1800;
+		Kp_(3) = 1400;
+		Kp_(4) = 100;
+		Kp_(5) = 100;
+		Kp_(6) = 100;
+
+		Kv_(0) = 181;
+		Kv_(1) = 82;
+		Kv_(2) = 83;
+		Kv_(3) = 54;
+		Kv_(4) = 10;
+		Kv_(5) = 10;
+		Kv_(6) = 10;
+
   		// get joint positions
   		for(size_t i=0; i<joint_handles_.size(); i++) 
   		{
 
-  			Kp_(i) = 1000.0;
-  			Kv_(i) = 300.0;
+  			//Kp_(i) = 500.0;
+  			//Kv_(i) = 150.0;
     			joint_msr_states_.q(i) = joint_handles_[i].getPosition();
     			joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
     			joint_msr_states_.qdotdot(i) = joint_handles_[i].getAcceleration();
@@ -116,6 +133,10 @@ namespace kuka_lwr_controllers
 					joint_des_states_.qdotdot(i) = OP_->NewAccelerationVector->VecData[i];
 
 				}
+
+				fk_pos_solver_->JntToCart(cmd_states_, x_Reflexxes_);
+				ROS_INFO("x refl = %f, y refl = %f, z refl = %f\n",x_Reflexxes_.p.x(), x_Reflexxes_.p.y(), x_Reflexxes_.p.z());  
+
 
 				// computing forward kinematics. Transform 'q' angle position to 3D pose in 'x_'.
 				// It is necessary to get the 'euler' distance from 'x_des_' to 'x_'.

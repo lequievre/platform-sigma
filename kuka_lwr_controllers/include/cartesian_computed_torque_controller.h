@@ -76,8 +76,9 @@ namespace kuka_lwr_controllers
 		boost::scoped_ptr<KDL::ChainIkSolverVel_pinv> ik_vel_solver_;
 		boost::scoped_ptr<KDL::ChainIkSolverPos_NR_JL> ik_pos_solver_;
 
-		KDL::Frame x_;		//current pose
-		KDL::Frame x_des_;	//desired pose
+		KDL::Frame x_;			//current pose
+		KDL::Frame x_des_;		//desired pose
+		KDL::Frame x_Reflexxes_;	//reflexxes pose
 
 		KDL::Twist x_err_;	// error of end effector position and rotation
 
