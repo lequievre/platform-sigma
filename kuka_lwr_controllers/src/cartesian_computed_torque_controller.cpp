@@ -196,7 +196,7 @@ namespace kuka_lwr_controllers
         for(size_t i=0; i<joint_handles_.size(); i++)
         {
             joint_handles_[i].setCommandTorque(tau_cmd_(i));
-	    //joint_handles_[i].setCommandPosition(joint_msr_states_.q(i));
+	    joint_handles_[i].setCommandPosition(joint_msr_states_.q(i));
 	     //joint_handles_[i].setCommandPosition(pid_cmd_(i));
 		//joint_handles_[i].setCommandPosition(joint_des_states_.q(i));
         }
