@@ -39,6 +39,8 @@
 	#define DEG(A)	((A) * 180.0 / PI )
 #endif
 
+#define TRACE_CartesianComputedTorqueController_ACTIVATED 0
+
 namespace kuka_lwr_controllers
 {
 	class CartesianComputedTorqueController: public controller_interface::KinematicChainControllerBase<hardware_interface::KUKAJointInterface> 
@@ -79,19 +81,22 @@ namespace kuka_lwr_controllers
 		KDL::Frame x_;			//current pose
 		KDL::Frame x_des_;		//desired pose
 		KDL::Frame x_Reflexxes_;	//reflexxes pose
+		KDL::Frame x_Solve_;	//ik solve pose
 
 		KDL::Twist x_err_;	// error of end effector position and rotation
 
 		KDL::Jacobian J_;	//Jacobian
 		Eigen::MatrixXd J_pinv_; // Pseudo Inverse Matrix
 
-		ReflexxesAPI *RML_;
-		RMLPositionInputParameters  	*IP_;
-		RMLPositionOutputParameters *	OP_;
-		RMLPositionFlags            	Flags_;
+		boost::scoped_ptr<ReflexxesAPI> 				RML_;
+		boost::scoped_ptr<RMLPositionInputParameters>  	IP_;
+		boost::scoped_ptr<RMLPositionOutputParameters> 	OP_;
+		RMLPositionFlags            					Flags_;
 
 		double cycleTime_;
 		int resultValue_;
+		
+		void print_frame_(const std::string& name, const KDL::Frame& frame) const;
 
 	};
 }

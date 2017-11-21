@@ -13,10 +13,13 @@
 namespace kuka_lwr_controllers
 {
 	CartesianComputedTorqueController::CartesianComputedTorqueController() {}
-	CartesianComputedTorqueController::~CartesianComputedTorqueController() {
-			delete RML_;
-			delete IP_;
-			delete OP_;	
+	CartesianComputedTorqueController::~CartesianComputedTorqueController() {}
+	
+	void CartesianComputedTorqueController::print_frame_(const std::string& name, const KDL::Frame& frame) const
+	{
+		double roll, pitch, yaw;
+		frame.M.GetRPY(roll,pitch,yaw);
+		ROS_INFO("%s -> x = %f, y = %f, z = %f, roll = %f, pitch = %f, yaw = %f\n",name.c_str(), frame.p.x(), frame.p.y(), frame.p.z(), roll, pitch, yaw);  
 	}
 
 	bool CartesianComputedTorqueController::init(hardware_interface::KUKAJointInterface *robot, ros::NodeHandle &n)
@@ -39,13 +42,13 @@ namespace kuka_lwr_controllers
 
 		fk_pos_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
 		ik_vel_solver_.reset(new KDL::ChainIkSolverVel_pinv(kdl_chain_));
-		ik_pos_solver_.reset(new KDL::ChainIkSolverPos_NR_JL(kdl_chain_,joint_limits_.min,joint_limits_.max,*fk_pos_solver_,*ik_vel_solver_));
+		ik_pos_solver_.reset(new KDL::ChainIkSolverPos_NR_JL(kdl_chain_,joint_limits_.min,joint_limits_.max,*fk_pos_solver_,*ik_vel_solver_,1000,1e-6));
 
 		cycleTime_ = 0.002;
         
-		RML_ = new ReflexxesAPI(joint_handles_.size(),cycleTime_);
-		IP_ = new RMLPositionInputParameters(joint_handles_.size());
-		OP_ = new RMLPositionOutputParameters(joint_handles_.size());
+		RML_.reset(new ReflexxesAPI(joint_handles_.size(),cycleTime_));
+		IP_.reset(new RMLPositionInputParameters(joint_handles_.size()));
+		OP_.reset(new RMLPositionOutputParameters(joint_handles_.size()));
 
 		return true;		
 	}
@@ -102,27 +105,23 @@ namespace kuka_lwr_controllers
 
     	if(cmd_flag_)
     	{
-				// Calculates the joint values 'cmd_states_' that correspond to the input pose 'x_des_' 
-				// given an initial guess 'joint_msr_states_.q'. 
-				ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
-
-				// Use reflexxes type 2 library that help to generate a 'smooth' movement. 
-				for (size_t i=0; i<joint_handles_.size(); ++i)
-				{
-					IP_->CurrentPositionVector->VecData[i] = joint_msr_states_.q(i);  // set current position with current position of joint handles
-					IP_->TargetPositionVector->VecData[i]	= cmd_states_(i); // set desired position (get from inverse kin solver)
-					IP_->MaxVelocityVector->VecData[i] = (double)1.0;
-					IP_->MaxAccelerationVector->VecData[i] = (double)4.0;
-					IP_->MaxJerkVector->VecData[i] = (double)8.0;
-					IP_->SelectionVector->VecData[i] = true;
-				}
+				#if TRACE_CartesianComputedTorqueController_ACTIVATED
+					print_frame_("x_Solve_",x_Solve_);
+				#endif
 
 				// Get next 'smooth' position in 'OP_' object. 
-				resultValue_  =   RML_->RMLPosition(*IP_,OP_,Flags_);
+				resultValue_  =   RML_->RMLPosition(*IP_,OP_.get(),Flags_);
+				
+				if (resultValue_ != ReflexxesAPI::RML_WORKING && resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
+				{
+					ROS_INFO("ERROR Reflexxes -> %d", resultValue_);
+					exit(-1);
+				}
 				
 				if (resultValue_ < 0)
 				{
 					ROS_INFO("GroupCommandControllerFRI::update : ERROR during trajectory generation err n°%d",resultValue_);
+					exit(-1);
 				}
 				
 				// set next desired 'smooth' states : position, velocity, acceleration
@@ -134,13 +133,21 @@ namespace kuka_lwr_controllers
 
 				}
 
-				fk_pos_solver_->JntToCart(cmd_states_, x_Reflexxes_);
-				ROS_INFO("x refl = %f, y refl = %f, z refl = %f\n",x_Reflexxes_.p.x(), x_Reflexxes_.p.y(), x_Reflexxes_.p.z());  
+				#if TRACE_CartesianComputedTorqueController_ACTIVATED
+					fk_pos_solver_->JntToCart(joint_des_states_.q, x_Reflexxes_);
+					print_frame_("x_Reflexxes_",x_Reflexxes_); 
+				#endif
 
-
+				double distance;
+				
 				// computing forward kinematics. Transform 'q' angle position to 3D pose in 'x_'.
 				// It is necessary to get the 'euler' distance from 'x_des_' to 'x_'.
 				fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
+				//#if TRACE_CartesianComputedTorqueController_ACTIVATED
+					print_frame_(" x_", x_);
+					distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
+					ROS_INFO("distance = %f\n",distance);  // Show the distance only for information.
+				//#endif
 
 				*IP_->CurrentPositionVector      =   *OP_->NewPositionVector      ;
 				*IP_->CurrentVelocityVector      =   *OP_->NewVelocityVector      ;
@@ -151,7 +158,7 @@ namespace kuka_lwr_controllers
 				{
 						ROS_INFO("On target");
 						// Computing 'euler' distance between measure (x_) to desired (x_des_).
-						double distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
+						distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
 						ROS_INFO("distance = %f\n",distance);  // Show the distance only for information.
 						cmd_flag_ = 0;
 				}
@@ -240,6 +247,28 @@ namespace kuka_lwr_controllers
         x_des_ = frame_des;
 		resultValue_ = ReflexxesAPI::RML_WORKING;
         cmd_flag_ = 1;
+        
+        // Calculates the joint values 'cmd_states_' that correspond to the input pose 'x_des_' 
+		// given an initial guess 'joint_msr_states_.q'. 
+		ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
+				
+		
+		#if TRACE_CartesianComputedTorqueController_ACTIVATED
+			fk_pos_solver_->JntToCart(cmd_states_, x_Solve_);
+			print_frame_("x_Solve_",x_Solve_);
+		#endif
+				
+
+		// Use reflexxes type 2 library that help to generate a 'smooth' movement. 
+		for (size_t i=0; i<joint_handles_.size(); ++i)
+		{
+			IP_->CurrentPositionVector->VecData[i] = joint_msr_states_.q(i);  // set current position with current position of joint handles
+			IP_->TargetPositionVector->VecData[i]	= cmd_states_(i); // set desired position (get from inverse kin solver)
+			IP_->MaxVelocityVector->VecData[i] = (double)1.0;
+			IP_->MaxAccelerationVector->VecData[i] = (double)4.0;
+			IP_->MaxJerkVector->VecData[i] = (double)8.0;
+			IP_->SelectionVector->VecData[i] = true;
+		}
         
         ROS_INFO("***** FINISH CartesianComputedTorqueController::command ************");
     }

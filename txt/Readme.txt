@@ -220,7 +220,7 @@ rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/command kuk
 
 rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/command kuka_lwr_controllers/PoseRPY '{id: 0, position: {x: -0.5, y: 0.0, z: 0.9}, orientation: {roll: ?, pitch: ?, yaw: ?}}'
 
-rostopic pub -1 /kuka_lwr_left/cartesian_computed_torque_controller/set_gains std_msgs/Float64MultiArray "data: [3000,1800,1800,1400,100,100,100,181,62,53,54,10,10,10]"
+rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/set_gains std_msgs/Float64MultiArray "data: [3000,1800,1800,1400,100,100,100,181,62,53,54,10,10,10]"
 
 
 
