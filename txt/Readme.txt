@@ -239,6 +239,18 @@ rostopic pub -1 /kuka_lwr_left/cartesian_computed_torque_controller/command kuka
 rostopic pub -1 /kuka_lwr_right/cartesian_computed_torque_controller/set_gains std_msgs/Float64MultiArray "data: [3000,1800,1800,1400,100,100,100,181,62,53,54,10,10,10]"
 rostopic pub -1 /kuka_lwr_left/cartesian_computed_torque_controller/set_gains std_msgs/Float64MultiArray "data: [3000,1800,1800,1400,100,100,100,181,62,53,54,10,10,10]"
 
+For Moveit!
+===========
+
+-> Launch controllers + moveit! + gazebo
+roslaunch platform_gazebo platform_gazebo.launch load_moveit:=true 
+
+-> Launch rviz plugin for moveit!
+roslaunch platform_gazebo show_moveit_rviz.launch use_left_arm:=true 
+
+-> Launch a test node using move group
+roslaunch test_move_group test_cartesian_position.launch group_name:=kuka_lwr_left
+
 
 
 
