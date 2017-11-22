@@ -194,8 +194,17 @@ rostopic pub -1 /kuka_lwr_right/kuka_gravity_compensation_controller/command std
 Cartesian computed torque controller
 ====================================
 
+In simulation Mode ->
+
 -> Launch ros controllers and gazebo
 roslaunch platform_gazebo platform_gazebo.launch
+
+In real Mode ->
+left arm only -> 
+roslaunch double_lwr_robot double_arms.launch use_right_arm:=false
+
+right arm only ->
+roslaunch double_lwr_robot double_arms.launch use_left_arm:=false
 
 -> Go to a specific position to avoid singularity :
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_group_command_controller_fri'], stop_controllers: [], strictness: 2}"
