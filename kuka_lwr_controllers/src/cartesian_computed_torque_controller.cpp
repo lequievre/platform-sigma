@@ -144,9 +144,9 @@ namespace kuka_lwr_controllers
 				// It is necessary to get the 'euler' distance from 'x_des_' to 'x_'.
 				fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
 				//#if TRACE_CartesianComputedTorqueController_ACTIVATED
-					print_frame_(" x_", x_);
-					distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
-					ROS_INFO("distance = %f\n",distance);  // Show the distance only for information.
+					//print_frame_(" x_", x_);
+					//distance = sqrt(pow(x_des_.p.x()-x_.p.x(),2) + pow(x_des_.p.y()-x_.p.y(),2) + pow(x_des_.p.z()-x_.p.z(),2));
+					//ROS_INFO("distance = %f\n",distance);  // Show the distance only for information.
 				//#endif
 
 				*IP_->CurrentPositionVector      =   *OP_->NewPositionVector      ;
