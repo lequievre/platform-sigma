@@ -250,7 +250,8 @@ namespace kuka_lwr_controllers
         
         // Calculates the joint values 'cmd_states_' that correspond to the input pose 'x_des_' 
 		// given an initial guess 'joint_msr_states_.q'. 
-		ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
+		int ik_pos_solver_return = ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
+		ROS_INFO("ik_pos_solver_return = %s", ik_pos_solver_->strError(ik_pos_solver_return));
 				
 		
 		#if TRACE_CartesianComputedTorqueController_ACTIVATED
@@ -264,9 +265,9 @@ namespace kuka_lwr_controllers
 		{
 			IP_->CurrentPositionVector->VecData[i] = joint_msr_states_.q(i);  // set current position with current position of joint handles
 			IP_->TargetPositionVector->VecData[i]	= cmd_states_(i); // set desired position (get from inverse kin solver)
-			IP_->MaxVelocityVector->VecData[i] = (double)1.0;
-			IP_->MaxAccelerationVector->VecData[i] = (double)4.0;
-			IP_->MaxJerkVector->VecData[i] = (double)8.0;
+			IP_->MaxVelocityVector->VecData[i] = (double)0.5;
+			IP_->MaxAccelerationVector->VecData[i] = (double)2.0;
+			IP_->MaxJerkVector->VecData[i] = (double)4.0;
 			IP_->SelectionVector->VecData[i] = true;
 		}
         
