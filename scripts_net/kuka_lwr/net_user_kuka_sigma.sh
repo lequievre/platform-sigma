@@ -7,7 +7,7 @@
 # Ip address of Kuka Computer -> 192.168.100.123
 # Ip address Of User Computer -> 192.168.100.105
 
-# eth0 -> network card used to communicate with the pan tilt computer by using the switch.
+# eth0 -> network card used to communicate with the pan tilt or kuka or hand computer by using the switch.
 
 # NETWORK INFORMATIONS
 # ====================
@@ -34,7 +34,7 @@ netmask_associate_switch="255.255.255.0"
 netmask_associate_computer="255.255.255.0"
 
 # Define hw of each ethX associated
-hw_ethX_associate_switch="30:e1:71:18:ab:c6"
+hw_ethX_associate_switch="2c:44:fd:68:fb:58"
 
 do_start()
 {
