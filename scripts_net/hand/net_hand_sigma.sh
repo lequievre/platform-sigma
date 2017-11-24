@@ -15,6 +15,7 @@
 # eth2 -> connexion shadow hand
 # eth1 -> On board connexion internet
 # eth0 -> connexion switch
+# eth3 -> ethernet USB3 adapter
 
 # Table de routage actuelle
 # route -n
@@ -22,8 +23,20 @@
 # Associate ethX
 # eth0 -> switch
 
+# List of modules
+# sudo lsmod
+
+# Insert a module
+# sudo insmod nameOfModule.ko
+
+# Remove a module
+# sudo rmmod nameOfModule
+
+# Load a module
+# sudo modprobe nameOfModule
+
 ethX_associate_switch="eth0"
-ethX_associate_fsensor="eth?"
+ethX_associate_fsensor="eth3"
 
 # Define IP address for ethX associate to switch
 
@@ -43,34 +56,61 @@ netmask_associate_fsensor="255.255.255.255"
 # Define hw of each ethX associated
 
 hw_ethX_associate_switch="00:0a:f7:93:2f:fa"
-hw_ethX_associate_fsensor="???????"
+hw_ethX_associate_fsensor="74:da:38:9f:fa:49"
 
 # path of ax88179_178a linux module
-path_of_ax88179_178a="/home/kmohyeldin/git_projects/AX88179_178A/ax88179_178a.ko"
+path_of_ax88179_178a="/home/hand/git_project/driver_ethernet_adapter/AX88179_178A_LINUX_DRIVER_v1.9.0_SOURCE/ax88179_178a.ko"
+
+checkEthernetModuleLoaded()
+{
+  MODULE="ax88179_178a"
+  MODEXIST=/sbin/lsmod | grep "$MODULE"
+
+  if [ -z "$MODEXIST" ]; then
+    echo "ax88179_178a module is not loaded!"
+    # 1 = false
+    return 1
+  else
+    echo "ax88179_178a module is loaded!"
+    # 0 = true
+    return 0
+  fi
+}
 
 
 do_start()
 {
+	sudo rmmod ax88179_178a
+	sleep 2
+
 	echo "load usb and ax88179_178a linux modules !"
 	sudo modprobe usbnet
 	sleep 3
 
-	sudo insmod $path_of_ax88179_178a
+	if (! checkEthernetModuleLoaded) then
+		echo "load ax88179_178a linux module !"
+		sudo insmod $path_of_ax88179_178a
+	else
+		echo "not necessary to load ax88179_178a linux module !"
+	fi
 	sleep 3
 	
 	echo "Start net config for switch !"
 
 	echo "ifconfig down ethX associated to switch !"
 	sudo ifconfig $ethX_associate_switch down
+
+	echo "Start net config for fsensor !"
 	
 	echo "ifconfig down ethX associated to fsensor !"
 	sudo ifconfig $ethX_associate_fsensor down
 
+	sleep 3
 
 	echo "Start ethX associate to switch !"
 	sudo ifconfig $ethX_associate_switch up $ip_address_associate_switch netmask $netmask_associate_switch hw ether $hw_ethX_associate_switch
 
-    echo "Start ethX associate to fsensor !"
+    	echo "Start ethX associate to fsensor !"
 	sudo ifconfig $ethX_associate_fsensor up $ip_address_associate_fsensor netmask $netmask_associate_fsensor hw ether $hw_ethX_associate_fsensor   
 
 	echo "Delete all route of eth0"
@@ -99,8 +139,10 @@ do_stop()
 	echo "ifconfig down ethX associated to switch !"
 	sudo ifconfig $ethX_associate_switch down
 
-	echo "ifconfig down (non RT) ethX associated to fsensor !"
+	echo "ifconfig down ethX associated to fsensor !"
 	sudo ifconfig $ethX_associate_fsensor down
+
+	sleep 3
 
 	echo "Delete all routes of ethX associate to switch !"
 	sleep 5
