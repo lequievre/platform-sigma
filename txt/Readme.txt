@@ -251,6 +251,15 @@ roslaunch platform_gazebo show_moveit_rviz.launch use_left_arm:=true
 -> Launch a test node using move group
 roslaunch test_move_group test_cartesian_position.launch group_name:=kuka_lwr_left
 
+Launch rqt plugin to start/stop controllers graphically
+=======================================================
+
+rosrun rqt_gui rqt_gui
+
+Menu Plugins / Robot Tools / Controller Manager
+
+ 
+
 
 
 
