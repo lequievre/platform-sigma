@@ -40,14 +40,14 @@ namespace kuka_lwr_controllers
         cycleTime_ = 0.002;
         
         RML_ = new TypeIRML(joint_handles_.size(),cycleTime_);
-	IP_ = new TypeIRMLInputParameters(joint_handles_.size());
-	OP_ = new TypeIRMLOutputParameters(joint_handles_.size());
+		IP_ = new TypeIRMLInputParameters(joint_handles_.size());
+		OP_ = new TypeIRMLOutputParameters(joint_handles_.size());
 
-	sub_command_ = nh_.subscribe("command", 1, &GroupCommandControllerFRI::commandCB, this);
+		sub_command_ = nh_.subscribe("command", 1, &GroupCommandControllerFRI::commandCB, this);
 
-	cmd_flag_ = 0;  // set this flag to 0 to not run the update method
+		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
 
-	return true;
+		return true;
 	}
 	
     void GroupCommandControllerFRI::starting(const ros::Time& time)
