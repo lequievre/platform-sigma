@@ -10,6 +10,10 @@
 
 #include <math.h>       /* sqrt */
 
+#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
+#include <tf_conversions/tf_kdl.h>
+
 namespace kuka_lwr_controllers
 {
 	CartesianComputedTorqueController::CartesianComputedTorqueController() {}
@@ -45,10 +49,57 @@ namespace kuka_lwr_controllers
 		ik_pos_solver_.reset(new KDL::ChainIkSolverPos_NR_JL(kdl_chain_,joint_limits_.min,joint_limits_.max,*fk_pos_solver_,*ik_vel_solver_,1000,1e-6));
 
 		cycleTime_ = 0.002;
-        
+		/*
+		// get URDF and name of root and tip from the parameter server
+		std::string robot_description, root_name, tip_name;
+
+		//ros::param::search(n.getNamespace(),"robot_description", robot_description);
+		n.getParam("root_name", root_name);
+		n.getParam("tip_name", tip_name);
+		//nh_.getParam("/robot_description", robot_description);
+		
+		//ROS_INFO("n namespace -> %s, nh namespace -> %s, root -> %s, tip -> %s", n.getNamespace().c_str(), nh_.getNamespace().c_str(), root_name.c_str(), tip_name.c_str());
+		
+		ROS_INFO("Before TRAC_IK::TRAC_IK !\n");
+		
+		double eps = 1e-5;
+		
+		tracik_solver_.reset(new TRAC_IK::TRAC_IK(root_name, tip_name, "/kuka_lwr_right/robot_description", cycleTime_, eps, TRAC_IK::SolveType::Distance));
+		
+		ROS_INFO("After TRAC_IK::TRAC_IK !\n");
+		
+		
+	   KDL::Chain chain;
+	   KDL::JntArray ll, ul; //lower joint limits, upper joint limits
+
+	   bool valid = tracik_solver_->getKDLChain(chain);
+	  
+	   if (!valid) {
+		 ROS_ERROR("There was no valid KDL chain found");
+		 return false;
+	   }
+
+	   valid = tracik_solver_->getKDLLimits(ll,ul);
+
+	   if (!valid) {
+		 ROS_ERROR("There were no valid KDL joint limits found");
+		 return false;
+	   }
+
+	   assert(chain.getNrOfJoints() == ll.data.size());
+	   assert(chain.getNrOfJoints() == ul.data.size());
+
+	   ROS_INFO ("Using %d joints",chain.getNrOfJoints());
+	   */
+		
 		RML_.reset(new ReflexxesAPI(joint_handles_.size(),cycleTime_));
 		IP_.reset(new RMLPositionInputParameters(joint_handles_.size()));
 		OP_.reset(new RMLPositionOutputParameters(joint_handles_.size()));
+		
+		ROS_INFO("End of CartesianComputedTorqueController::init !");
+		
+		
+		ros::Duration(1.0).sleep();
 
 		return true;		
 	}
@@ -205,55 +256,84 @@ namespace kuka_lwr_controllers
 
     void CartesianComputedTorqueController::command(const kuka_lwr_controllers::PoseRPY::ConstPtr &msg)
     {
-		ROS_INFO("***** START OneTaskInverseKinematics::command ************");
+		ROS_INFO("***** START CartesianComputedTorqueController::command ************");
 
         KDL::Frame frame_des;
 
         switch(msg->id)
         {
             case 0:
+            {
 				ROS_INFO("***** CartesianComputedTorqueController::command position and orientation ************");
+				KDL::Rotation 	kdlROT;
+				tf::Quaternion  tfROT;
+				tfROT = tf::createQuaternionFromRPY(msg->orientation.roll, msg->orientation.pitch, msg->orientation.yaw);
+				tf::quaternionTFToKDL(tfROT, kdlROT);
 				//ROS_INFO("position desired -> x = %f, y = %f, z = %f", msg->position.x, msg->position.y, msg->position.z);
-				frame_des = KDL::Frame(
+				/*frame_des = KDL::Frame(    
                     KDL::Rotation::RPY(msg->orientation.roll,
                                       msg->orientation.pitch,
                                       msg->orientation.yaw),
                     KDL::Vector(msg->position.x,
                                 msg->position.y,
-                                msg->position.z));
-            break;
+                                msg->position.z));*/
+                                
+                 frame_des = KDL::Frame(    
+                   kdlROT,
+                    KDL::Vector(msg->position.x,
+                                msg->position.y,
+                                msg->position.z));               
+                                
+				break;
+			}
 
-            case 1: // position only
+            case 1: 
+            {
+				// position only
 				ROS_INFO("***** CartesianComputedTorqueController::command position only ************");
 				frame_des = KDL::Frame(
                 KDL::Vector(msg->position.x,
                             msg->position.y,
                             msg->position.z));
-            break;
+				break;
+			}
 
-            case 2: // orientation only
+            case 2: 
+			{	
+				// orientation only
 				ROS_INFO("***** CartesianComputedTorqueController::command orientation only ************");
+				KDL::Rotation 	kdlROT;
+				tf::Quaternion  tfROT;
+				tfROT = tf::createQuaternionFromRPY(msg->orientation.roll, msg->orientation.pitch, msg->orientation.yaw);
+				tf::quaternionTFToKDL(tfROT, kdlROT);
+				
+				fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
+				
 				frame_des = KDL::Frame(
-                KDL::Rotation::RPY(msg->orientation.roll,
-                                   msg->orientation.pitch,
-                                   msg->orientation.yaw));
-            break;
-
+					    kdlROT,
+						KDL::Vector(x_.p.x(),
+                            x_.p.y(),
+                            x_.p.z())
+                            );
+				break;
+			}
+			
             default:
 				ROS_INFO("Wrong message ID");
-            return;
+				return;
         }
 
         x_des_ = frame_des;
 		resultValue_ = ReflexxesAPI::RML_WORKING;
-        cmd_flag_ = 1;
+        
         
         // Calculates the joint values 'cmd_states_' that correspond to the input pose 'x_des_' 
 		// given an initial guess 'joint_msr_states_.q'. 
 		int ik_pos_solver_return = ik_pos_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
+		//int ik_pos_solver_return = tracik_solver_->CartToJnt(joint_msr_states_.q, x_des_, cmd_states_);
+		
 		ROS_INFO("ik_pos_solver_return = %s", ik_pos_solver_->strError(ik_pos_solver_return));
 				
-		
 		#if TRACE_CartesianComputedTorqueController_ACTIVATED
 			fk_pos_solver_->JntToCart(cmd_states_, x_Solve_);
 			print_frame_("x_Solve_",x_Solve_);
@@ -270,6 +350,8 @@ namespace kuka_lwr_controllers
 			IP_->MaxJerkVector->VecData[i] = (double)4.0;
 			IP_->SelectionVector->VecData[i] = true;
 		}
+		
+		cmd_flag_ = 1;
         
         ROS_INFO("***** FINISH CartesianComputedTorqueController::command ************");
     }

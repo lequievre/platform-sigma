@@ -27,6 +27,9 @@
 #include <RMLPositionInputParameters.h>
 #include <RMLPositionOutputParameters.h>
 
+// Trac IK
+//#include <trac_ik/trac_ik.hpp>
+
 #ifndef PI
 	#define PI 3.1415926535897932384626433832795
 #endif
@@ -77,6 +80,8 @@ namespace kuka_lwr_controllers
 		boost::scoped_ptr<KDL::ChainFkSolverPos_recursive> fk_pos_solver_;  // Forward kinematic Solver (Jnt to Cartesian)
 		boost::scoped_ptr<KDL::ChainIkSolverVel_pinv> ik_vel_solver_;
 		boost::scoped_ptr<KDL::ChainIkSolverPos_NR_JL> ik_pos_solver_;
+		
+		//boost::scoped_ptr<TRAC_IK::TRAC_IK> tracik_solver_;
 
 		KDL::Frame x_;			//current pose
 		KDL::Frame x_des_;		//desired pose

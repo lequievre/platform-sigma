@@ -19,6 +19,9 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   cmake_modules
   kuka_lwr_hw
+  #trac_ik_lib
+  tf
+  tf_conversions
 )
 
 # After find_package(catkin REQUIRED COMPONENTS....) :
@@ -71,6 +74,7 @@ catkin_package(
     std_msgs
     geometry_msgs
     kuka_lwr_hw
+    #trac_ik_lib
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME} TypeIRML ReflexxesTypeII
 )
