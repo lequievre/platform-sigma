@@ -90,6 +90,7 @@ add_library(${PROJECT_NAME}
   src/torque_based_position_gazebo.cpp
   src/computed_torque_controller.cpp
   src/cartesian_computed_torque_controller.cpp
+  src/basic_torque_controller.cpp
 )
 
 # Link a target to given libraries.

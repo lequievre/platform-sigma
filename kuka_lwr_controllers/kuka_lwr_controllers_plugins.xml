@@ -59,5 +59,11 @@
 			Info...
 		</description>
 	</class> 
+	
+	<class name="kuka_lwr_controllers/BasicTorqueController" type="kuka_lwr_controllers::BasicTorqueController" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Info...
+		</description>
+	</class> 
 
 </library>
