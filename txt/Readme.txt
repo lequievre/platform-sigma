@@ -43,14 +43,20 @@ In Simulation/Gazebo Mode
 How to launch the simulation of Sigma Platform (arms + pantilt) :
 ---------------------------------------------------------------
 source devel/setup.bash
-roslaunch platform_gazebo platform_gazebo.launch
+roslaunch platform_gazebo platform_gazebo.launch use_pantilt:=true
 
 If you don't need the pantilt -> roslaunch platform_gazebo platform_gazebo.launch use_pantilt:=false
 
 
 How to move the pantilt in position :
 -----------------------------------
-rostopic pub -1 /pantilt/pan_tilt_position_controller/command std_msgs/Float64MultiArray "data: [1.5,-0.5,0.5,0.5]"
+rostopic pub -1 /pantilt/pantilt_group_position_controller/command std_msgs/Float64MultiArray "data: [1.5,-0.5,0.5,0.5]"
+
+How to see the image_raw of each camera :
+-----------------------------------------
+rosrun image_view image_view image:=/pantilt/camera1/image_raw
+rosrun image_view image_view image:=/pantilt/camera2/image_raw
+
 
 
 How to move the right or left kuka lwr arm :
