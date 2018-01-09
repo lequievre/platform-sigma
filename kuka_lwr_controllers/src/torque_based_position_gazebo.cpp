@@ -54,8 +54,10 @@ namespace kuka_lwr_controllers
 		pub_traj_resp_		= n.advertise<kuka_lwr_controllers::TrajPathPoint>("traj_resp", 1000);
 		pub_tau_cmd_		= n.advertise<std_msgs::Float64MultiArray>("tau_cmd", 1000);
 		pub_F_des_			= n.advertise<geometry_msgs::WrenchStamped>("F_des", 1000);
+		pub_Sv				= n.advertise<std_msgs::Float64>("Sv", 1000);
+		pub_Sf 				= n.advertise<std_msgs::Float64>("Sf", 1000);
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
-		d_wall_ = 1.0;
+		d_wall_ = 0.5;
 	
 
 		//resizing the used vectors
@@ -81,7 +83,7 @@ namespace kuka_lwr_controllers
 		}
 		for (std::size_t i=0; i<joint_handles_.size(); i++)
 		{
-			stiff_(i) = 200.0;
+			stiff_(i) = 500.0;
 			damp_(i) = 0.7;
 		}
 		for (std::size_t i=4; i<joint_handles_.size(); i++)
@@ -105,6 +107,7 @@ namespace kuka_lwr_controllers
 			KPv_(i,i )=Kp_cartesian_(i);
 			KDv_(i,i )=Kd_cartesian_(i);
 		}    
+		KPf_(0,0) = 100;
 		
 		S_v_    	= MatrixXd::Identity(6,6);				// selection matrix for position controlled direction
 		
@@ -126,9 +129,9 @@ namespace kuka_lwr_controllers
 		Tau_cmd_	= VectorXd::Zero(6);
 		
 		
-		for (std::size_t i=0; i<3; i++)
-		F_des_(i) = 50;
-		
+		//for (std::size_t i=0; i<3; i++)
+		//F_des_(i) = 50;
+		F_des_(0) = 70;
 		#if TRACE_Torque_Based_Position_ACTIVATED
 			ROS_INFO("TorqueBasedPositionController: End of Start init of robot %s !",robot_namespace_.c_str());
 		#endif
@@ -163,6 +166,7 @@ namespace kuka_lwr_controllers
 		/****** messages to be published for analyses *****/
 		kuka_lwr_controllers::TrajPathPoint traj_resp_msg;
 		std_msgs::Float64MultiArray tau_cmd_msg;	 tau_cmd_msg.data.resize(7);	
+		std_msgs::Float64 Sv_msg, Sf_msg;
         geometry_msgs::WrenchStamped  F_des_msg;
         	
 		double torque;
@@ -237,10 +241,11 @@ namespace kuka_lwr_controllers
 			
 			//calculatePsuedoInertia(J6x6_, I6x6_, LAMDA_ );
 			calculatePsuedoInertia(Jkdl_.data, M_.data, LAMDA_ );	
-			//LAMDA_ = ((Jkdl_.data)*(M_.data.inverse())*(Jkdl_.data.transpose())).inverse();							// calculate inertia matrix in workspace
-		    calculateAccelerationCommand(P_current_, V_current_,traj_des_,Alpha_v_ );								// calculate the acceleration command 
+			//LAMDA_ = ((Jkdl_.data)*(M_.data.inverse())*(Jkdl_.data.transpose())).inverse();				// calculate inertia matrix in workspace
+		    calculateAccelerationCommand(P_current_, V_current_,traj_des_,Alpha_v_ );						// calculate the acceleration command 
+		    SelectionMatricesTransitionControl();                                                           // change the selection matrices based on the distance to wall from camera
 		    calculateForceCommand(FT_sensor_, F_des_, F_cmd_);
-			calculateJointTorques(J6x6_,Alpha_v_, Tau_cmd_);																// calculate the joint torques
+			calculateJointTorques(J6x6_,Alpha_v_, Tau_cmd_);												// calculate the joint torques
 			
 			
 			tau_cmd_msg.data[0] = Tau_cmd_(0)+C_(0)+G_(0);
@@ -301,13 +306,16 @@ namespace kuka_lwr_controllers
 				F_des_msg.wrench.torque.y = 0;
 				F_des_msg.wrench.torque.z = 0;
 				pub_F_des_.publish(F_des_msg);
-						
 				
+				Sv_msg.data = S_v_(0,0);	
+				pub_Sv.publish(Sv_msg);
+				Sf_msg.data = S_f_(0,0);	
+				pub_Sf.publish(Sf_msg);
 				
 			ros::Time end = ros::Time::now();
 			if(count%100==0)
 			{	//std::cout << "time"<<end-begin<< "\n";
-				std::cout << "d_wall="<<d_wall_<<" roll="<<roll_<<" pitch="<<pitch_<<" yaw="<<yaw_<< "\n";
+				std::cout << "d_wall="<<d_wall_<<" Sf="<<S_f_(0,0)<<" Sv="<<S_v_(0,0)<<"\n";
 				//std::cout << "Here is the Jkdl_:\n" << Jkdl_.data<< "\n";
 				//std::cout << "Here is the J6x6_:\n" << ((J6x6_.transpose()).inverse())*maxtorques<< "\n";
 				//std::cout << "Here is the J_trans_:\n" << J_trans_<< "\n";
@@ -361,6 +369,28 @@ namespace kuka_lwr_controllers
 		}
 	
 		alpha_v = (traj_des_.qdotdot.data + KDv_*(traj_des.qdot.data - v_resp)  + KPv_*(traj_des.q.data - p_resp));
+	}
+	void TorqueBasedPositionControllerGazebo :: SelectionMatricesTransitionControl()
+	{
+		double offset    = 0.278;              // offset between radars and wall at distance = 0
+		double Dist      = d_wall_ - offset;	
+		
+		if (Dist < 0) 
+		{
+			Dist = 0;
+		}
+		
+		double S_f_0     = 1;
+		double x_initial = 0;
+		double x_final   = 2.5;   // domain of work
+		double S_f_final = 0.0001;
+		double gain      = 10000;
+		double eps       = (x_final - x_initial)*gain; // value to adjust the shape of the transition curve
+		double ka        = (-log(S_f_final/S_f_0)/x_final )+eps;
+		
+		S_f_(0,0) = S_f_0*exp(-ka*Dist); // the term corresponding to the direction controlled by position then force
+		S_v_(0,0) = 1-S_f_(0,0);
+		//std::cout<<"Sf "<< S_f_0*exp(-ka*Dist)<<"\n";
 	}
 	
 	void TorqueBasedPositionControllerGazebo ::calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & F_des, Eigen::MatrixXd & F_cmd )
@@ -566,7 +596,7 @@ namespace kuka_lwr_controllers
 	void TorqueBasedPositionControllerGazebo::setRollPitchYaw(const  geometry_msgs::PoseStamped& msg)
 	{
 		d_wall_ = msg.pose.position.z;
-		
+		//ROS_INFO("In setRollPitchYaw");
 		double sinr = +2.0 * (msg.pose.orientation.w * msg.pose.orientation.x + msg.pose.orientation.y * msg.pose.orientation.z);
 		double cosr = +1.0 - 2.0 * (msg.pose.orientation.x * msg.pose.orientation.x + msg.pose.orientation.y * msg.pose.orientation.y);
 		roll_ = atan2(sinr, cosr);

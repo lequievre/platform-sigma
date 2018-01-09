@@ -16,6 +16,8 @@
 
 // msgs 
 #include <std_msgs/Float64MultiArray.h>
+#include <std_msgs/Float64.h>
+
 #include <geometry_msgs/WrenchStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <kuka_lwr_controllers/TrajPathPoint.h>
@@ -58,7 +60,7 @@ namespace kuka_lwr_controllers
 			void stopping(const ros::Time& time);  // Stop the controller
 			void update(const ros::Time& time, const ros::Duration& period);  // Update the controller
 			//void calculate3x3jacobian(KDL::JntArray & joint_resp, KDL::Jacobian & jacobian);
-			
+			void SelectionMatricesTransitionControl();
 		private:
 			void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg);		 			// function associate to a subscribe joint command topic
 			void setcartesianKp(const std_msgs::Float64MultiArrayConstPtr& msg); 			// function associate to a subscribe setcartesianKp topic
@@ -73,7 +75,7 @@ namespace kuka_lwr_controllers
 			
 			ros::Subscriber sub_command_  , sub_traj_      , sub_ft_;
 			ros::Subscriber sub_kp_joints_, sub_kd_joints_ , sub_kp_cartesian_ , sub_kd_cartesian_, sub_kp_force_,sub_ee_pos_, sub_stiffness_damping_; // subscribers of gains
-			ros::Publisher pub_traj_resp_,pub_tau_cmd_, pub_F_des_;              
+			ros::Publisher pub_traj_resp_,pub_tau_cmd_, pub_F_des_, pub_Sv, pub_Sf;              
 			int cmd_flag_; // flag set only to 1 when the controller receive a message to the command topic	
 			
 			std::string robot_namespace_;
