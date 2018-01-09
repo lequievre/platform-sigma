@@ -78,20 +78,24 @@ namespace kuka_lwr_controllers
 		
 		for (std::size_t i=0; i<joint_handles_.size()-3; i++)
 		{
-			Kp_joints_(i) = 100.0;
+			Kp_joints_(i) = 200.0;
 			Kd_joints_(i) = 50.0;
-		}
-		for (std::size_t i=0; i<joint_handles_.size(); i++)
-		{
-			stiff_(i) = 500.0;
-			damp_(i) = 0.7;
 		}
 		for (std::size_t i=4; i<joint_handles_.size(); i++)
 		{
 			Kp_joints_(i) = 50.0;
 			Kd_joints_(i) = 10.0;
 		}
-		
+		for (std::size_t i=0; i<joint_handles_.size()-3; i++)
+		{
+			stiff_(i) = 1000.0;
+			damp_(i) = 1.0;
+		}
+		for (std::size_t i=4; i<joint_handles_.size(); i++)
+		{
+			stiff_(i) = 50.0;
+			damp_(i) = 0.3;
+		}
 		Kp_cartesian_ .resize(6);
 		Kd_cartesian_ .resize(6);
 		
@@ -191,14 +195,24 @@ namespace kuka_lwr_controllers
 			}*/
 			
 			
-			 for(size_t i=0; i<joint_handles_.size(); i++) 
+			 /*for(size_t i=0; i<joint_handles_.size(); i++) 
 			{
 				joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
 				//joint_handles_[i].setCommandTorque(0.0); // Set a value of torque to 0.0 for each joint.
 				joint_handles_[i].setCommandStiffness(stiff_(i));
 				joint_handles_[i].setCommandDamping(damp_(i));
-			}
-			
+			}*/
+				joint_handles_[0].setCommandPosition(joint_handles_[0].getPosition());
+				joint_handles_[0].setCommandStiffness(stiff_(0));
+				joint_handles_[0].setCommandDamping(damp_(0));
+				
+				joint_handles_[1].setCommandPosition(joint_handles_[1].getPosition());
+				joint_handles_[1].setCommandStiffness(stiff_(1));
+				joint_handles_[1].setCommandDamping(damp_(1));
+				
+				joint_handles_[3].setCommandPosition(joint_handles_[3].getPosition());
+				joint_handles_[3].setCommandStiffness(stiff_(3));
+				joint_handles_[3].setCommandDamping(damp_(3));
 			//-------------------------------------------------------------------------------// 
 			//-------------------------------------computing by solvers----------------------//   
 			//-------------------------------------------------------------------------------// 
@@ -252,18 +266,39 @@ namespace kuka_lwr_controllers
 			tau_cmd_msg.data[1] = Tau_cmd_(1)+C_(1)+G_(1);
 			tau_cmd_msg.data[2] = (Kp_joints_(2)*(0-joint_handles_[2].getPosition()))+(Kd_joints_(2)*(-joint_handles_[2].getVelocity()))+C_(2)+G_(2);
 			tau_cmd_msg.data[3] = Tau_cmd_(2)+C_(3)+G_(3);
-			tau_cmd_msg.data[4] = (Kp_joints_(4)*(0-joint_handles_[4].getPosition()))+(Kd_joints_(4)*(-joint_handles_[4].getVelocity()))+C_(4)+G_(4);
+			/*tau_cmd_msg.data[4] = (Kp_joints_(4)*(0-joint_handles_[4].getPosition()))+(Kd_joints_(4)*(-joint_handles_[4].getVelocity()))+C_(4)+G_(4);
 			tau_cmd_msg.data[5] = ((Kp_joints_(5)*((-joint_handles_[1].getPosition()+joint_handles_[3].getPosition())- joint_handles_[5].getPosition()
 								))+(Kd_joints_(5)*((-joint_handles_[1].getVelocity()+joint_handles_[3].getVelocity())-joint_handles_[5].getVelocity())))+C_(5)+G_(4);
 			tau_cmd_msg.data[6] = (Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity()))+C_(6)+G_(6);
-				
+			*/
+			
+			joint_handles_[2].setCommandPosition(0.0);
+			joint_handles_[2].setCommandStiffness(stiff_(2));
+			joint_handles_[2].setCommandDamping(damp_(2));
+			
+			joint_handles_[4].setCommandPosition(0.0);
+			joint_handles_[4].setCommandStiffness(stiff_(4));
+			joint_handles_[4].setCommandDamping(damp_(4));
+			
+			joint_handles_[5].setCommandPosition(-joint_handles_[1].getPosition()+joint_handles_[3].getPosition());
+			joint_handles_[5].setCommandStiffness(stiff_(5));
+			joint_handles_[5].setCommandDamping(damp_(5));
+			
+			joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
+			joint_handles_[6].setCommandStiffness(stiff_(6));
+			joint_handles_[6].setCommandDamping(damp_(6));
+			
 			joint_handles_[0].setCommandTorque(tau_cmd_msg.data[0]) ;
 			joint_handles_[1].setCommandTorque(tau_cmd_msg.data[1]);
-			joint_handles_[2].setCommandTorque(tau_cmd_msg.data[2]); // Set a value of redundant joint.
+			joint_handles_[2].setCommandTorque(tau_cmd_msg.data[2]*0.0); // Set a value of redundant joint.
 			joint_handles_[3].setCommandTorque(tau_cmd_msg.data[3]);
-			joint_handles_[4].setCommandTorque(tau_cmd_msg.data[4]);
+			joint_handles_[4].setCommandTorque(0.0);
+			joint_handles_[5].setCommandTorque(0.0);
+			joint_handles_[6].setCommandTorque(0.0);
+			
+			/*joint_handles_[4].setCommandTorque(tau_cmd_msg.data[4]);
 			joint_handles_[5].setCommandTorque(tau_cmd_msg.data[5]);
-			joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]);
+			joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]);*/
 			
 			/*	
 	        joint_handles_[0].setCommandTorque(Tau_cmd_(0)) ;
@@ -395,7 +430,7 @@ namespace kuka_lwr_controllers
 	
 	void TorqueBasedPositionControllerGazebo ::calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & F_des, Eigen::MatrixXd & F_cmd )
 	{
-		F_cmd_ = F_des + KPf_*(F_des - FT_sensor);  // pay attention to the sign of the force sensor
+		F_cmd_ = F_des + KPf_*(F_des + FT_sensor);  // pay attention to the sign of the force sensor
 
 	}
 	
