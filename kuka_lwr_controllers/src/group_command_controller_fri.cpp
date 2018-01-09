@@ -120,7 +120,7 @@ namespace kuka_lwr_controllers
 		{
 			IP_->CurrentPosition->VecData[i] = (double)DEG(joint_handles_[i].getPosition());  // set current position (transfrom to degrees) with current position of joint handles
 			IP_->TargetPosition->VecData[i]	= (double)DEG(msg->data[i]); // set desired position (get it from msg data of topic)
-			IP_->MaxVelocity->VecData[i] = (double)50.0;
+			IP_->MaxVelocity->VecData[i] = (double)5.0;
 			IP_->MaxAcceleration->VecData[i] = (double)20.0;
 			IP_->SelectionVector->VecData[i] = true;
 		}
