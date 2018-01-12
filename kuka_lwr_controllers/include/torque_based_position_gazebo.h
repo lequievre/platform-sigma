@@ -92,7 +92,7 @@ namespace kuka_lwr_controllers
 			KDL::JntArrayVel 			Jnt_vel_;
 			
 			Eigen::MatrixXd 			J6x6_, J_inv_, J_trans_, J_inv_trans_, I6x6_, LAMDA_, S_v_,S_f_, Alpha_v_, KDv_, KPv_,KPf_, F_cmd_;
-			Eigen::VectorXd				FT_sensor_, F_des_,Tau_cmd_;
+			Eigen::VectorXd				FT_sensor_, F_des_,F_des_max_,Tau_cmd_;
 
 			int count =0;
 			double roll_, pitch_, yaw_, d_wall_;
@@ -109,6 +109,8 @@ namespace kuka_lwr_controllers
 			void calculateAccelerationCommand(const KDL::Frame  & p_current, const KDL::FrameVel & v_current, const KDL::JntArrayAcc & traj_des, Eigen::MatrixXd & alpha_v );
 			void calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & f_des, Eigen::MatrixXd & F_cmd );
 			void calculateJointTorques(const Eigen::MatrixXd & j6x6, const Eigen::MatrixXd & alpha_v,Eigen::VectorXd & Tau_cmd_ );
+			void checkTorqueMax_(std_msgs::Float64MultiArray& torqueArray);
+
 	};
 }
 

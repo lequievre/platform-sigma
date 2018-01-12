@@ -40,11 +40,11 @@ namespace kuka_lwr_controllers
 		fk_vel_solver_.reset(new KDL::ChainFkSolverVel_recursive(kdl_chain_));
 		
 		
-        sub_command_ 		= n.subscribe("command"				,1, &TorqueBasedPositionControllerGazebo::commandCB			, this);
+       // sub_command_ 		= n.subscribe("command"				,1, &TorqueBasedPositionControllerGazebo::commandCB			, this);
         sub_kp_cartesian_ 	= n.subscribe("setcartesianKp"		,1, &TorqueBasedPositionControllerGazebo::setcartesianKp	, this);
         sub_kd_cartesian_ 	= n.subscribe("setcartesianKd"		,1, &TorqueBasedPositionControllerGazebo::setcartesianKd	, this);
 		sub_traj_			= n.subscribe("/traj_cmd"			,1, &TorqueBasedPositionControllerGazebo::TrajPathPointCB	, this);
-		sub_ft_ 			= n.subscribe("sensor_readings"		,1, &TorqueBasedPositionControllerGazebo::ft_readingsCB		, this);
+		sub_ft_ 			= n.subscribe("/sensor_readings"		,1, &TorqueBasedPositionControllerGazebo::ft_readingsCB		, this);
 		sub_kp_joints_  	= n.subscribe("setjointsKp"			,1, &TorqueBasedPositionControllerGazebo::setjointsKp		, this); 
 		sub_kd_joints_  	= n.subscribe("setjointsKd"			,1, &TorqueBasedPositionControllerGazebo::setjointsKd		, this); 
 		sub_kp_force_		= n.subscribe("setforceKp"			,1, &TorqueBasedPositionControllerGazebo::setforceKp		, this); 
@@ -57,7 +57,8 @@ namespace kuka_lwr_controllers
 		pub_Sv				= n.advertise<std_msgs::Float64>("Sv", 1000);
 		pub_Sf 				= n.advertise<std_msgs::Float64>("Sf", 1000);
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
-		d_wall_ = 0.5;
+		//d_wall_ = 0.5;
+		d_wall_ = 0.0; // for testing the force control alone
 	
 
 		//resizing the used vectors
@@ -93,8 +94,8 @@ namespace kuka_lwr_controllers
 		}
 		for (std::size_t i=4; i<joint_handles_.size(); i++)
 		{
-			stiff_(i) = 50.0;
-			damp_(i) = 0.3;
+			stiff_(i) = 2000.0;
+			damp_(i) = 1.0;
 		}
 		Kp_cartesian_ .resize(6);
 		Kd_cartesian_ .resize(6);
@@ -105,22 +106,36 @@ namespace kuka_lwr_controllers
 		
  		for (std::size_t i=0; i<3; i++)
 		{
-			Kp_cartesian_(i) = 100.0;
+			//Kp_cartesian_(i) = 600.0;
+			//Kd_cartesian_(i) = 60.0;
+			//Kp_cartesian_(i) = 500.0;
+			//Kd_cartesian_(i) = 50.0;
+			Kp_cartesian_(i) = 1000.0;
 			Kd_cartesian_(i) = 50.0;
 			
 			KPv_(i,i )=Kp_cartesian_(i);
 			KDv_(i,i )=Kd_cartesian_(i);
 		}    
-		KPf_(0,0) = 100;
+		KPf_(0,0) = 10;
 		
 		S_v_    	= MatrixXd::Identity(6,6);				// selection matrix for position controlled direction
 		
 		S_v_.bottomRightCorner(3,3) = MatrixXd::Zero(3, 3);
 		S_f_    	= MatrixXd::Zero(6,6);					// selection matrix for velocity controlled direction
 		
+		// setting the values of the initial point 
 		traj_des_.resize(6);
 		SetToZero (traj_des_);
-
+		/*
+		traj_des_.q.data(0) = 0.281;
+		traj_des_.q.data(1) = -0.232;
+		traj_des_.q.data(2) = 0.8546;
+		*/
+		// initial position for testing the force control
+		traj_des_.q.data(0) = 0.5905;
+		traj_des_.q.data(1) = -0.001;
+		traj_des_.q.data(2) = 0.72117;
+		
 		q_des_.resize(kdl_chain_.getNrOfJoints());
 		SetToZero (q_des_);
 		
@@ -130,12 +145,14 @@ namespace kuka_lwr_controllers
 		Alpha_v_ 	= MatrixXd::Zero(6, 1);
 		FT_sensor_	= VectorXd::Zero(6);
 		F_des_		= VectorXd::Zero(6);
+		F_des_max_		= VectorXd::Zero(6);
+
 		Tau_cmd_	= VectorXd::Zero(6);
 		
 		
 		//for (std::size_t i=0; i<3; i++)
 		//F_des_(i) = 50;
-		F_des_(0) = 70;
+		F_des_max_(0) = 10;
 		#if TRACE_Torque_Based_Position_ACTIVATED
 			ROS_INFO("TorqueBasedPositionController: End of Start init of robot %s !",robot_namespace_.c_str());
 		#endif
@@ -164,6 +181,26 @@ namespace kuka_lwr_controllers
 		
 	}
 	
+	
+	void TorqueBasedPositionControllerGazebo::checkTorqueMax_(std_msgs::Float64MultiArray& torqueArray)
+	{
+		
+		double maxTorqueArray[] = { 176.0, 176.0, 100.0, 100.0, 100.0, 38.0, 38.0 };
+		
+		for (size_t i=0; i<torqueArray.data.size(); ++i)
+		{
+			if (torqueArray.data[i] > maxTorqueArray[i])
+			{
+				ROS_INFO("Current joint n°%i torque = %f -> Max allowed value = %f", (int)i, torqueArray.data[i], maxTorqueArray[i]);
+				torqueArray.data[i] = maxTorqueArray[i] - 5.0;
+				 
+			}
+		}
+		
+		
+	}
+	
+	
     void TorqueBasedPositionControllerGazebo::update(const ros::Time& time, const ros::Duration& period)
     {	
 		ros::Time begin = ros::Time::now();
@@ -172,8 +209,17 @@ namespace kuka_lwr_controllers
 		std_msgs::Float64MultiArray tau_cmd_msg;	 tau_cmd_msg.data.resize(7);	
 		std_msgs::Float64 Sv_msg, Sf_msg;
         geometry_msgs::WrenchStamped  F_des_msg;
-        	
-		double torque;
+        double torque;
+
+        /*
+        for (size_t i=0; i<joint_handles_.size(); i++) 
+		{
+				joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
+				joint_handles_[i].setCommandStiffness(stiff_(i));
+				joint_handles_[i].setCommandDamping(damp_(i));
+				joint_handles_[i].setCommandTorque(0.0);
+		}
+        */	
 		
 		if (cmd_flag_)
 		{
@@ -203,16 +249,16 @@ namespace kuka_lwr_controllers
 				joint_handles_[i].setCommandDamping(damp_(i));
 			}*/
 				joint_handles_[0].setCommandPosition(joint_handles_[0].getPosition());
-				joint_handles_[0].setCommandStiffness(stiff_(0));
-				joint_handles_[0].setCommandDamping(damp_(0));
+				joint_handles_[0].setCommandStiffness(stiff_(0)*0);
+				joint_handles_[0].setCommandDamping(damp_(0)*0);
 				
 				joint_handles_[1].setCommandPosition(joint_handles_[1].getPosition());
-				joint_handles_[1].setCommandStiffness(stiff_(1));
-				joint_handles_[1].setCommandDamping(damp_(1));
+				joint_handles_[1].setCommandStiffness(stiff_(1)*0);
+				joint_handles_[1].setCommandDamping(damp_(1)*0);
 				
 				joint_handles_[3].setCommandPosition(joint_handles_[3].getPosition());
-				joint_handles_[3].setCommandStiffness(stiff_(3));
-				joint_handles_[3].setCommandDamping(damp_(3));
+				joint_handles_[3].setCommandStiffness(stiff_(3)*0);
+				joint_handles_[3].setCommandDamping(damp_(3)*0);
 			//-------------------------------------------------------------------------------// 
 			//-------------------------------------computing by solvers----------------------//   
 			//-------------------------------------------------------------------------------// 
@@ -257,7 +303,13 @@ namespace kuka_lwr_controllers
 			calculatePsuedoInertia(Jkdl_.data, M_.data, LAMDA_ );	
 			//LAMDA_ = ((Jkdl_.data)*(M_.data.inverse())*(Jkdl_.data.transpose())).inverse();				// calculate inertia matrix in workspace
 		    calculateAccelerationCommand(P_current_, V_current_,traj_des_,Alpha_v_ );						// calculate the acceleration command 
-		    SelectionMatricesTransitionControl();                                                           // change the selection matrices based on the distance to wall from camera
+		    SelectionMatricesTransitionControl(); 
+		    
+		    if (S_f_(0,0) ==1 && F_des_(0) < F_des_max_(0))
+			{
+				F_des_(0) = F_des_(0)+0.001;
+			} ;
+			                                                            // change the selection matrices based on the distance to wall from camera
 		    calculateForceCommand(FT_sensor_, F_des_, F_cmd_);
 			calculateJointTorques(J6x6_,Alpha_v_, Tau_cmd_);												// calculate the joint torques
 			
@@ -272,6 +324,12 @@ namespace kuka_lwr_controllers
 			tau_cmd_msg.data[6] = (Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity()))+C_(6)+G_(6);
 			*/
 			
+			tau_cmd_msg.data[4] = 0.0;
+			tau_cmd_msg.data[5] = 0.0;
+			tau_cmd_msg.data[6] = 0.0;
+			
+			checkTorqueMax_(tau_cmd_msg);
+			
 			joint_handles_[2].setCommandPosition(0.0);
 			joint_handles_[2].setCommandStiffness(stiff_(2));
 			joint_handles_[2].setCommandDamping(damp_(2));
@@ -280,11 +338,13 @@ namespace kuka_lwr_controllers
 			joint_handles_[4].setCommandStiffness(stiff_(4));
 			joint_handles_[4].setCommandDamping(damp_(4));
 			
-			joint_handles_[5].setCommandPosition(-joint_handles_[1].getPosition()+joint_handles_[3].getPosition());
+			//joint_handles_[5].setCommandPosition(-joint_handles_[1].getPosition()+joint_handles_[3].getPosition());
+			joint_handles_[5].setCommandPosition(1.6132078);
 			joint_handles_[5].setCommandStiffness(stiff_(5));
 			joint_handles_[5].setCommandDamping(damp_(5));
 			
-			joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
+			//joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
+			joint_handles_[6].setCommandPosition(0.0);
 			joint_handles_[6].setCommandStiffness(stiff_(6));
 			joint_handles_[6].setCommandDamping(damp_(6));
 			
@@ -348,9 +408,9 @@ namespace kuka_lwr_controllers
 				pub_Sf.publish(Sf_msg);
 				
 			ros::Time end = ros::Time::now();
-			if(count%100==0)
+			if(count%500==0)
 			{	//std::cout << "time"<<end-begin<< "\n";
-				std::cout << "d_wall="<<d_wall_<<" Sf="<<S_f_(0,0)<<" Sv="<<S_v_(0,0)<<"\n";
+				std::cout << "d_wall="<<d_wall_<<" Sf="<<S_f_(0,0)<<" Sv="<<S_v_(0,0)<<" fdes="<<F_des_(0)<<"\n";
 				//std::cout << "Here is the Jkdl_:\n" << Jkdl_.data<< "\n";
 				//std::cout << "Here is the J6x6_:\n" << ((J6x6_.transpose()).inverse())*maxtorques<< "\n";
 				//std::cout << "Here is the J_trans_:\n" << J_trans_<< "\n";
@@ -407,7 +467,7 @@ namespace kuka_lwr_controllers
 	}
 	void TorqueBasedPositionControllerGazebo :: SelectionMatricesTransitionControl()
 	{
-		double offset    = 0.278;              // offset between radars and wall at distance = 0
+		double offset    = 0.0;              // offset between radars and wall at distance = 0
 		double Dist      = d_wall_ - offset;	
 		
 		if (Dist < 0) 
@@ -430,7 +490,17 @@ namespace kuka_lwr_controllers
 	
 	void TorqueBasedPositionControllerGazebo ::calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & F_des, Eigen::MatrixXd & F_cmd )
 	{
-		F_cmd_ = F_des + KPf_*(F_des + FT_sensor);  // pay attention to the sign of the force sensor
+		Eigen::VectorXd FT_sensor_des;
+		
+		FT_sensor_des = FT_sensor_;
+		
+		if(FT_sensor(0)>(F_des_max_(0)+3))
+		FT_sensor_des(0) = F_des_max_(0)+3;
+		
+		if(FT_sensor(0)<0)
+		FT_sensor_des(0) = 0;
+		
+		F_cmd_ = F_des + KPf_*(F_des - FT_sensor_des);  // pay attention to the sign of the force sensor
 
 	}
 	
@@ -463,7 +533,7 @@ namespace kuka_lwr_controllers
 	
 	void TorqueBasedPositionControllerGazebo::commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
     {
-		#if TRACE_Torque_Based_Position_ACTIVATED
+		/*#if TRACE_Torque_Based_Position_ACTIVATED
 			ROS_INFO("TorqueBasedPositionController: Start commandCB of robot %s!",robot_namespace_.c_str());
 		#endif
 
@@ -480,7 +550,7 @@ namespace kuka_lwr_controllers
 			q_des_(i) = (double)msg->data[i]*0;
 		}
 		
-		cmd_flag_ = 1;
+		cmd_flag_ = 1;*/
 		
 	}
 	
@@ -514,21 +584,26 @@ namespace kuka_lwr_controllers
 			traj_des_.qdot(i) = 0;
 			traj_des_.qdotdot(i) = 0;
 		}
+		
 		cmd_flag_ = 1;
+		
 	}
 	void TorqueBasedPositionControllerGazebo::ft_readingsCB(const geometry_msgs::WrenchStamped& msg)
     {
-		#if TRACE_Torque_Based_Position_ACTIVATED
+		/*#if TRACE_Torque_Based_Position_ACTIVATED
 			ROS_INFO("TorqueBasedPositionController: Start ft_readingsCB of robot %s!",robot_namespace_.c_str());
 		#endif
-		FT_sensor_[0] = msg.wrench.force.x ;
-		FT_sensor_[1] = msg.wrench.force.y ;
-		FT_sensor_[2] = msg.wrench.force.z ;
-		FT_sensor_[3] = msg.wrench.torque.x ;
-		FT_sensor_[4] = msg.wrench.torque.y ;
-		FT_sensor_[5] = msg.wrench.torque.z ;
-
+		* */
+		
+		FT_sensor_(0) = -msg.wrench.force.x ;
+		FT_sensor_(1) = msg.wrench.force.y ;
+		FT_sensor_(2) = msg.wrench.force.z ;
+		FT_sensor_(3) = msg.wrench.torque.x ;
+		FT_sensor_(4) = msg.wrench.torque.y ;
+		FT_sensor_(5) = msg.wrench.torque.z ;
+		
 		cmd_flag_ = 1;
+
 	}
 	
 	void TorqueBasedPositionControllerGazebo:: setjointsKp(const std_msgs::Float64MultiArrayConstPtr& msg)
@@ -651,6 +726,10 @@ namespace kuka_lwr_controllers
 
 void TorqueBasedPositionControllerGazebo::setStiffnessDamping(const kuka_lwr_controllers::StiffnessDamping::ConstPtr & msg){
 		
+		#if TRACE_Torque_Based_Position_ACTIVATED
+			ROS_INFO("TorqueBasedPositionController: Start setStiffnessDamping of robot %s!",robot_namespace_.c_str());
+		#endif
+		
 		
 		if(msg->stiffness.data.size()!=joint_handles_.size()  )
 		{ 
@@ -668,6 +747,7 @@ void TorqueBasedPositionControllerGazebo::setStiffnessDamping(const kuka_lwr_con
 			stiff_(i) = (double)msg->stiffness.data[i];
 			damp_(i) = (double)msg->damping.data[i];
 		}
+		cmd_flag_ = 1;
 	}
 }
 
