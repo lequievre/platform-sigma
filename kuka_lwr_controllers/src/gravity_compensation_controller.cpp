@@ -73,12 +73,14 @@ namespace kuka_lwr_controllers
         // is raised again
         for(size_t i=0; i<joint_handles_.size(); i++) 
         {
-			//joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
-			joint_handles_[i].setCommandPosition(q_des_(i));
+			joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
+			//joint_handles_[i].setCommandPosition(q_des_(i));
             joint_handles_[i].setCommandTorque(0.0); // Set a value of torque to 0.0 for each joint.
             joint_handles_[i].setCommandStiffness(stiff_(i));
 			joint_handles_[i].setCommandDamping(damp_(i));
         }
+        
+        joint_handles_[2].setCommandTorque(0.5); // Set a value of torque to 0.0 for each joint.
         
 	}
 	
