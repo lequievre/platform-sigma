@@ -99,6 +99,14 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} TypeIRML ReflexxesType
 # Add a dependencies of generation message, to be sure that all headers files of all messages are generated before !
 add_dependencies(kuka_lwr_controllers ${PROJECT_NAME}_generate_messages_cpp  FRILibrary reflexxes)
 
+
+add_executable(node_test_irml  src/node_test_irml.cpp)
+
+target_link_libraries(node_test_irml
+  ${catkin_LIBRARIES}
+  TypeIRML ReflexxesTypeII
+)
+
 #install(DIRECTORY include/${PROJECT_NAME}/
 #  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 

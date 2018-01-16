@@ -40,10 +40,12 @@ namespace kuka_lwr_controllers
 		fk_vel_solver_.reset(new KDL::ChainFkSolverVel_recursive(kdl_chain_));
 		
 		
+		
        // sub_command_ 		= n.subscribe("command"				,1, &TorqueBasedPositionControllerGazebo::commandCB			, this);
         sub_kp_cartesian_ 	= n.subscribe("setcartesianKp"		,1, &TorqueBasedPositionControllerGazebo::setcartesianKp	, this);
         sub_kd_cartesian_ 	= n.subscribe("setcartesianKd"		,1, &TorqueBasedPositionControllerGazebo::setcartesianKd	, this);
 		sub_traj_			= n.subscribe("/traj_cmd"			,1, &TorqueBasedPositionControllerGazebo::TrajPathPointCB	, this);
+		sub_traj_initial_	= n.subscribe("/traj_cmd_initial"	,1, &TorqueBasedPositionControllerGazebo::TrajPathPointCBInitial, this);
 		sub_ft_ 			= n.subscribe("/sensor_readings"		,1, &TorqueBasedPositionControllerGazebo::ft_readingsCB		, this);
 		sub_kp_joints_  	= n.subscribe("setjointsKp"			,1, &TorqueBasedPositionControllerGazebo::setjointsKp		, this); 
 		sub_kd_joints_  	= n.subscribe("setjointsKd"			,1, &TorqueBasedPositionControllerGazebo::setjointsKd		, this); 
@@ -57,8 +59,7 @@ namespace kuka_lwr_controllers
 		pub_Sv				= n.advertise<std_msgs::Float64>("Sv", 1000);
 		pub_Sf 				= n.advertise<std_msgs::Float64>("Sf", 1000);
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
-		//d_wall_ = 0.5;
-		d_wall_ = 0.0; // for testing the force control alone
+		d_wall_ = 0.5; // 
 	
 
 		//resizing the used vectors
@@ -75,6 +76,8 @@ namespace kuka_lwr_controllers
 		Kd_joints_.resize(kdl_chain_.getNrOfJoints());
 		stiff_.resize(kdl_chain_.getNrOfJoints());
 		damp_.resize(kdl_chain_.getNrOfJoints());
+		
+		initialPositions_.resize(kdl_chain_.getNrOfJoints());
 
 		
 		for (std::size_t i=0; i<joint_handles_.size()-3; i++)
@@ -94,7 +97,7 @@ namespace kuka_lwr_controllers
 		}
 		for (std::size_t i=4; i<joint_handles_.size(); i++)
 		{
-			stiff_(i) = 2000.0;
+			stiff_(i) = 500.0;
 			damp_(i) = 1.0;
 		}
 		Kp_cartesian_ .resize(6);
@@ -103,13 +106,10 @@ namespace kuka_lwr_controllers
 		KDv_ 		= MatrixXd::Zero(6,6);
 		KPv_ 		= MatrixXd::Zero(6,6);
 		KPf_ 		= MatrixXd::Zero(6,6);
-		
+
+						
  		for (std::size_t i=0; i<3; i++)
-		{
-			//Kp_cartesian_(i) = 600.0;
-			//Kd_cartesian_(i) = 60.0;
-			//Kp_cartesian_(i) = 500.0;
-			//Kd_cartesian_(i) = 50.0;
+		{		
 			Kp_cartesian_(i) = 1000.0;
 			Kd_cartesian_(i) = 50.0;
 			
@@ -119,23 +119,23 @@ namespace kuka_lwr_controllers
 		KPf_(0,0) = 10;
 		
 		S_v_    	= MatrixXd::Identity(6,6);				// selection matrix for position controlled direction
-		
 		S_v_.bottomRightCorner(3,3) = MatrixXd::Zero(3, 3);
 		S_f_    	= MatrixXd::Zero(6,6);					// selection matrix for velocity controlled direction
 		
 		// setting the values of the initial point 
 		traj_des_.resize(6);
 		SetToZero (traj_des_);
-		/*
-		traj_des_.q.data(0) = 0.281;
-		traj_des_.q.data(1) = -0.232;
-		traj_des_.q.data(2) = 0.8546;
-		*/
+		
+		/*traj_des_.q.data(0) = 0.281;
+		traj_des_.q.data(1) = -0.231;
+		traj_des_.q.data(2) = 0.8547;*/
+		
 		// initial position for testing the force control
+		/*
 		traj_des_.q.data(0) = 0.5905;
 		traj_des_.q.data(1) = -0.001;
 		traj_des_.q.data(2) = 0.72117;
-		
+		*/
 		q_des_.resize(kdl_chain_.getNrOfJoints());
 		SetToZero (q_des_);
 		
@@ -149,10 +149,20 @@ namespace kuka_lwr_controllers
 
 		Tau_cmd_	= VectorXd::Zero(6);
 		
-		
-		//for (std::size_t i=0; i<3; i++)
-		//F_des_(i) = 50;
 		F_des_max_(0) = 10;
+		
+		robotState_ = State::NoMove;
+		
+		cycleTime_ = 0.002;
+        
+        RML_ = new ReflexxesAPI(3,cycleTime_);
+		IP_ = new RMLPositionInputParameters(3);
+		OP_ = new RMLPositionOutputParameters(3);
+	
+		setInitialPositions_ = true;
+		count_pos_reached=0;
+		
+
 		#if TRACE_Torque_Based_Position_ACTIVATED
 			ROS_INFO("TorqueBasedPositionController: End of Start init of robot %s !",robot_namespace_.c_str());
 		#endif
@@ -169,6 +179,9 @@ namespace kuka_lwr_controllers
 		
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
 		count = 0;
+		setInitialPositions_ = true;
+		robotState_ = State::NoMove;
+		count_pos_reached=0;
     }
     
     void TorqueBasedPositionControllerGazebo::stopping(const ros::Time& time)
@@ -178,6 +191,8 @@ namespace kuka_lwr_controllers
 		#endif
 		
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
+		robotState_ = State::NoMove;
+		count_pos_reached=0;
 		
 	}
 	
@@ -186,13 +201,21 @@ namespace kuka_lwr_controllers
 	{
 		
 		double maxTorqueArray[] = { 176.0, 176.0, 100.0, 100.0, 100.0, 38.0, 38.0 };
-		
+		double minTorqueArray[] = { -176.0, -176.0, -100.0, -100.0, -100.0, -38.0, -38.0 };
+
 		for (size_t i=0; i<torqueArray.data.size(); ++i)
 		{
 			if (torqueArray.data[i] > maxTorqueArray[i])
 			{
 				ROS_INFO("Current joint n°%i torque = %f -> Max allowed value = %f", (int)i, torqueArray.data[i], maxTorqueArray[i]);
 				torqueArray.data[i] = maxTorqueArray[i] - 5.0;
+				 
+			}
+			
+			if (torqueArray.data[i] < minTorqueArray[i])
+			{
+				ROS_INFO("Current joint n°%i torque = %f -> Min allowed value = %f", (int)i, torqueArray.data[i], minTorqueArray[i]);
+				torqueArray.data[i] = minTorqueArray[i] + 5.0;
 				 
 			}
 		}
@@ -210,226 +233,198 @@ namespace kuka_lwr_controllers
 		std_msgs::Float64 Sv_msg, Sf_msg;
         geometry_msgs::WrenchStamped  F_des_msg;
         double torque;
-
-        /*
-        for (size_t i=0; i<joint_handles_.size(); i++) 
+        
+        for(size_t i=0; i<joint_handles_.size(); i++) 
 		{
-				joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
-				joint_handles_[i].setCommandStiffness(stiff_(i));
-				joint_handles_[i].setCommandDamping(damp_(i));
-				joint_handles_[i].setCommandTorque(0.0);
+			
+			joint_msr_states_.q(i) = joint_handles_[i].getPosition();
+			joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
+			joint_msr_states_.qdotdot(i) = joint_handles_[i].getAcceleration();
+					
 		}
-        */	
+				
+				
+		//fcn->JntToCart(const JntArray& q_in, Frame& p_out, int seg_nr) 
+		fk_pos_solver_->JntToCart(joint_msr_states_.q, P_current_); 					// computing forward kinematics
 		
-		if (cmd_flag_)
-		{
-
-			// update the commanded position to the actual, so that the robot doesn't 
-			// go back at full speed to the last commanded position when the stiffness 
-			// is raised again
-			for(size_t i=0; i<joint_handles_.size(); i++) 
+		Jnt_vel_.q=joint_msr_states_.q;													
+		Jnt_vel_.qdot=joint_msr_states_.qdot;
+		fk_vel_solver_->JntToCart(Jnt_vel_, V_current_);								// computing velocities
+		
+		if (setInitialPositions_ == true)
 			{
-				joint_msr_states_.q(i) = joint_handles_[i].getPosition();
-				joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();		
+				for(size_t i=0; i<joint_handles_.size(); i++) 
+				{
+					initialPositions_(i) = joint_handles_[i].getPosition();
+				}
+				
+				setInitialPositions_ = false;
+		}
+		
+		count++;
+					
+		switch (robotState_)
+		{
+			
+			case State::NoMove :
+			{
+				if(count%500==0)
+				{
+					ROS_INFO("Current position x=%lf y=%lf z=%lf ",P_current_.p.x(),P_current_.p.y(),P_current_.p.z());
+				}
 			}
-			// position control
-			/*for(size_t i=0; i<joint_handles_.size(); i++) 
+			
+			break;
+			
+			case State::MoveInitial :
 			{
-			
-			torque = (Kp_(i)*(q_des_(i)-joint_handles_[i].getPosition()))+(Kd_(i)*(-joint_handles_[i].getVelocity())) +G_.data(i);
-			joint_handles_[i].setCommand(torque); // Set a value of redundant joint.
-			}*/
-			
-			
-			 /*for(size_t i=0; i<joint_handles_.size(); i++) 
-			{
-				joint_handles_[i].setCommandPosition(joint_handles_[i].getPosition());
-				//joint_handles_[i].setCommandTorque(0.0); // Set a value of torque to 0.0 for each joint.
-				joint_handles_[i].setCommandStiffness(stiff_(i));
-				joint_handles_[i].setCommandDamping(damp_(i));
-			}*/
-				joint_handles_[0].setCommandPosition(joint_handles_[0].getPosition());
-				joint_handles_[0].setCommandStiffness(stiff_(0)*0);
-				joint_handles_[0].setCommandDamping(damp_(0)*0);
-				
-				joint_handles_[1].setCommandPosition(joint_handles_[1].getPosition());
-				joint_handles_[1].setCommandStiffness(stiff_(1)*0);
-				joint_handles_[1].setCommandDamping(damp_(1)*0);
-				
-				joint_handles_[3].setCommandPosition(joint_handles_[3].getPosition());
-				joint_handles_[3].setCommandStiffness(stiff_(3)*0);
-				joint_handles_[3].setCommandDamping(damp_(3)*0);
-			//-------------------------------------------------------------------------------// 
-			//-------------------------------------computing by solvers----------------------//   
-			//-------------------------------------------------------------------------------// 
-			
-            jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, Jkdl_);						// computing Jacobian with KDL
-            id_solver_->JntToMass(joint_msr_states_.q, M_);									// computing Inertia matrix		
-			id_solver_->JntToCoriolis(joint_msr_states_.q, joint_msr_states_.qdot, C_);		// computing Coriolis torques	
-			id_solver_->JntToGravity(joint_msr_states_.q, G_);								// computing Gravity torques
-		
-			//fcn->JntToCart(const JntArray& q_in, Frame& p_out, int seg_nr) 
-            fk_pos_solver_->JntToCart(joint_msr_states_.q, P_current_); 					// computing forward kinematics
-           
-            //fcn->JntToCart(const JntArrayVel& q_in,FrameVel& out,int segmentNr=-1);
-            Jnt_vel_.q=joint_msr_states_.q;													
-			Jnt_vel_.qdot=joint_msr_states_.qdot;
-            fk_vel_solver_->JntToCart(Jnt_vel_, V_current_);								// computing velocities
-			
-			
-			//ROS_INFO("***** joint velocity **************");
-			//ROS_INFO("q%d_dot=%lf",0+1,joint_handles_[0].getVelocity());
-			//ROS_INFO("***** joint position **************");
-			//ROS_INFO("q5=%lf q6=%lf q7=%lf",joint_msr_states_.q(4),joint_msr_states_.q(5),joint_msr_states_.q(6));
-			//ROS_INFO("***** Current velocity **************");
-			//ROS_INFO("vx=%lf vy=%lf vz=%lf ",V_current_.GetTwist ().vel.x(),V_current_.GetTwist ().vel.y(),V_current_.GetTwist ().vel.z());
-			        
-            //------------------------------------------------------------------------------------------------------------------------------------// 
-            //-------------------------------------------Hybrid Control Calculation---------------------------------------------------------------//   
-            //------------------------------------------------------------------------------------------------------------------------------------//     
-            
-            J6x6_ =   Jkdl_.data;        // save the KDL jacoian to the 6x6 one to modify it
-            removeColumn(J6x6_, 2);      // removing the column corresponding to the redundant joint and resising the matrix
-            J_trans_= J6x6_.transpose();
-            //J_inv_  = J6x6_.inverse();
-            //J_inv_trans_ = J_inv_.transpose();
-           
-            I6x6_= M_.data;             // save the KDL Inertia matrix to the 6x6 one to modify it
-			removeColumn(I6x6_, 2);     // removing the column corresponding to the redundant joint and resising the matrix
-			removeRow(I6x6_, 2);        // removing the row corresponding to the redundant joint and resising the matrix
-			
-			
-			//calculatePsuedoInertia(J6x6_, I6x6_, LAMDA_ );
-			calculatePsuedoInertia(Jkdl_.data, M_.data, LAMDA_ );	
-			//LAMDA_ = ((Jkdl_.data)*(M_.data.inverse())*(Jkdl_.data.transpose())).inverse();				// calculate inertia matrix in workspace
-		    calculateAccelerationCommand(P_current_, V_current_,traj_des_,Alpha_v_ );						// calculate the acceleration command 
-		    SelectionMatricesTransitionControl(); 
-		    
-		    if (S_f_(0,0) ==1 && F_des_(0) < F_des_max_(0))
-			{
-				F_des_(0) = F_des_(0)+0.001;
-			} ;
-			                                                            // change the selection matrices based on the distance to wall from camera
-		    calculateForceCommand(FT_sensor_, F_des_, F_cmd_);
-			calculateJointTorques(J6x6_,Alpha_v_, Tau_cmd_);												// calculate the joint torques
-			
-			
-			tau_cmd_msg.data[0] = Tau_cmd_(0)+C_(0)+G_(0);
-			tau_cmd_msg.data[1] = Tau_cmd_(1)+C_(1)+G_(1);
-			tau_cmd_msg.data[2] = (Kp_joints_(2)*(0-joint_handles_[2].getPosition()))+(Kd_joints_(2)*(-joint_handles_[2].getVelocity()))+C_(2)+G_(2);
-			tau_cmd_msg.data[3] = Tau_cmd_(2)+C_(3)+G_(3);
-			/*tau_cmd_msg.data[4] = (Kp_joints_(4)*(0-joint_handles_[4].getPosition()))+(Kd_joints_(4)*(-joint_handles_[4].getVelocity()))+C_(4)+G_(4);
-			tau_cmd_msg.data[5] = ((Kp_joints_(5)*((-joint_handles_[1].getPosition()+joint_handles_[3].getPosition())- joint_handles_[5].getPosition()
-								))+(Kd_joints_(5)*((-joint_handles_[1].getVelocity()+joint_handles_[3].getVelocity())-joint_handles_[5].getVelocity())))+C_(5)+G_(4);
-			tau_cmd_msg.data[6] = (Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity()))+C_(6)+G_(6);
-			*/
-			
-			tau_cmd_msg.data[4] = 0.0;
-			tau_cmd_msg.data[5] = 0.0;
-			tau_cmd_msg.data[6] = 0.0;
-			
-			checkTorqueMax_(tau_cmd_msg);
-			
-			joint_handles_[2].setCommandPosition(0.0);
-			joint_handles_[2].setCommandStiffness(stiff_(2));
-			joint_handles_[2].setCommandDamping(damp_(2));
-			
-			joint_handles_[4].setCommandPosition(0.0);
-			joint_handles_[4].setCommandStiffness(stiff_(4));
-			joint_handles_[4].setCommandDamping(damp_(4));
-			
-			//joint_handles_[5].setCommandPosition(-joint_handles_[1].getPosition()+joint_handles_[3].getPosition());
-			joint_handles_[5].setCommandPosition(1.6132078);
-			joint_handles_[5].setCommandStiffness(stiff_(5));
-			joint_handles_[5].setCommandDamping(damp_(5));
-			
-			//joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
-			joint_handles_[6].setCommandPosition(0.0);
-			joint_handles_[6].setCommandStiffness(stiff_(6));
-			joint_handles_[6].setCommandDamping(damp_(6));
-			
-			joint_handles_[0].setCommandTorque(tau_cmd_msg.data[0]) ;
-			joint_handles_[1].setCommandTorque(tau_cmd_msg.data[1]);
-			joint_handles_[2].setCommandTorque(tau_cmd_msg.data[2]*0.0); // Set a value of redundant joint.
-			joint_handles_[3].setCommandTorque(tau_cmd_msg.data[3]);
-			joint_handles_[4].setCommandTorque(0.0);
-			joint_handles_[5].setCommandTorque(0.0);
-			joint_handles_[6].setCommandTorque(0.0);
-			
-			/*joint_handles_[4].setCommandTorque(tau_cmd_msg.data[4]);
-			joint_handles_[5].setCommandTorque(tau_cmd_msg.data[5]);
-			joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]);*/
-			
-			/*	
-	        joint_handles_[0].setCommandTorque(Tau_cmd_(0)) ;
-			joint_handles_[1].setCommandTorque(Tau_cmd_(1));
-			torque = (Kp_joints_(2)*(0-joint_handles_[2].getPosition()))+(Kd_joints_(2)*(-joint_handles_[2].getVelocity()));
-			joint_handles_[2].setCommandTorque(torque); // Set a value of redundant joint.
-			joint_handles_[3].setCommandTorque(Tau_cmd_(2));
-			joint_handles_[4].setCommandTorque((Kp_joints_(4)*(0-joint_handles_[4].getPosition()))+(Kd_joints_(4)*(-joint_handles_[4].getVelocity())));
-			joint_handles_[5].setCommandTorque((Kp_joints_(5)*((-joint_handles_[1].getPosition()+joint_handles_[3].getPosition())- joint_handles_[5].getPosition()
-											))+(Kd_joints_(5)*((-joint_handles_[1].getVelocity()+joint_handles_[3].getVelocity())-joint_handles_[5].getVelocity())));
-			joint_handles_[6].setCommandTorque((Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity())));
-			*/
-			count++;
-			// publishing data 
-				traj_resp_msg.pos.x = P_current_.p.x();
-				traj_resp_msg.pos.y = P_current_.p.y();
-				traj_resp_msg.pos.z = P_current_.p.z();
-				traj_resp_msg.vel.x = V_current_.GetTwist ().vel.x();
-				traj_resp_msg.vel.y = V_current_.GetTwist ().vel.y();
-				traj_resp_msg.vel.z = V_current_.GetTwist ().vel.z();
-				traj_resp_msg.acc.x = 0.0;
-				traj_resp_msg.acc.y = 0.0;
-				traj_resp_msg.acc.z = 0.0;
-				pub_traj_resp_.publish(traj_resp_msg);
-				
-				/*tau_cmd_msg.data[0] = Tau_cmd_(0);
-				tau_cmd_msg.data[1] = Tau_cmd_(1);
-				tau_cmd_msg.data[2] = torque;
-				tau_cmd_msg.data[3] = Tau_cmd_(2);
-				tau_cmd_msg.data[4] = Tau_cmd_(3);
-				tau_cmd_msg.data[5] = Tau_cmd_(4);
-				tau_cmd_msg.data[6] = Tau_cmd_(5);
-				*/
-				pub_tau_cmd_.publish(tau_cmd_msg);
-				
-				F_des_msg.wrench.force.x = F_des_[0];
-				F_des_msg.wrench.force.y = F_des_[1];
-				F_des_msg.wrench.force.z = F_des_[2];
-				F_des_msg.wrench.torque.x = 0;
-				F_des_msg.wrench.torque.y = 0;
-				F_des_msg.wrench.torque.z = 0;
-				pub_F_des_.publish(F_des_msg);
-				
-				Sv_msg.data = S_v_(0,0);	
-				pub_Sv.publish(Sv_msg);
-				Sf_msg.data = S_f_(0,0);	
-				pub_Sf.publish(Sf_msg);
-				
-			ros::Time end = ros::Time::now();
-			if(count%500==0)
-			{	//std::cout << "time"<<end-begin<< "\n";
-				std::cout << "d_wall="<<d_wall_<<" Sf="<<S_f_(0,0)<<" Sv="<<S_v_(0,0)<<" fdes="<<F_des_(0)<<"\n";
-				//std::cout << "Here is the Jkdl_:\n" << Jkdl_.data<< "\n";
-				//std::cout << "Here is the J6x6_:\n" << ((J6x6_.transpose()).inverse())*maxtorques<< "\n";
-				//std::cout << "Here is the J_trans_:\n" << J_trans_<< "\n";
-				//std::cout << "Here is the J_inv_:\n" << J_inv_<< "\n";
-				//std::cout << "Here is the M_.data:\n" << M_.data<< "\n";
-				//std::cout << "Here is the I6x6_:\n" << I6x6_<< "\n";
-				//std::cout << "out:\n" << LAMDA_<< "\n";
-				//ROS_INFO("trajectory-> x=%lf y=%lf z=%lf \n",traj_des_.q.data(1),traj_des_.q.data(2),traj_des_.q.data(3));
-				//ROS_INFO("Current position x=%lf y=%lf z=%lf ",P_current_.p.x(),P_current_.p.y(),P_current_.p.z());
-				 //ROS_INFO("Current position q1=%lf,q2=%lf, q1+q2 = %lf, q3=%lf  ",joint_handles_[1].getPosition(),joint_handles_[3].getPosition(),joint_handles_[1].getPosition()+joint_handles_[3].getPosition(),joint_handles_[5].getPosition() );
-				//ROS_INFO("q5=%lf q6=%lf q7=%lf",joint_msr_states_.q(4),joint_msr_states_.q(5),joint_msr_states_.q(6));
-
-				/*ROS_INFO("***** Current velocity **************");
-				ROS_INFO("x=%lf y=%lf z=%lf ",V_current_.GetTwist ().vel.x(),V_current_.GetTwist ().vel.y(),V_current_.GetTwist ().vel.z());*/
+				//if (resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
+				//{
+					
+					if(count%500==0)
+					{
+						ROS_INFO("Current position x=%lf y=%lf z=%lf ",P_current_.p.x(),P_current_.p.y(),P_current_.p.z());
+					}
+					
+					
+					
+					if (resultValue_ == ReflexxesAPI::RML_FINAL_STATE_REACHED)
+					{
+							count_pos_reached++;
+							if (count_pos_reached == 1)
+								ROS_INFO("Initial Position Reached !");
 							
-				//ROS_INFO("x=%lf",traj_resp_msg.pos.x);
-			}				
-
+					}
+					else
+					{
+						resultValue_ = RML_->RMLPosition(*IP_,OP_, Flags_);
+						if ( resultValue_ < 0 )
+						{
+							ROS_INFO("GroupCommandControllerFRI::update : ERROR during trajectory generation err n°%d",resultValue_);
+						}
+					}
+					
+					
+											
+					
+					traj_des_.q.data(0) = OP_->NewPositionVector->VecData[0];
+					traj_des_.q.data(1) = OP_->NewPositionVector->VecData[1];
+					traj_des_.q.data(2) = OP_->NewPositionVector->VecData[2];
+							
+					traj_des_.qdot.data(0) = OP_->NewVelocityVector->VecData[0];
+					traj_des_.qdot.data(1) = OP_->NewVelocityVector->VecData[1];
+					traj_des_.qdot.data(2) = OP_->NewVelocityVector->VecData[2];
+					
+					traj_des_.qdotdot.data(0) = OP_->NewAccelerationVector->VecData[0];
+					traj_des_.qdotdot.data(1) = OP_->NewAccelerationVector->VecData[1];
+					traj_des_.qdotdot.data(2) = OP_->NewAccelerationVector->VecData[2];
+						
+					jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, Jkdl_);						// computing Jacobian with KDL
+					id_solver_->JntToMass(joint_msr_states_.q, M_);									// computing Inertia matrix		
+					id_solver_->JntToCoriolis(joint_msr_states_.q, joint_msr_states_.qdot, C_);		// computing Coriolis torques	
+					id_solver_->JntToGravity(joint_msr_states_.q, G_);								// computing Gravity torques
+					
+					//ROS_INFO("1");
+					J6x6_ =   Jkdl_.data;        // save the KDL jacoian to the 6x6 one to modify it
+					removeColumn(J6x6_, 2);      // removing the column corresponding to the redundant joint and resising the matrix
+					J_trans_= J6x6_.transpose();
+					//ROS_INFO("2");
+				   	I6x6_= M_.data;             // save the KDL Inertia matrix to the 6x6 one to modify it
+					removeColumn(I6x6_, 2);     // removing the column corresponding to the redundant joint and resising the matrix
+					removeRow(I6x6_, 2);        // removing the row corresponding to the redundant joint and resising the matrix
+					//ROS_INFO("3");
+					calculatePsuedoInertia(Jkdl_.data, M_.data, LAMDA_ );	
+					//ROS_INFO("4");
+					calculateAccelerationCommand(P_current_, V_current_,traj_des_,Alpha_v_ );		
+					//ROS_INFO("5");	
+					calculateJointTorques(J6x6_,Alpha_v_, Tau_cmd_);	
+					//ROS_INFO("6");
+					
+					tau_cmd_msg.data[0] = Tau_cmd_(0)+C_(0)+G_(0);
+					tau_cmd_msg.data[1] = Tau_cmd_(1)+C_(1)+G_(1);
+					tau_cmd_msg.data[2] = (Kp_joints_(2)*(0-joint_handles_[2].getPosition()))+(Kd_joints_(2)*(-joint_handles_[2].getVelocity()))+C_(2)+G_(2);
+					tau_cmd_msg.data[3] = Tau_cmd_(2)+C_(3)+G_(3);
+					
+					tau_cmd_msg.data[4] = 0.0;
+					tau_cmd_msg.data[5] = ((Kp_joints_(5)*((-joint_handles_[1].getPosition()+joint_handles_[3].getPosition())- joint_handles_[5].getPosition()
+								))+(Kd_joints_(5)*((-joint_handles_[1].getVelocity()+joint_handles_[3].getVelocity())-joint_handles_[5].getVelocity())))+C_(5)+G_(4);
+					tau_cmd_msg.data[6] = (Kp_joints_(6)*(0-joint_handles_[6].getPosition()))+(Kd_joints_(6)*(-joint_handles_[6].getVelocity()))+C_(6)+G_(6);
+					
+					
+					checkTorqueMax_(tau_cmd_msg);
+					
+					joint_handles_[0].setCommandPosition(joint_handles_[0].getPosition());
+					joint_handles_[0].setCommandStiffness(stiff_(0)*0);
+					joint_handles_[0].setCommandDamping(damp_(0)*0);
+					
+					joint_handles_[1].setCommandPosition(joint_handles_[1].getPosition());
+					joint_handles_[1].setCommandStiffness(stiff_(1)*0);
+					joint_handles_[1].setCommandDamping(damp_(1)*0);
+					
+					joint_handles_[2].setCommandPosition(initialPositions_(2));
+					joint_handles_[2].setCommandStiffness(stiff_(2));
+					joint_handles_[2].setCommandDamping(damp_(2));
+					
+					joint_handles_[3].setCommandPosition(joint_handles_[3].getPosition());
+					joint_handles_[3].setCommandStiffness(stiff_(3)*0);
+					joint_handles_[3].setCommandDamping(damp_(3)*0);
+					
+					joint_handles_[4].setCommandPosition(initialPositions_(4));
+					joint_handles_[4].setCommandStiffness(stiff_(4));
+					joint_handles_[4].setCommandDamping(damp_(4));
+					
+					
+					joint_handles_[5].setCommandPosition(initialPositions_(5));
+					joint_handles_[5].setCommandStiffness(stiff_(5));
+					joint_handles_[5].setCommandDamping(damp_(5));
+					
+					joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
+					joint_handles_[6].setCommandStiffness(stiff_(6));
+					joint_handles_[6].setCommandDamping(damp_(6));
+					
+					joint_handles_[0].setCommandTorque(tau_cmd_msg.data[0]) ;
+					joint_handles_[1].setCommandTorque(tau_cmd_msg.data[1]);
+					joint_handles_[2].setCommandTorque(0.0); // Set a value of redundant joint.
+					joint_handles_[3].setCommandTorque(tau_cmd_msg.data[3]);
+					joint_handles_[4].setCommandTorque(0.0);
+					joint_handles_[5].setCommandTorque(tau_cmd_msg.data[5]*0.0);
+					joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]);
+					
+					if (resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
+					{
+						*IP_->CurrentPositionVector      =   *OP_->NewPositionVector      ;
+						*IP_->CurrentVelocityVector      =   *OP_->NewVelocityVector      ;
+						*IP_->CurrentAccelerationVector  =   *OP_->NewAccelerationVector  ;
+					}
+					
+					#if TRACE_GroupCommandController_ACTIVATED
+						ROS_INFO("GroupCommandControllerFRI: resultValue_ = %d", resultValue_);
+						ROS_INFO("GroupCommandControllerFRI: of robot %s -> j0=%f, j1=%f, j2=%f, j3=%f, j4=%f, j5=%f, j6=%f",robot_namespace_.c_str(),joint_des_states_.q(0), joint_des_states_.q(1), joint_des_states_.q(2), joint_des_states_.q(3), joint_des_states_.q(4), joint_des_states_.q(5), joint_des_states_.q(6));
+					#endif
+				/*}
+				else
+				{
+					
+					if(count%500==0)
+					{
+						ROS_INFO("Initial Position Reached !");
+					}
+					// robotState_= State::NoMove;
+				}*/
+				
+				
+			}
+			break;
+			
+			
+			case State::MoveTrajectory :
+			{
+			
+			}
+			break;		
+			
 		}
+ 
         
 	}
 	
@@ -485,7 +480,6 @@ namespace kuka_lwr_controllers
 		
 		S_f_(0,0) = S_f_0*exp(-ka*Dist); // the term corresponding to the direction controlled by position then force
 		S_v_(0,0) = 1-S_f_(0,0);
-		//std::cout<<"Sf "<< S_f_0*exp(-ka*Dist)<<"\n";
 	}
 	
 	void TorqueBasedPositionControllerGazebo ::calculateForceCommand(const Eigen::VectorXd & FT_sensor, const Eigen::VectorXd & F_des, Eigen::MatrixXd & F_cmd )
@@ -494,11 +488,13 @@ namespace kuka_lwr_controllers
 		
 		FT_sensor_des = FT_sensor_;
 		
+		// X direction
 		if(FT_sensor(0)>(F_des_max_(0)+3))
 		FT_sensor_des(0) = F_des_max_(0)+3;
 		
 		if(FT_sensor(0)<0)
 		FT_sensor_des(0) = 0;
+
 		
 		F_cmd_ = F_des + KPf_*(F_des - FT_sensor_des);  // pay attention to the sign of the force sensor
 
@@ -507,7 +503,8 @@ namespace kuka_lwr_controllers
 	void TorqueBasedPositionControllerGazebo :: calculateJointTorques(const Eigen::MatrixXd & j6x6,const Eigen::MatrixXd & alpha_v, Eigen::VectorXd & Tau_cmd_  )
 	{
 		//Tau_cmd_ = Jkdl_.data.transpose()*(LAMDA_*S_v_*alpha_v);
-		Tau_cmd_ = J6x6_.transpose()*((LAMDA_*S_v_*alpha_v)+(S_f_*F_cmd_));
+		//Tau_cmd_ = J6x6_.transpose()*((LAMDA_*S_v_*alpha_v)+(S_f_*F_cmd_));
+		Tau_cmd_ = J6x6_.transpose()*(LAMDA_*S_v_*alpha_v);	
 	}
 	void TorqueBasedPositionControllerGazebo :: removeColumn(Eigen::MatrixXd& matrix_in, unsigned int colToRemove)
 	{
@@ -555,13 +552,58 @@ namespace kuka_lwr_controllers
 	}
 	
 	
+	void TorqueBasedPositionControllerGazebo::TrajPathPointCBInitial(const kuka_lwr_controllers::TrajPathPoint::ConstPtr & msg)
+    {
+
+		
+			IP_->CurrentPositionVector->VecData[0] = (double)P_current_.p.x(); 
+			IP_->CurrentPositionVector->VecData[1] = (double)P_current_.p.y();
+			IP_->CurrentPositionVector->VecData[2] = (double)P_current_.p.z();
+			
+			
+			IP_->TargetPositionVector->VecData[0]	= (double)msg->pos.x; 
+			IP_->TargetPositionVector->VecData[1]	= (double)msg->pos.y;
+			IP_->TargetPositionVector->VecData[2]	= (double)msg->pos.z;
+			
+			
+			IP_->MaxVelocityVector->VecData[0] = (double)msg->vel.x;
+			IP_->MaxVelocityVector->VecData[1] = (double)msg->vel.y;
+			IP_->MaxVelocityVector->VecData[2] = (double)msg->vel.z;
+			
+			
+			IP_->MaxAccelerationVector->VecData[0] = (double)msg->acc.x;
+			IP_->MaxAccelerationVector->VecData[1] = (double)msg->acc.y;
+			IP_->MaxAccelerationVector->VecData[2] = (double)msg->acc.z;
+			
+			
+			
+			IP_->CurrentVelocityVector->VecData      [0] =   V_current_.p.v.x();
+			IP_->CurrentVelocityVector->VecData      [1] =   V_current_.p.v.y();
+			IP_->CurrentVelocityVector->VecData      [2] =   V_current_.p.v.z();
+
+			/*IP_->CurrentAccelerationVector->VecData  [0] =   Acc_current_.p.dv.x();
+			IP_->CurrentAccelerationVector->VecData  [1] =   Acc_current_.p.dv.y();
+			IP_->CurrentAccelerationVector->VecData  [2] =   Acc_current_.p.dv.z();*/
+			
+			
+			IP_->SelectionVector->VecData[0] = true;
+			IP_->SelectionVector->VecData[1] = true;
+			IP_->SelectionVector->VecData[2] = true;
+		 
+
+			resultValue_ = ReflexxesAPI::RML_WORKING;
+		
+			robotState_ = State::MoveInitial;
+			
+			count_pos_reached = 0;
+			
+			ROS_INFO("TorqueBasedPositionController: TrajPathPointCBInitial received  x = %f, y=%f, z=%f !",(double)msg->pos.x,(double)msg->pos.y,(double)msg->pos.z);
+		
+	}
+	
 	void TorqueBasedPositionControllerGazebo::TrajPathPointCB(const kuka_lwr_controllers::TrajPathPoint::ConstPtr & msg)
     {
-		/*
-		#if TRACE_Torque_Based_Position_ACTIVATED
-			ROS_INFO("TorqueBasedPositionController: Start trajCB of robot %s!",robot_namespace_.c_str());
-		#endif
-		*/
+
 		traj_des_.resize(6);
 
 			traj_des_.q.data(0) = (double)msg->pos.x;
@@ -587,14 +629,11 @@ namespace kuka_lwr_controllers
 		
 		cmd_flag_ = 1;
 		
+		robotState_ = State::MoveTrajectory;
+		
 	}
 	void TorqueBasedPositionControllerGazebo::ft_readingsCB(const geometry_msgs::WrenchStamped& msg)
-    {
-		/*#if TRACE_Torque_Based_Position_ACTIVATED
-			ROS_INFO("TorqueBasedPositionController: Start ft_readingsCB of robot %s!",robot_namespace_.c_str());
-		#endif
-		* */
-		
+    {		
 		FT_sensor_(0) = -msg.wrench.force.x ;
 		FT_sensor_(1) = msg.wrench.force.y ;
 		FT_sensor_(2) = msg.wrench.force.z ;
@@ -602,7 +641,7 @@ namespace kuka_lwr_controllers
 		FT_sensor_(4) = msg.wrench.torque.y ;
 		FT_sensor_(5) = msg.wrench.torque.z ;
 		
-		cmd_flag_ = 1;
+		//cmd_flag_ = 1;
 
 	}
 	
