@@ -133,15 +133,17 @@ namespace kuka_lwr_controllers
 			
 			
 			
-			ReflexxesAPI  *RML_;
+			ReflexxesAPI  *RML_, *RML_Q_;
 	
-			RMLPositionInputParameters *IP_;
-			RMLPositionOutputParameters *OP_;
-			RMLPositionFlags            Flags_   ;
+			RMLPositionInputParameters *IP_, *IP_Q_;
+			RMLPositionOutputParameters *OP_, *OP_Q_;
+			RMLPositionFlags            Flags_, Flags_Q_;
 			
-			double cycleTime_;
-			int resultValue_;
+			double cycleTime_, cycleTime_Q_;
+			int resultValue_, resultValue_Q_;
 			
+			
+			ros::Time previous_, current_;
 			
 
 	};

@@ -22,6 +22,10 @@ namespace kuka_lwr_controllers
 		delete RML_;
 		delete IP_;
 		delete OP_;	
+		
+		delete RML_Q_;
+		delete IP_Q_;
+		delete OP_Q_;	
 	}
 
    bool TorqueBasedPositionControllerGazebo::init(hardware_interface::KUKAJointInterface *robot, ros::NodeHandle &n)
@@ -100,11 +104,17 @@ namespace kuka_lwr_controllers
 			stiff_(i) = 1000.0;
 			damp_(i) = 1.0;
 		}
-		for (std::size_t i=4; i<joint_handles_.size(); i++)
+		/*for (std::size_t i=4; i<joint_handles_.size(); i++)
 		{
 			stiff_(i) = 500.0;
 			damp_(i) = 1.0;
-		}
+		}*/
+			stiff_(4) = 500.0;
+			damp_(4) = 1.0;
+			stiff_(5) = 500.0;
+			damp_(5) = 1.0;
+			stiff_(6) = 500.0;
+			damp_(6) = 1.0;
 		Kp_cartesian_ .resize(6);
 		Kd_cartesian_ .resize(6);
 		
@@ -158,11 +168,16 @@ namespace kuka_lwr_controllers
 		
 		robotState_ = State::NoMove;
 		
-		cycleTime_ = 0.001;
+		cycleTime_ = 0.002;
+		cycleTime_Q_ = 0.001;
         
         RML_ = new ReflexxesAPI(3,cycleTime_);
 		IP_ = new RMLPositionInputParameters(3);
 		OP_ = new RMLPositionOutputParameters(3);
+		
+		RML_Q_ = new ReflexxesAPI(2,cycleTime_Q_);
+		IP_Q_ = new RMLPositionInputParameters(2);
+		OP_Q_ = new RMLPositionOutputParameters(2);
 	
 		setInitialPositions_ = true;
 		count_pos_reached=0;
@@ -232,6 +247,12 @@ namespace kuka_lwr_controllers
     void TorqueBasedPositionControllerGazebo::update(const ros::Time& time, const ros::Duration& period)
     {	
 		ros::Time begin = ros::Time::now();
+		
+		/*current_ = ros::Time::now();
+		
+		ros::Duration diff_time = current_ - previous_;*/
+		
+		
 		/****** messages to be published for analyses *****/
 		kuka_lwr_controllers::TrajPathPoint traj_resp_msg;
 		std_msgs::Float64MultiArray tau_cmd_msg;	 tau_cmd_msg.data.resize(7);	
@@ -248,7 +269,6 @@ namespace kuka_lwr_controllers
 					
 		}
 				
-				
 		//fcn->JntToCart(const JntArray& q_in, Frame& p_out, int seg_nr) 
 		fk_pos_solver_->JntToCart(joint_msr_states_.q, P_current_); 					// computing forward kinematics
 		
@@ -256,23 +276,55 @@ namespace kuka_lwr_controllers
 		Jnt_vel_.qdot=joint_msr_states_.qdot;
 		fk_vel_solver_->JntToCart(Jnt_vel_, V_current_);								// computing velocities
 		
-		if (setInitialPositions_ == true)
-			{
-				for(size_t i=0; i<joint_handles_.size(); i++) 
-				{
-					initialPositions_(i) = joint_handles_[i].getPosition();
-				}
-				
-				setInitialPositions_ = false;
-		}
-		
 		count++;
 		
 		if(count%500==0)
 		{
 			ROS_INFO("Current position x=%lf y=%lf z=%lf ",P_current_.p.x(),P_current_.p.y(),P_current_.p.z());
+			//ROS_INFO("diff time = %f , period = %f", diff_time.toSec(), period.toSec());
 		}
 		
+		/*IP_Q_->CurrentPositionVector->VecData[0] = (double)joint_handles_[5].getPosition(); 
+		IP_Q_->CurrentPositionVector->VecData[1] = (double)joint_handles_[6].getPosition();
+		
+		
+		IP_Q_->TargetPositionVector->VecData[0]	= (double)((-joint_handles_[1].getPosition())+joint_handles_[3].getPosition()); 
+		IP_Q_->TargetPositionVector->VecData[1]	= (double)(-joint_handles_[0].getPosition());
+		
+		
+		IP_Q_->MaxVelocityVector->VecData[0] = (double)3.0;
+		IP_Q_->MaxVelocityVector->VecData[1] = (double)3.0;
+	
+		
+		IP_Q_->MaxAccelerationVector->VecData[0] = (double)5.0;
+		IP_Q_->MaxAccelerationVector->VecData[1] = (double)5.0;
+		
+		
+		IP_Q_->CurrentVelocityVector->VecData[0] = joint_handles_[5].getVelocity();
+		IP_Q_->CurrentVelocityVector->VecData[1] = joint_handles_[6].getVelocity();
+	
+		
+		IP_Q_->SelectionVector->VecData[0] = true;
+		IP_Q_->SelectionVector->VecData[1] = true;
+		
+		for (size_t i=0; i<10; i++)
+		{
+			resultValue_Q_ = RML_Q_->RMLPosition(*IP_Q_,OP_Q_, Flags_Q_);
+			if ( resultValue_Q_ < 0 )
+			{
+				ROS_INFO("RML_Q_ -> ERROR during trajectory generation err n°%d",resultValue_Q_);
+			}
+			*IP_Q_->CurrentPositionVector      =   *OP_Q_->NewPositionVector      ;
+			*IP_Q_->CurrentVelocityVector      =   *OP_Q_->NewVelocityVector      ;
+			*IP_Q_->CurrentAccelerationVector  =   *OP_Q_->NewAccelerationVector  ;
+		}*/
+		
+	/*	if(count%100==0)
+		{
+			//ROS_INFO("q4= %f, -q2+q'= %f ", joint_handles_[5].getPosition(), -joint_handles_[1].getPosition()+joint_handles_[3].getPosition());
+			
+			ROS_INFO("current q5 = %f, q6 = %f, irml q5 = %f, q6 = %f", joint_handles_[5].getPosition(), joint_handles_[6].getPosition(), OP_Q_->NewPositionVector->VecData[0], OP_Q_->NewPositionVector->VecData[1]);
+		}*/
 					
 		switch (robotState_)
 		{
@@ -375,11 +427,15 @@ namespace kuka_lwr_controllers
 					joint_handles_[4].setCommandDamping(damp_(4));
 					
 					
-					joint_handles_[5].setCommandPosition(initialPositions_(5));
+					joint_handles_[5].setCommandPosition(joint_handles_[5].getPosition());
+					//joint_handles_[5].setCommandPosition(-initialPositions_(1)+initialPositions_(3));
+					//joint_handles_[5].setCommandPosition(OP_Q_->NewPositionVector->VecData[0]);
 					joint_handles_[5].setCommandStiffness(stiff_(5));
 					joint_handles_[5].setCommandDamping(damp_(5));
 					
-					joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
+					//joint_handles_[6].setCommandPosition(OP_Q_->NewPositionVector->VecData[1]);
+					joint_handles_[6].setCommandPosition(joint_handles_[6].getPosition());
+					//joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
 					joint_handles_[6].setCommandStiffness(stiff_(6));
 					joint_handles_[6].setCommandDamping(damp_(6));
 					
@@ -389,7 +445,7 @@ namespace kuka_lwr_controllers
 					joint_handles_[3].setCommandTorque(tau_cmd_msg.data[3]);
 					joint_handles_[4].setCommandTorque(0.0);
 					joint_handles_[5].setCommandTorque(tau_cmd_msg.data[5]*0.0);
-					joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]);
+					joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]*0.0);
 					
 					if (resultValue_ != ReflexxesAPI::RML_FINAL_STATE_REACHED)
 					{
@@ -454,6 +510,7 @@ namespace kuka_lwr_controllers
 					
 					
 					checkTorqueMax_(tau_cmd_msg);
+						
 					
 					joint_handles_[0].setCommandPosition(joint_handles_[0].getPosition());
 					joint_handles_[0].setCommandStiffness(stiff_(0)*0);
@@ -462,8 +519,9 @@ namespace kuka_lwr_controllers
 					joint_handles_[1].setCommandPosition(joint_handles_[1].getPosition());
 					joint_handles_[1].setCommandStiffness(stiff_(1)*0);
 					joint_handles_[1].setCommandDamping(damp_(1)*0);
-					
-					joint_handles_[2].setCommandPosition(initialPositions_(2));
+
+					joint_handles_[2].setCommandPosition(initialPositions_(2));			
+					//joint_handles_[2].setCommandPosition(joint_handles_[2].getPosition());
 					joint_handles_[2].setCommandStiffness(stiff_(2));
 					joint_handles_[2].setCommandDamping(damp_(2));
 					
@@ -471,19 +529,29 @@ namespace kuka_lwr_controllers
 					joint_handles_[3].setCommandStiffness(stiff_(3)*0);
 					joint_handles_[3].setCommandDamping(damp_(3)*0);
 					
-					joint_handles_[4].setCommandPosition(initialPositions_(4));
+					joint_handles_[4].setCommandPosition(initialPositions_(4));			
+					//joint_handles_[4].setCommandPosition(joint_handles_[4].getPosition());
 					joint_handles_[4].setCommandStiffness(stiff_(4));
 					joint_handles_[4].setCommandDamping(damp_(4));
 					
 					
+					joint_handles_[5].setCommandPosition(joint_handles_[3].getPosition());
+					//joint_handles_[5].setCommandPosition(-joint_handles_[1].getPosition()+joint_handles_[3].getPosition()+initialPositions_(5));
 					//joint_handles_[5].setCommandPosition(initialPositions_(5));
-					joint_handles_[5].setCommandPosition(-joint_handles_[1].getPosition()+joint_handles_[3].getPosition());
+					//joint_handles_[5].setCommandPosition(-joint_handles_[1].getPosition()+joint_handles_[3].getPosition());
+					//joint_handles_[5].setCommandPosition(OP_Q_->NewPositionVector->VecData[0]);
 					joint_handles_[5].setCommandStiffness(stiff_(5));
 					joint_handles_[5].setCommandDamping(damp_(5));
 					
+					
+					//joint_handles_[6].setCommandPosition(initialPositions_(6));
+					//joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition()+initialPositions_(6));
 					joint_handles_[6].setCommandPosition(-joint_handles_[0].getPosition());
+					//joint_handles_[6].setCommandPosition(OP_Q_->NewPositionVector->VecData[1]);
 					joint_handles_[6].setCommandStiffness(stiff_(6));
 					joint_handles_[6].setCommandDamping(damp_(6));
+					
+					
 					
 					joint_handles_[0].setCommandTorque(tau_cmd_msg.data[0]) ;
 					joint_handles_[1].setCommandTorque(tau_cmd_msg.data[1]);
@@ -491,11 +559,17 @@ namespace kuka_lwr_controllers
 					joint_handles_[3].setCommandTorque(tau_cmd_msg.data[3]);
 					joint_handles_[4].setCommandTorque(0.0);
 					joint_handles_[5].setCommandTorque(tau_cmd_msg.data[5]*0.0);
-					joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]);
+					joint_handles_[6].setCommandTorque(tau_cmd_msg.data[6]*0.0);
+					
+					stiff_(5) = 10.0;
+					damp_(5) = 1.0;
 			}
 			break;		
 			
 		}
+		
+		
+		//previous_ = current_;
  
         
 	}
@@ -626,7 +700,17 @@ namespace kuka_lwr_controllers
 	
 	void TorqueBasedPositionControllerGazebo::TrajPathPointCBInitial(const kuka_lwr_controllers::TrajPathPoint::ConstPtr & msg)
     {
-
+			if (setInitialPositions_ == true)
+			{
+				for(size_t i=0; i<joint_handles_.size(); i++) 
+				{
+					initialPositions_(i) = joint_handles_[i].getPosition();
+				}
+				
+				setInitialPositions_ = false;
+			}
+				
+				
 		
 			IP_->CurrentPositionVector->VecData[0] = (double)P_current_.p.x(); 
 			IP_->CurrentPositionVector->VecData[1] = (double)P_current_.p.y();
