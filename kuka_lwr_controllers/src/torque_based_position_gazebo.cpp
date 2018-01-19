@@ -27,6 +27,7 @@ namespace kuka_lwr_controllers
 		delete IP_Q_;
 		delete OP_Q_;
 		
+		// Don't forget to delete pointer !
 		//delete pid_fx_;	
 	}
 
