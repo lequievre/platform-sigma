@@ -49,6 +49,9 @@
 #include <RMLPositionInputParameters.h>
 #include <RMLPositionOutputParameters.h>
 
+// PID
+#include "pid/pid.h"
+
 #define TRACE_Torque_Based_Position_ACTIVATED 1
 
 namespace kuka_lwr_controllers
@@ -141,7 +144,8 @@ namespace kuka_lwr_controllers
 			
 			double cycleTime_, cycleTime_Q_;
 			int resultValue_, resultValue_Q_;
-			
+			PID pid_fx_ = PID(0.001/*dt*/,400/*max*/,-400/*min*/,8/*Kp*/,0/*Kd*/, 1/*Ki*/);
+			//PID *pid_fx_;
 			
 			ros::Time previous_, current_;
 			

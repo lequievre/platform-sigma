@@ -79,6 +79,12 @@ catkin_package(
   LIBRARIES ${PROJECT_NAME} TypeIRML ReflexxesTypeII
 )
 
+add_library(${PROJECT_NAME}_pid
+  src/pid/pid.cpp
+)
+
+
+
 # The add_library() CMake function is used to specify libraries to build. By default catkin builds shared libraries.
 add_library(${PROJECT_NAME}
   src/group_command_controller_fri.cpp
@@ -94,7 +100,9 @@ add_library(${PROJECT_NAME}
 )
 
 # Link a target to given libraries.
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} TypeIRML ReflexxesTypeII)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} TypeIRML ReflexxesTypeII ${PROJECT_NAME}_pid)
+
+ 
 
 # Add a dependencies of generation message, to be sure that all headers files of all messages are generated before !
 add_dependencies(kuka_lwr_controllers ${PROJECT_NAME}_generate_messages_cpp  FRILibrary reflexxes)

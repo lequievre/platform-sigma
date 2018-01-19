@@ -25,7 +25,9 @@ namespace kuka_lwr_controllers
 		
 		delete RML_Q_;
 		delete IP_Q_;
-		delete OP_Q_;	
+		delete OP_Q_;
+		
+		//delete pid_fx_;	
 	}
 
    bool TorqueBasedPositionControllerGazebo::init(hardware_interface::KUKAJointInterface *robot, ros::NodeHandle &n)
@@ -181,6 +183,8 @@ namespace kuka_lwr_controllers
 	
 		setInitialPositions_ = true;
 		count_pos_reached=0;
+		// in case of using pointer
+		//pid_fx_ = new PID(0.001/*dt*/,400/*max*/,-400/*min*/,8/*Kp*/,0/*Kd*/, 1/*Ki*/);
 		
 
 		#if TRACE_Torque_Based_Position_ACTIVATED
@@ -641,9 +645,8 @@ namespace kuka_lwr_controllers
 		if(FT_sensor(0)<0)
 		FT_sensor_des(0) = 0;
 
-		
 		F_cmd_ = F_des + KPf_*(F_des - FT_sensor_des);  // pay attention to the sign of the force sensor
-
+		F_cmd_(0) = pid_fx_.calculate( F_des(0), FT_sensor_des(0));
 	}
 	
 	void TorqueBasedPositionControllerGazebo :: calculateJointTorques(const Eigen::MatrixXd & j6x6,const Eigen::MatrixXd & alpha_v, Eigen::VectorXd & Tau_cmd_  )
