@@ -88,7 +88,7 @@ namespace kuka_lwr_controllers
 			
 			ros::Subscriber sub_command_  , sub_traj_      , sub_ft_, sub_traj_initial_;
 			ros::Subscriber sub_kp_joints_, sub_kd_joints_ , sub_kp_cartesian_ , sub_kd_cartesian_, sub_kp_force_,sub_ee_pos_, sub_stiffness_damping_; // subscribers of gains
-			ros::Publisher pub_traj_resp_,pub_tau_cmd_, pub_F_des_, pub_Sv, pub_Sf;              
+			ros::Publisher pub_traj_resp_,pub_tau_cmd_, pub_F_des_, pub_Sv_, pub_Sf_;              
 			int cmd_flag_; // flag set only to 1 when the controller receive a message to the command topic	
 			
 			std::string robot_namespace_;
@@ -115,7 +115,7 @@ namespace kuka_lwr_controllers
 			int count =0;
 			int count_pos_reached = 0;
 			double roll_, pitch_, yaw_, d_wall_;
-			bool setInitialPositions_;
+			bool setInitialPositions_,switchControl_;
 			
 			State robotState_;
 			
@@ -144,10 +144,14 @@ namespace kuka_lwr_controllers
 			
 			double cycleTime_, cycleTime_Q_;
 			int resultValue_, resultValue_Q_;
-			PID pid_fx_ = PID(0.001/*dt*/,400/*max*/,-400/*min*/,8/*Kp*/,0/*Kd*/, 1/*Ki*/);
+			PID pid_fx_ = PID(0.002/*dt*/,100/*max*/,-100/*min*/,0.0/*Kp*/,0.05/*Kd*/, 0.0/*Ki*/);
 			//PID *pid_fx_;
 			
 			ros::Time previous_, current_;
+			kuka_lwr_controllers::TrajPathPoint traj_resp_msg_;  // traj response msg
+			std_msgs::Float64MultiArray tau_cmd_msg_; // tau command msg
+			geometry_msgs::WrenchStamped  F_des_msg_; // F desired msg
+			std_msgs::Float64 Sv_msg_, Sf_msg_; // selections matrix data msg
 			
 
 	};
