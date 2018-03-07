@@ -35,6 +35,12 @@ kuka_lwr_left:
      root_name: kuka_lwr_left_base_link
      tip_name: kuka_lwr_left_7_link
      
+  # Simple Cartesian Impedance Controller  
+  kuka_simple_cartesian_impedance_controller:
+     type: kuka_lwr_controllers/SimpleCartesianImpedanceController
+     root_name: kuka_lwr_left_base_link
+     tip_name: kuka_lwr_left_7_link
+     
   # Torque Based Position Controller  
   torque_based_position_controller:
      type: kuka_lwr_controllers/TorqueBasedPositionController
@@ -117,6 +123,12 @@ kuka_lwr_right:
   # Gravity Compensation Controller  
   kuka_gravity_compensation_controller:
      type: kuka_lwr_controllers/GravityCompensationController
+     root_name: kuka_lwr_right_base_link
+     tip_name: kuka_lwr_right_7_link
+     
+  # Simple Cartesian Impedance Controller  
+  kuka_simple_cartesian_impedance_controller:
+     type: kuka_lwr_controllers/SimpleCartesianImpedanceController
      root_name: kuka_lwr_right_base_link
      tip_name: kuka_lwr_right_7_link
      

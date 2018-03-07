@@ -89,6 +89,7 @@ add_library(${PROJECT_NAME}_pid
 add_library(${PROJECT_NAME}
   src/group_command_controller_fri.cpp
   src/gravity_compensation_controller.cpp
+  src/simple_cartesian_impedance_controller.cpp
   src/one_task_inverse_kinematics.cpp
   src/cartesian_velocity_control.cpp
   src/one_task_inverse_kinematics_fri.cpp

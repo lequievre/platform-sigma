@@ -240,6 +240,12 @@ namespace lwr_hw
     hardware_interface::KukaCartesianStiffnessStateInterface kuka_cart_stiff_state_interface;
     kuka_cart_stiff_state_interface.registerHandle(hardware_interface::KukaCartesianStiffnessStateHandle(robot_namespace_ + std::string("_cart_stiffness"),&cart_stiff_[0],&cart_stiff_[1],&cart_stiff_[2],&cart_stiff_[3],&cart_stiff_[4],&cart_stiff_[5]));
     
+    /*
+    ROS_INFO("*************************");
+    ROS_INFO("CARTESIAN Interfaces namespace --> %s",robot_namespace_.c_str());
+    ROS_INFO("*************************");
+    */
+    
     hardware_interface::KUKACartesianStiffnessHandle kuka_cart_stiff_handle;
     kuka_cart_stiff_handle = hardware_interface::KUKACartesianStiffnessHandle(kuka_cart_stiff_state_interface.getHandle(robot_namespace_ + std::string("_cart_stiffness")),&cart_stiff_command_[0],&cart_stiff_command_[1],&cart_stiff_command_[2],&cart_stiff_command_[3],&cart_stiff_command_[4],&cart_stiff_command_[5]);
 

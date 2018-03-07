@@ -36,6 +36,12 @@
 		</description>
 	</class> 
 	
+	<class name="kuka_lwr_controllers/SimpleCartesianImpedanceController" type="kuka_lwr_controllers::SimpleCartesianImpedanceController" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Info...
+		</description>
+	</class> 
+	
 	<class name="kuka_lwr_controllers/TorqueBasedPositionController" type="kuka_lwr_controllers::TorqueBasedPositionController" base_class_type="controller_interface::ControllerBase">
 		<description>
 			Info...

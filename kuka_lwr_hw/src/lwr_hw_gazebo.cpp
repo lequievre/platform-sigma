@@ -60,6 +60,14 @@ namespace lwr_hw
 				  joint_acceleration_[j] = filters::exponentialSmoothing((joint_velocity_[j]-joint_velocity_prev_[j])/period.toSec(), joint_acceleration_[j], 0.2);
 				  joint_effort_[j] = sim_joints_[j]->GetForce((int)(0));
 				  joint_stiffness_[j] = joint_stiffness_command_[j];
+				  joint_damping_[j] = joint_damping_command_[j];
+				  
+				}
+				
+				for (int i=0; i<NUMBER_OF_CART_DOFS; i++)
+				{
+					cart_stiff_[i] = cart_stiff_command_[i];
+					cart_damp_[i] = cart_damp_command_[i];
 				}
 				
 				//ROS_INFO("LWRHWGazebo -> read,  joint_position_[0]=%f",joint_position_[0]);
@@ -95,7 +103,7 @@ namespace lwr_hw
 							break;
 
 						case CARTESIAN_IMPEDANCE:
-							ROS_WARN("CARTESIAN IMPEDANCE NOT IMPLEMENTED");
+							//ROS_WARN("CARTESIAN IMPEDANCE NOT IMPLEMENTED");
 							break;
 
 						case JOINT_IMPEDANCE:

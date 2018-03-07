@@ -10,7 +10,7 @@
 #define HARDWARE_INTERFACE_LWR_KUKA_CARTESIAN_INTERFACE_H
 
 #include <hardware_interface/internal/hardware_resource_manager.h>
-#include <hardware_interface/joint_state_interface.h>
+#include <hardware_interface/joint_command_interface.h>
 
 namespace hardware_interface
 {
@@ -298,6 +298,9 @@ namespace hardware_interface
 		using HardwareResourceManager<KUKACartesianStiffnessHandle, ClaimResources>::ResourceManager<KUKACartesianStiffnessHandle>::registerHandle;
 		using HardwareResourceManager<KUKACartesianDampingHandle, ClaimResources>::ResourceManager<KUKACartesianDampingHandle>::registerHandle;
 		using HardwareResourceManager<JointHandle, ClaimResources>::ResourceManager<JointHandle>::registerHandle;
+		
+		
+		typedef JointHandle  ResourceHandleType;
 		
 		/// getHandle needs to be discriminated as there is no way of deducing which functions to call (only differ based on return type)
 		/// unless using a Proxy class, and exploiting the cast operator
