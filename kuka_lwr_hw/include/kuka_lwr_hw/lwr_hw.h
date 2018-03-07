@@ -45,6 +45,9 @@ public:
 
   // Strings
   std::string robot_namespace_;
+  
+  static constexpr int NUMBER_OF_CART_DOFS = 6;
+  static constexpr int NUMBER_OF_FRAME_ELEMENTS = 12;
 
   // Model
   std::string urdf_string_;

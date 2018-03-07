@@ -75,7 +75,7 @@ namespace lwr_hw
 			  joint_damping_[j] = joint_damping_command_[j];
 			}
 			
-			for (int i=0; i<6; i++)
+			for (int i=0; i<NUMBER_OF_CART_DOFS; i++)
 			{
 				cart_stiff_[i] = cart_stiff_command_[i];
 			    cart_damp_[i] = cart_damp_command_[i];
@@ -120,10 +120,10 @@ namespace lwr_hw
 				  // Ensure the robot is in this mode
 				  if (device_->GetCurrentControlScheme() == FastResearchInterface::CART_IMPEDANCE_CONTROL)
 				  {
-					  float newCartStiff[6];
-					  float newCartDamp[6];
+					  float newCartStiff[NUMBER_OF_CART_DOFS];
+					  float newCartDamp[NUMBER_OF_CART_DOFS];
 					  
-					  for (int j=0; j<6; j++)
+					  for (int j=0; j<NUMBER_OF_CART_DOFS; j++)
 					  {
 						  newCartStiff[j] = (float)cart_stiff_command_[j];
 						  newCartDamp[j] = (float)cart_damp_command_[j];
@@ -213,9 +213,9 @@ namespace lwr_hw
 						desired_strategy = JOINT_IMPEDANCE;
 						break;
 					}
-					else if( it->hardware_interface.compare( std::string("hardware_interface::PositionCartesianInterface") ) == 0 )
+					else if( it->hardware_interface.compare( std::string("hardware_interface::KUKACartesianInterface") ) == 0 )
 					{
-						std::cout << "Request to switch to hardware_interface::PositionCartesianInterface (CARTESIAN_IMPEDANCE)" << std::endl;
+						std::cout << "Request to switch to hardware_interface::KUKACartesianInterface (CARTESIAN_IMPEDANCE)" << std::endl;
 						desired_strategy = CARTESIAN_IMPEDANCE;
 						break;
 					}
@@ -278,6 +278,15 @@ namespace lwr_hw
 							return;
 						  }
 						  break;
+						  
+						 case CARTESIAN_IMPEDANCE:
+						  resultValue_ = device_->StartRobot( FastResearchInterface::CART_IMPEDANCE_CONTROL,FRI_CONN_TIMEOUT_SEC);
+						  if (resultValue_ != EOK)
+						  {
+							std::cout << "An error occurred during starting the robot, couldn't switch to CARTESIAN_IMPEDANCE...\n" << std::endl;
+							return;
+						  }
+						 break; 
 					}
 
 					// if sucess during the switch in FRI, set the ROS strategy

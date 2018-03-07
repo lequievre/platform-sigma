@@ -38,10 +38,10 @@ namespace lwr_hw
     joint_damping_command_.resize(n_joints_);
     
     // Cartesian variables
-    cart_stiff_.resize(6);
-	cart_damp_.resize(6);
-	cart_stiff_command_.resize(6);
-	cart_damp_command_.resize(6);
+    cart_stiff_.resize(NUMBER_OF_CART_DOFS);
+	cart_damp_.resize(NUMBER_OF_CART_DOFS);
+	cart_stiff_command_.resize(NUMBER_OF_CART_DOFS);
+	cart_damp_command_.resize(NUMBER_OF_CART_DOFS);
 
 	// limits variable
     joint_lower_limits_.resize(n_joints_);
@@ -96,7 +96,7 @@ namespace lwr_hw
       joint_damping_command_[j] = 1.0;
     }
     
-    for(int i=0; i < 3; i++)
+    for(int i=0; i < (NUMBER_OF_CART_DOFS/2); i++)
     {
       cart_stiff_[i] = 0.0;
       cart_stiff_[i + 3] = 0.0;
