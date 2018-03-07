@@ -36,14 +36,21 @@ namespace lwr_hw
     joint_effort_command_.resize(n_joints_);
     joint_stiffness_command_.resize(n_joints_);
     joint_damping_command_.resize(n_joints_);
+    
+    // Cartesian variables
+    cart_stiff_.resize(6);
+	cart_damp_.resize(6);
+	cart_stiff_command_.resize(6);
+	cart_damp_command_.resize(6);
 
+	// limits variable
     joint_lower_limits_.resize(n_joints_);
     joint_upper_limits_.resize(n_joints_);
     joint_lower_limits_stiffness_.resize(n_joints_);
     joint_upper_limits_stiffness_.resize(n_joints_);
     joint_effort_limits_.resize(n_joints_);
 
-    // RESET VARIABLES
+    // reset variables
     reset();
 
     std::cout << "Parsing transmissions from the URDF..." << std::endl;
@@ -88,6 +95,19 @@ namespace lwr_hw
       joint_stiffness_command_[j] = 1000.0;
       joint_damping_command_[j] = 1.0;
     }
+    
+    for(int i=0; i < 3; i++)
+    {
+      cart_stiff_[i] = 0.0;
+      cart_stiff_[i + 3] = 0.0;
+      cart_damp_[i] = 0.0;
+      cart_damp_[i + 3] = 0.0;
+      
+      cart_stiff_command_[i] = 800;
+      cart_stiff_command_[i + 3] = 50;
+      cart_damp_command_[i] = 10;
+      cart_damp_command_[i + 3] = 1;
+	}
 
     current_strategy_ = JOINT_POSITION;
 
@@ -166,7 +186,12 @@ namespace lwr_hw
       joint_handle_effort = hardware_interface::JointHandle(state_interface_.getHandle(joint_names_[j]),
                                                        &joint_effort_command_[j]);
       effort_interface_.registerHandle(joint_handle_effort);
-
+      
+      // CARTESIAN INTERFACE *********************************************
+      // To be able to read joint torques in the kuka cartesian interface
+      kuka_cart_interface_.registerHandle(joint_handle_effort);
+	  // *****************************************************************
+	  
       /// Position interface
       hardware_interface::JointHandle joint_handle_position;
       joint_handle_position = hardware_interface::JointHandle(state_interface_.getHandle(joint_names_[j]),
@@ -208,12 +233,35 @@ namespace lwr_hw
                           &joint_upper_limits_stiffness_[j],
                           &joint_effort_limits_[j]);
     }
+    
+    // CARTESIAN Interfaces *****************************************************************************
+    
+    // Cartesian Stiffness
+    hardware_interface::KukaCartesianStiffnessStateInterface kuka_cart_stiff_state_interface;
+    kuka_cart_stiff_state_interface.registerHandle(hardware_interface::KukaCartesianStiffnessStateHandle(robot_namespace_ + std::string("_cart_stiffness"),&cart_stiff_[0],&cart_stiff_[1],&cart_stiff_[2],&cart_stiff_[3],&cart_stiff_[4],&cart_stiff_[5]));
+    
+    hardware_interface::KUKACartesianStiffnessHandle kuka_cart_stiff_handle;
+    kuka_cart_stiff_handle = hardware_interface::KUKACartesianStiffnessHandle(kuka_cart_stiff_state_interface.getHandle(robot_namespace_ + std::string("_cart_stiffness")),&cart_stiff_command_[0],&cart_stiff_command_[1],&cart_stiff_command_[2],&cart_stiff_command_[3],&cart_stiff_command_[4],&cart_stiff_command_[5]);
+
+	// Cartesian Damping
+	hardware_interface::KukaCartesianDampingStateInterface kuka_cart_damp_state_interface;
+    kuka_cart_damp_state_interface.registerHandle(hardware_interface::KukaCartesianDampingStateHandle(robot_namespace_ + std::string("_cart_damping"),&cart_damp_[0],&cart_damp_[1],&cart_damp_[2],&cart_damp_[3],&cart_damp_[4],&cart_damp_[5]));
+    
+    hardware_interface::KUKACartesianDampingHandle kuka_cart_damp_handle;
+    kuka_cart_damp_handle = hardware_interface::KUKACartesianDampingHandle(kuka_cart_damp_state_interface.getHandle(robot_namespace_ + std::string("_cart_damping")),&cart_damp_command_[0],&cart_damp_command_[1],&cart_damp_command_[2],&cart_damp_command_[3],&cart_damp_command_[4],&cart_damp_command_[5]);
+
+	
+	kuka_cart_interface_.registerHandle(kuka_cart_stiff_handle);
+	kuka_cart_interface_.registerHandle(kuka_cart_damp_handle);
+	
+	// ************************************************************************************************
 
     // Register interfaces
     registerInterface(&state_interface_);
     registerInterface(&effort_interface_);
     registerInterface(&position_interface_);
     registerInterface(&kuka_interface_);
+    registerInterface(&kuka_cart_interface_);
 
   }
 

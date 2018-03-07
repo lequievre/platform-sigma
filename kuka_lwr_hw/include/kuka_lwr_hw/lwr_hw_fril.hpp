@@ -72,7 +72,15 @@ namespace lwr_hw
 			  
 			  joint_acceleration_[j] = filters::exponentialSmoothing((joint_velocity_[j]-joint_velocity_prev_[j])/period.toSec(), joint_acceleration_[j], 0.2);
 			  joint_stiffness_[j] = joint_stiffness_command_[j];
+			  joint_damping_[j] = joint_damping_command_[j];
 			}
+			
+			for (int i=0; i<6; i++)
+			{
+				cart_stiff_[i] = cart_stiff_command_[i];
+			    cart_damp_[i] = cart_damp_command_[i];
+			}
+			
 			return;
 		  }
 
@@ -109,6 +117,21 @@ namespace lwr_hw
 				  break;
 
 				case CARTESIAN_IMPEDANCE:
+				  // Ensure the robot is in this mode
+				  if (device_->GetCurrentControlScheme() == FastResearchInterface::CART_IMPEDANCE_CONTROL)
+				  {
+					  float newCartStiff[6];
+					  float newCartDamp[6];
+					  
+					  for (int j=0; j<6; j++)
+					  {
+						  newCartStiff[j] = (float)cart_stiff_command_[j];
+						  newCartDamp[j] = (float)cart_damp_command_[j];
+					  }
+					  
+					  device_->SetCommandedCartStiffness(newCartStiff);
+					  device_->SetCommandedCartDamping(newCartDamp);
+				  }
 				  break;
 
 				 case JOINT_IMPEDANCE:

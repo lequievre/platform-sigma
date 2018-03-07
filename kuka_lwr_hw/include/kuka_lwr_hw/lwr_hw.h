@@ -22,6 +22,7 @@
 
 // KUKA specific ROS control interface
 #include "kuka_lwr_hw/lwr_kuka_interface.h"
+#include "kuka_lwr_hw/lwr_kuka_cartesian_interface.h"
 
 // KDL
 #include <kdl/kdl.hpp>
@@ -111,6 +112,7 @@ public:
 
   hardware_interface::JointKUKAStateInterface   state_kuka_interface_;
   hardware_interface::KUKAJointInterface        kuka_interface_;
+  hardware_interface::KUKACartesianInterface    kuka_cart_interface_;
 
   ControlStrategy current_strategy_;
 
@@ -157,7 +159,11 @@ public:
   joint_velocity_command_,
   joint_stiffness_command_,
   joint_damping_command_,
-  joint_effort_command_;
+  joint_effort_command_,
+  cart_stiff_,
+  cart_damp_,
+  cart_stiff_command_,
+  cart_damp_command_;
 
   // NOTE:
   // joint_velocity_command is not really to command the kuka arm in velocity,
