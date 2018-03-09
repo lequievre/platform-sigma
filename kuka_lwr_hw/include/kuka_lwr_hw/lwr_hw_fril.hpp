@@ -57,9 +57,13 @@ namespace lwr_hw
 		  {
 			float msrJntPos[n_joints_];
 			float msrJntTrq[n_joints_];
+			float msrCartPose[NUMBER_OF_FRAME_ELEMENTS];
+			float msrCartWrench[NUMBER_OF_CART_DOFS];
 
 			device_->GetMeasuredJointPositions( msrJntPos );
 			device_->GetMeasuredJointTorques( msrJntTrq );
+			device_->GetMeasuredCartPose( msrCartPose );
+			device_->GetEstimatedExternalCartForcesAndTorques( msrCartWrench );
 
 			for (int j = 0; j < n_joints_; j++)
 			{
@@ -79,6 +83,12 @@ namespace lwr_hw
 			{
 				cart_stiff_[i] = cart_stiff_command_[i];
 			    cart_damp_[i] = cart_damp_command_[i];
+			    cart_wrench_[i] = (double)msrCartWrench[i];
+			}
+			
+			for (int i=0; i < NUMBER_OF_FRAME_ELEMENTS; ++i)
+			{
+				cart_pose_[i] = (double)msrCartPose[i];
 			}
 			
 			return;
@@ -122,15 +132,26 @@ namespace lwr_hw
 				  {
 					  float newCartStiff[NUMBER_OF_CART_DOFS];
 					  float newCartDamp[NUMBER_OF_CART_DOFS];
+					  float newCartWrench[NUMBER_OF_CART_DOFS];
+					  float newCartPose[NUMBER_OF_FRAME_ELEMENTS];
 					  
 					  for (int j=0; j<NUMBER_OF_CART_DOFS; j++)
 					  {
 						  newCartStiff[j] = (float)cart_stiff_command_[j];
 						  newCartDamp[j] = (float)cart_damp_command_[j];
+						  newCartWrench[j] = (float)cart_wrench_command_[j];
+					  }
+					  
+					  for (int i=0; i<NUMBER_OF_FRAME_ELEMENTS; i++)
+					  {
+						  newCartPose[i] = (float)cart_pose_command_[i];
 					  }
 					  
 					  device_->SetCommandedCartStiffness(newCartStiff);
 					  device_->SetCommandedCartDamping(newCartDamp);
+					  device_->SetCommandedCartForcesAndTorques(newCartWrench);
+					  device_->SetCommandedCartPose(newCartPose);
+					  
 				  }
 				  break;
 
