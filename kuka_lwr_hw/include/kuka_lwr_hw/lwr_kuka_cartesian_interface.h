@@ -651,12 +651,16 @@ namespace hardware_interface
 	 */
 	class KUKACartesianCommandInterface : 	public HardwareResourceManager<KUKACartesianStiffnessHandle, ClaimResources>, 
 											public HardwareResourceManager<KUKACartesianDampingHandle, ClaimResources>,
+											public HardwareResourceManager<KUKACartesianPoseHandle, ClaimResources>,
+											public HardwareResourceManager<KUKACartesianWrenchHandle, ClaimResources>,
 											public HardwareResourceManager<JointHandle, ClaimResources>
 	{
 	public:
 		/// these "using" directives are needed to disambiguate
 		using HardwareResourceManager<KUKACartesianStiffnessHandle, ClaimResources>::ResourceManager<KUKACartesianStiffnessHandle>::registerHandle;
 		using HardwareResourceManager<KUKACartesianDampingHandle, ClaimResources>::ResourceManager<KUKACartesianDampingHandle>::registerHandle;
+		using HardwareResourceManager<KUKACartesianPoseHandle, ClaimResources>::ResourceManager<KUKACartesianPoseHandle>::registerHandle;
+		using HardwareResourceManager<KUKACartesianWrenchHandle, ClaimResources>::ResourceManager<KUKACartesianWrenchHandle>::registerHandle;
 		using HardwareResourceManager<JointHandle, ClaimResources>::ResourceManager<JointHandle>::registerHandle;
 		
 		
@@ -685,6 +689,14 @@ namespace hardware_interface
 				{
 					return myOwner->HardwareResourceManager<KUKACartesianDampingHandle, ClaimResources>::getHandle(myName);
 				}
+				operator KUKACartesianPoseHandle() const
+				{
+					return myOwner->HardwareResourceManager<KUKACartesianPoseHandle, ClaimResources>::getHandle(myName);
+				}
+				operator KUKACartesianWrenchHandle() const
+				{
+					return myOwner->HardwareResourceManager<KUKACartesianWrenchHandle, ClaimResources>::getHandle(myName);
+				}
 				operator JointHandle() const
 				{
 					return myOwner->HardwareResourceManager<JointHandle, ClaimResources>::getHandle(myName);
@@ -702,10 +714,14 @@ namespace hardware_interface
 			std::vector<std::string> vect_joint_names = this->HardwareResourceManager<JointHandle, ClaimResources>::getNames();
 			std::vector<std::string> vect_cart_siff_names = this->HardwareResourceManager<KUKACartesianStiffnessHandle, ClaimResources>::getNames();
 			std::vector<std::string> vect_cart_damp_names = this->HardwareResourceManager<KUKACartesianDampingHandle, ClaimResources>::getNames();
+			std::vector<std::string> vect_cart_pose_names = this->HardwareResourceManager<KUKACartesianPoseHandle, ClaimResources>::getNames();
+			std::vector<std::string> vect_cart_wrench_names = this->HardwareResourceManager<KUKACartesianWrenchHandle, ClaimResources>::getNames();
 			
 			
 			vect_joint_names.insert(vect_joint_names.end(), std::make_move_iterator(vect_cart_siff_names.begin()), std::make_move_iterator(vect_cart_siff_names.end()));
 			vect_joint_names.insert(vect_joint_names.end(), std::make_move_iterator(vect_cart_damp_names.begin()), std::make_move_iterator(vect_cart_damp_names.end()));
+			vect_joint_names.insert(vect_joint_names.end(), std::make_move_iterator(vect_cart_pose_names.begin()), std::make_move_iterator(vect_cart_pose_names.end()));
+			vect_joint_names.insert(vect_joint_names.end(), std::make_move_iterator(vect_cart_wrench_names.begin()), std::make_move_iterator(vect_cart_wrench_names.end()));
 			
 			return vect_joint_names;
 		}
@@ -716,6 +732,9 @@ namespace hardware_interface
 			this->HardwareResourceManager<JointHandle, ClaimResources>::clearClaims();
 			this->HardwareResourceManager<KUKACartesianStiffnessHandle, ClaimResources>::clearClaims();
 			this->HardwareResourceManager<KUKACartesianDampingHandle, ClaimResources>::clearClaims();
+			this->HardwareResourceManager<KUKACartesianPoseHandle, ClaimResources>::clearClaims();
+			this->HardwareResourceManager<KUKACartesianWrenchHandle, ClaimResources>::clearClaims();
+			
 			return;
 		}
 		
@@ -725,9 +744,13 @@ namespace hardware_interface
 			std::set<std::string> set_joint_claims = this->HardwareResourceManager<JointHandle, ClaimResources>::getClaims();
 			std::set<std::string> set_stiff_claims = this->HardwareResourceManager<KUKACartesianStiffnessHandle, ClaimResources>::getClaims();
 			std::set<std::string> set_damp_claims = this->HardwareResourceManager<KUKACartesianDampingHandle, ClaimResources>::getClaims();
+			std::set<std::string> set_pose_claims = this->HardwareResourceManager<KUKACartesianPoseHandle, ClaimResources>::getClaims();
+			std::set<std::string> set_wrench_claims = this->HardwareResourceManager<KUKACartesianWrenchHandle, ClaimResources>::getClaims();
 			
 			set_joint_claims.insert(set_stiff_claims.begin(), set_stiff_claims.end());
 			set_joint_claims.insert(set_damp_claims.begin(), set_damp_claims.end());
+			set_joint_claims.insert(set_pose_claims.begin(), set_pose_claims.end());
+			set_joint_claims.insert(set_wrench_claims.begin(), set_wrench_claims.end());
 			
 			return set_joint_claims;
 		}
