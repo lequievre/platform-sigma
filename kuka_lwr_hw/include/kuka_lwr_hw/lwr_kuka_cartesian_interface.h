@@ -112,6 +112,62 @@ namespace hardware_interface
 		  const double* tz_; 
 	};
 	
+	/** A KUKA cartesian wrench state handle class. */
+	class KukaCartesianWrenchStateHandle
+	{
+		public:
+		  KukaCartesianWrenchStateHandle(): name_(), x_(0), y_(0), z_(0), a_(0), b_(0), c_(0) {}
+
+		  /**
+		   * \param name The name of the wrench handle
+		   */
+		  KukaCartesianWrenchStateHandle(const std::string& name, const double* x, const double* y, const double* z, const double* a, const double* b, const double* c)
+			: name_(name), x_(x), y_(y), z_(z), a_(a), b_(b), c_(c)
+		  {
+				if (!x)
+				{
+				  throw HardwareInterfaceException("Cannot create Kuka Cartesian Wrench State handle '" + name + "'. X data pointer is null.");
+				}
+				if (!y)
+				{
+				  throw HardwareInterfaceException("Cannot create Kuka Cartesian Wrench State handle '" + name + "'. Y data pointer is null.");
+				}
+				if (!z)
+				{
+				  throw HardwareInterfaceException("Cannot create Kuka Cartesian Wrench State handle '" + name + "'. Z data pointer is null.");
+				}
+				if (!a)
+				{
+				  throw HardwareInterfaceException("Cannot create Kuka Cartesian Wrench State handle '" + name + "'. A data pointer is null.");
+				}
+				if (!b)
+				{
+				  throw HardwareInterfaceException("Cannot create Kuka Cartesian Wrench State handle '" + name + "'. B data pointer is null.");
+				}
+				if (!c)
+				{
+				  throw HardwareInterfaceException("Cannot create Kuka Cartesian Wrench State handle '" + name + "'. C data pointer is null.");
+				}
+		  }
+
+		  std::string getName()     const {return name_;}
+		  double getX()      		const {assert(x_); return *x_;}
+		  double getY()      		const {assert(y_); return *y_;}
+		  double getZ()      		const {assert(z_); return *z_;}
+		  double getA()      		const {assert(a_); return *a_;}
+		  double getB()      		const {assert(b_); return *b_;}
+		  double getC()      		const {assert(c_); return *c_;}
+
+		private:
+		  std::string name_;
+		  const double* x_;
+		  const double* y_;
+		  const double* z_;
+		  const double* a_;
+		  const double* b_;
+		  const double* c_;
+	};
+	
 	/** A KUKA cartesian stiffness state handle class. */
 	class KukaCartesianStiffnessStateHandle
 	{
@@ -348,6 +404,76 @@ namespace hardware_interface
 	};
 	
 	
+	/** \brief A handle used to read and command a KUKA cartesian wrench. */
+	class KUKACartesianWrenchHandle : public KukaCartesianWrenchStateHandle
+	{
+	public:
+	  KUKACartesianWrenchHandle() : KukaCartesianWrenchStateHandle(), x_cmd_(0), y_cmd_(0), z_cmd_(0), a_cmd_(0), b_cmd_(0), c_cmd_(0) {}
+
+	  /**
+	   * \param js This wrench's state handle
+	   * \param cmd A pointer to the storage for this wrench's output command
+	   */
+	  KUKACartesianWrenchHandle(const KukaCartesianWrenchStateHandle& js, double* x_cmd, double* y_cmd, double* z_cmd, double* a_cmd, double* b_cmd, double* c_cmd)
+		: KukaCartesianWrenchStateHandle(js), x_cmd_(x_cmd), y_cmd_(y_cmd), z_cmd_(z_cmd), a_cmd_(a_cmd), b_cmd_(b_cmd), c_cmd_(c_cmd)
+	  {
+		if (!x_cmd_)
+		{
+		  throw HardwareInterfaceException("Cannot create handle '" + js.getName() + "'. Command [KUKA Cartesian Wrench] X pointer is null.");
+		}
+
+		if (!y_cmd_)
+		{
+		  throw HardwareInterfaceException("Cannot create handle '" + js.getName() + "'. Command [KUKA Cartesian Wrench] Y pointer is null.");
+		}
+
+		if (!z_cmd_)
+		{
+		  throw HardwareInterfaceException("Cannot create handle '" + js.getName() + "'. Command [KUKA Cartesian Wrench] Z pointer is null.");
+		}
+
+		if (!a_cmd_)
+		{
+		  throw HardwareInterfaceException("Cannot create handle '" + js.getName() + "'. Command [KUKA Cartesian Wrench] A pointer is null.");
+		}
+		
+		if (!b_cmd_)
+		{
+		  throw HardwareInterfaceException("Cannot create handle '" + js.getName() + "'. Command [KUKA Cartesian Wrench] B pointer is null.");
+		}
+		
+		if (!c_cmd_)
+		{
+		  throw HardwareInterfaceException("Cannot create handle '" + js.getName() + "'. Command [KUKA Cartesian Wrench] C pointer is null.");
+		}
+	  }
+
+	  void setCommandX(double command)    {assert(x_cmd_); *x_cmd_ = command;}
+	  void setCommandY(double command)    {assert(y_cmd_); *y_cmd_ = command;}
+	  void setCommandZ(double command)    {assert(z_cmd_); *z_cmd_ = command;}
+	  void setCommandA(double command)    {assert(a_cmd_); *a_cmd_ = command;}
+	  void setCommandB(double command)    {assert(b_cmd_); *b_cmd_ = command;}
+	  void setCommandC(double command)    {assert(c_cmd_); *c_cmd_ = command;}
+
+
+	  double getCommandX()    const {assert(x_cmd_); return *x_cmd_;}
+	  double getCommandY()    const {assert(y_cmd_); return *y_cmd_;}
+	  double getCommandZ()    const {assert(z_cmd_); return *z_cmd_;}
+	  double getCommandA()    const {assert(a_cmd_); return *a_cmd_;}
+	  double getCommandB()    const {assert(b_cmd_); return *b_cmd_;}
+	  double getCommandC()    const {assert(c_cmd_); return *c_cmd_;}
+
+	private:
+
+	  double* x_cmd_;
+	  double* y_cmd_;
+	  double* z_cmd_;
+	  double* a_cmd_;
+	  double* b_cmd_;
+	  double* c_cmd_;
+
+	};
+	
 	/** \brief A handle used to read and command a KUKA cartesian stiffness. */
 	class KUKACartesianStiffnessHandle : public KukaCartesianStiffnessStateHandle
 	{
@@ -509,10 +635,14 @@ namespace hardware_interface
 	class KUKACartesianPoseInterface : public KUKACartesianPoseCommandInterface {};
 	
 	
+	class KukaCartesianWrenchStateInterface : public HardwareResourceManager<KukaCartesianWrenchStateHandle> {};
+
+	class KUKACartesianWrenchCommandInterface : public HardwareResourceManager<KUKACartesianWrenchHandle, ClaimResources> {};
+
+	class KUKACartesianWrenchInterface : public KUKACartesianWrenchCommandInterface {};
 	
 	
-	
-	
+
 	 /** \brief Hardware interface to support commanding KUKA LWR 4+ cartesian.
 	 *
 	 *
