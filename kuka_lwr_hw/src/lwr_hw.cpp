@@ -37,11 +37,19 @@ namespace lwr_hw
     joint_stiffness_command_.resize(n_joints_);
     joint_damping_command_.resize(n_joints_);
     
-    // Cartesian variables
+    // Cartesian variables ****************************
     cart_stiff_.resize(NUMBER_OF_CART_DOFS);
+    cart_stiff_command_.resize(NUMBER_OF_CART_DOFS);
+    
 	cart_damp_.resize(NUMBER_OF_CART_DOFS);
-	cart_stiff_command_.resize(NUMBER_OF_CART_DOFS);
 	cart_damp_command_.resize(NUMBER_OF_CART_DOFS);
+	
+	cart_pose_.resize(NUMBER_OF_FRAME_ELEMENTS);
+	cart_pose_command_.resize(NUMBER_OF_FRAME_ELEMENTS);
+	
+	cart_wrench_.resize(NUMBER_OF_CART_DOFS);
+	cart_wrench_command_.resize(NUMBER_OF_CART_DOFS);
+	// ************************************************
 
 	// limits variable
     joint_lower_limits_.resize(n_joints_);
@@ -96,18 +104,41 @@ namespace lwr_hw
       joint_damping_command_[j] = 1.0;
     }
     
-    for(int i=0; i < (NUMBER_OF_CART_DOFS/2); i++)
+    for (int i=0; i < (NUMBER_OF_CART_DOFS/2); i++)
     {
       cart_stiff_[i] = 0.0;
       cart_stiff_[i + 3] = 0.0;
+      
       cart_damp_[i] = 0.0;
       cart_damp_[i + 3] = 0.0;
       
+      cart_wrench_[i] = 0.0;
+	  cart_wrench_[i + 3] = 0.0;
+      
       cart_stiff_command_[i] = 800;
       cart_stiff_command_[i + 3] = 50;
+      
       cart_damp_command_[i] = 10;
       cart_damp_command_[i + 3] = 1;
+      
+      cart_wrench_command_[i] = 0.0;
+	  cart_wrench_command_[i + 3] = 0.0;
 	}
+	
+	for (int i=0; i < NUMBER_OF_FRAME_ELEMENTS; ++i)
+    {
+      cart_pose_[i] = 0.0;
+      cart_pose_command_[i] = 0.0;
+	}
+	
+	// Set Rotation Matrix to Identity
+	// 0=Rxx, 1=Rxy, 2=Rxz, 3=Tx, 4=Ryx, 5=Ryy, 6=Ryz, 7=Ty, 8=Rzx, 9=Rzy, 10=Rzz, 11=Tz
+	cart_pose_[0] = 1.0;
+    cart_pose_[5] = 1.0;
+    cart_pose_[10] = 1.0;
+    cart_pose_command_[0] = 1.0;
+    cart_pose_command_[5] = 1.0;
+	cart_pose_command_[10] = 1.0;
 
     current_strategy_ = JOINT_POSITION;
 
@@ -236,15 +267,15 @@ namespace lwr_hw
     
     // CARTESIAN Interfaces *****************************************************************************
     
-    // Cartesian Stiffness
-    hardware_interface::KukaCartesianStiffnessStateInterface kuka_cart_stiff_state_interface;
-    kuka_cart_stiff_state_interface.registerHandle(hardware_interface::KukaCartesianStiffnessStateHandle(robot_namespace_ + std::string("_cart_stiffness"),&cart_stiff_[0],&cart_stiff_[1],&cart_stiff_[2],&cart_stiff_[3],&cart_stiff_[4],&cart_stiff_[5]));
-    
-    /*
+     /*
     ROS_INFO("*************************");
     ROS_INFO("CARTESIAN Interfaces namespace --> %s",robot_namespace_.c_str());
     ROS_INFO("*************************");
     */
+    
+    // Cartesian Stiffness
+    hardware_interface::KukaCartesianStiffnessStateInterface kuka_cart_stiff_state_interface;
+    kuka_cart_stiff_state_interface.registerHandle(hardware_interface::KukaCartesianStiffnessStateHandle(robot_namespace_ + std::string("_cart_stiffness"),&cart_stiff_[0],&cart_stiff_[1],&cart_stiff_[2],&cart_stiff_[3],&cart_stiff_[4],&cart_stiff_[5]));
     
     hardware_interface::KUKACartesianStiffnessHandle kuka_cart_stiff_handle;
     kuka_cart_stiff_handle = hardware_interface::KUKACartesianStiffnessHandle(kuka_cart_stiff_state_interface.getHandle(robot_namespace_ + std::string("_cart_stiffness")),&cart_stiff_command_[0],&cart_stiff_command_[1],&cart_stiff_command_[2],&cart_stiff_command_[3],&cart_stiff_command_[4],&cart_stiff_command_[5]);
@@ -256,13 +287,30 @@ namespace lwr_hw
     hardware_interface::KUKACartesianDampingHandle kuka_cart_damp_handle;
     kuka_cart_damp_handle = hardware_interface::KUKACartesianDampingHandle(kuka_cart_damp_state_interface.getHandle(robot_namespace_ + std::string("_cart_damping")),&cart_damp_command_[0],&cart_damp_command_[1],&cart_damp_command_[2],&cart_damp_command_[3],&cart_damp_command_[4],&cart_damp_command_[5]);
 
-	
+
+	// Cartesian Pose
+	hardware_interface::KukaCartesianPoseStateInterface kuka_cart_pose_state_interface;
+    kuka_cart_pose_state_interface.registerHandle(hardware_interface::KukaCartesianPoseStateHandle(robot_namespace_ + std::string("_cart_pose"),&cart_pose_[0],&cart_pose_[1],&cart_pose_[2],&cart_pose_[3],&cart_pose_[4],&cart_pose_[5],&cart_pose_[6],&cart_pose_[7],&cart_pose_[8],&cart_pose_[9],&cart_pose_[10],&cart_pose_[11]));
+    
+    hardware_interface::KUKACartesianPoseHandle kuka_cart_pose_handle;
+    kuka_cart_pose_handle = hardware_interface::KUKACartesianPoseHandle(kuka_cart_pose_state_interface.getHandle(robot_namespace_ + std::string("_cart_pose")),&cart_pose_command_[0],&cart_pose_command_[1],&cart_pose_command_[2],&cart_pose_command_[3],&cart_pose_command_[4],&cart_pose_command_[5],&cart_pose_command_[6],&cart_pose_command_[7],&cart_pose_command_[8],&cart_pose_command_[9],&cart_pose_command_[10],&cart_pose_command_[11]);
+
+    // Cartesian Wrench
+    hardware_interface::KukaCartesianWrenchStateInterface kuka_cart_wrench_state_interface;
+    kuka_cart_wrench_state_interface.registerHandle(hardware_interface::KukaCartesianWrenchStateHandle(robot_namespace_ + std::string("_cart_wrench"),&cart_wrench_[0],&cart_wrench_[1],&cart_wrench_[2],&cart_wrench_[3],&cart_wrench_[4],&cart_wrench_[5]));
+    
+    hardware_interface::KUKACartesianWrenchHandle kuka_cart_wrench_handle;
+    kuka_cart_wrench_handle = hardware_interface::KUKACartesianWrenchHandle(kuka_cart_wrench_state_interface.getHandle(robot_namespace_ + std::string("_cart_wrench")),&cart_wrench_command_[0],&cart_wrench_command_[1],&cart_wrench_command_[2],&cart_wrench_command_[3],&cart_wrench_command_[4],&cart_wrench_command_[5]);
+
+    // Register Stiffness, Damping, Pose, Wrench handles to kuka cartesian interface
 	kuka_cart_interface_.registerHandle(kuka_cart_stiff_handle);
 	kuka_cart_interface_.registerHandle(kuka_cart_damp_handle);
+	kuka_cart_interface_.registerHandle(kuka_cart_pose_handle);
+	kuka_cart_interface_.registerHandle(kuka_cart_wrench_handle);
 	
 	// ************************************************************************************************
 
-    // Register interfaces
+    // Register all interfaces
     registerInterface(&state_interface_);
     registerInterface(&effort_interface_);
     registerInterface(&position_interface_);

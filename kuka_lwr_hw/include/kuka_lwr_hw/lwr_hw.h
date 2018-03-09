@@ -166,7 +166,11 @@ public:
   cart_stiff_,
   cart_damp_,
   cart_stiff_command_,
-  cart_damp_command_;
+  cart_damp_command_,
+  cart_pose_,
+  cart_wrench_,
+  cart_pose_command_,
+  cart_wrench_command_;
 
   // NOTE:
   // joint_velocity_command is not really to command the kuka arm in velocity,
