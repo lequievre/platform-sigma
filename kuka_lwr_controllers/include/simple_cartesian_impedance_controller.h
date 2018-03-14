@@ -22,7 +22,7 @@
 #include <kdl/trajectory.hpp>
 #include <kdl_conversions/kdl_msg.h>
 
-#define TRACE_CARTESIAN_IMPENDANCE_CONTROLLER_ACTIVATED 1
+#define TRACE_CARTESIAN_IMPENDANCE_CONTROLLER_ACTIVATED 0
 
 namespace kuka_lwr_controllers
 {
