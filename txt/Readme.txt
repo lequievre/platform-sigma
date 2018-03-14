@@ -264,6 +264,22 @@ rosrun rqt_gui rqt_gui
 
 Menu Plugins / Robot Tools / Controller Manager
 
+
+Simple Cartesian Controller :
+===========================
+
+-> How to start 'kuka_simple_cartesian_impedance_controller' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: ['kuka_simple_cartesian_impedance_controller'], stop_controllers: [], strictness: 2}"
+
+-> How to stop 'kuka_simple_cartesian_impedance_controller' controller :
+rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_simple_cartesian_impedance_controller'], strictness: 2}"
+
+-> Set Cartesian or damping values
+rostopic pub -1 /kuka_lwr_right/kuka_simple_cartesian_impedance_controller/setCartesianStiffness std_msgs/Float64MultiArray "data: [800.0, 800.0, 800.0, 50.0, 50.0, 50.0]"
+rostopic pub -1 /kuka_lwr_right/kuka_simple_cartesian_impedance_controller/setCartesianDamping std_msgs/Float64MultiArray "data: [ 0.8, 0.8, 0.8, 0.8, 0.8, 0.8]"
+
+
+
  
 
 
