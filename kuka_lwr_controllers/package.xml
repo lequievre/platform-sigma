@@ -18,6 +18,7 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>kuka_lwr_hw</build_depend>
+  <build_depend>realtime_tools</build_depend> 
   <!--<build_depend>trac_ik_lib</build_depend>-->
 
   <run_depend>controller_interface</run_depend>
@@ -28,6 +29,7 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>kuka_lwr_hw</run_depend>
+  <run_depend>realtime_tools</run_depend> 
   <!--<run_depend>trac_ik_lib</run_depend>-->
 
   <export>

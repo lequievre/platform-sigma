@@ -14,13 +14,25 @@
 // hardware_interface 
 #include <kuka_lwr_hw/lwr_kuka_cartesian_interface.h> // contains definition of KUKACartesianInterface
 
-// msgs Float64MultiArray
+// msgs Float64MultiArray and PoseStamped
 #include <std_msgs/Float64MultiArray.h>
+#include <geometry_msgs/PoseStamped.h>
 
 // KDL added
 #include <kdl/stiffness.hpp>
 #include <kdl/trajectory.hpp>
 #include <kdl_conversions/kdl_msg.h>
+
+// ROS Realtime Publisher Tools
+#include <realtime_tools/realtime_publisher.h>
+
+// BOOST added
+#include <boost/scoped_ptr.hpp>
+
+// TF conversions
+#include <tf_conversions/tf_kdl.h>
+
+
 
 #define TRACE_CARTESIAN_IMPENDANCE_CONTROLLER_ACTIVATED 0
 
@@ -42,6 +54,7 @@ namespace kuka_lwr_controllers
 			
 			void setCartesianPose(const std_msgs::Float64MultiArrayConstPtr& msg);
 			void setCartesianWrench(const std_msgs::Float64MultiArrayConstPtr& msg);
+			void publishCurrentPose(const KDL::Frame& f);
 			
 			
 		private:
@@ -71,6 +84,8 @@ namespace kuka_lwr_controllers
 			
 			static constexpr int NUMBER_OF_CART_DOFS = 6;
 			static constexpr int NUMBER_OF_FRAME_ELEMENTS = 12;
+			
+			boost::shared_ptr< realtime_tools::RealtimePublisher< geometry_msgs::PoseStamped > > realtime_pose_pub_;
 			
 	};
 	

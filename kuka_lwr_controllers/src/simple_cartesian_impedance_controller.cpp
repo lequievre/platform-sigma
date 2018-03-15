@@ -50,6 +50,8 @@ namespace kuka_lwr_controllers
         
         sub_cart_pose_command_ = n.subscribe("setCartesianPose", 1, &SimpleCartesianImpedanceController::setCartesianPose, this); 
         sub_cart_wrench_command_ = n.subscribe("setCartesianWrench", 1, &SimpleCartesianImpedanceController::setCartesianWrench, this); 
+        
+        realtime_pose_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::PoseStamped>(n, "cartesianPose", 4));
        
         cur_Pose_FRI_.resize(NUMBER_OF_FRAME_ELEMENTS);
        
@@ -98,6 +100,9 @@ namespace kuka_lwr_controllers
      {
 		// Get current Pose (Rotation && Translation matrix values)
 		getCurrentPose_(pose_cur_);
+		
+		// Publish current cartesian pose
+		publishCurrentPose(pose_cur_);
         
 		// forward initial commands to HW
 		forwardCmdFRI_(pose_cur_,stiff_cur_,damp_cur_,wrench_cur_);
@@ -301,6 +306,17 @@ namespace kuka_lwr_controllers
 	 kuka_cart_wrench_handle_.setCommandB(wrench.torque.y());
 	 kuka_cart_wrench_handle_.setCommandC(wrench.torque.z());
 		 
+	}
+	
+	
+	void SimpleCartesianImpedanceController::publishCurrentPose(const KDL::Frame& f)
+    {
+        if (realtime_pose_pub_->trylock()) 
+        {
+            realtime_pose_pub_->msg_.header.stamp = ros::Time::now();
+            tf::poseKDLToMsg(f, realtime_pose_pub_->msg_.pose);
+            realtime_pose_pub_->unlockAndPublish();
+        }
 	}
 	 
 }

@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   #trac_ik_lib
   tf
   tf_conversions
+  realtime_tools
 )
 
 # After find_package(catkin REQUIRED COMPONENTS....) :
@@ -74,6 +75,7 @@ catkin_package(
     std_msgs
     geometry_msgs
     kuka_lwr_hw
+    realtime_tools
     #trac_ik_lib
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME} TypeIRML ReflexxesTypeII
