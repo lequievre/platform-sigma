@@ -40,6 +40,9 @@ namespace kuka_lwr_controllers
 			void setCartesianStiffness(const std_msgs::Float64MultiArrayConstPtr& msg);
 			void setCartesianDamping(const std_msgs::Float64MultiArrayConstPtr& msg);
 			
+			void setCartesianPose(const std_msgs::Float64MultiArrayConstPtr& msg);
+			void setCartesianWrench(const std_msgs::Float64MultiArrayConstPtr& msg);
+			
 			
 		private:
 			std::string robot_namespace_;
@@ -50,7 +53,7 @@ namespace kuka_lwr_controllers
 			
 			int trace_count_ = 0;
 			
-			ros::Subscriber sub_cart_stiffness_command_, sub_cart_damping_command_;
+			ros::Subscriber sub_cart_stiffness_command_, sub_cart_damping_command_, sub_cart_pose_command_, sub_cart_wrench_command_;
 			
 			// Utility function to get the current pose
 			void getCurrentPose_(KDL::Frame& frame);

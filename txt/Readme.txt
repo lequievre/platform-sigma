@@ -274,12 +274,16 @@ rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_con
 -> How to stop 'kuka_simple_cartesian_impedance_controller' controller :
 rosservice call /kuka_lwr_right/controller_manager/switch_controller "{start_controllers: [], stop_controllers: ['kuka_simple_cartesian_impedance_controller'], strictness: 2}"
 
--> Set Cartesian or damping values
+-> Set Cartesian stiffness or damping values
 rostopic pub -1 /kuka_lwr_right/kuka_simple_cartesian_impedance_controller/setCartesianStiffness std_msgs/Float64MultiArray "data: [800.0, 800.0, 800.0, 50.0, 50.0, 50.0]"
 rostopic pub -1 /kuka_lwr_right/kuka_simple_cartesian_impedance_controller/setCartesianDamping std_msgs/Float64MultiArray "data: [ 0.8, 0.8, 0.8, 0.8, 0.8, 0.8]"
 
 
-
+-> Set Cartesian pose or wrench values
+-> Pose data to send -> [RXX, RXY, RXZ, TX, RYX, RYY, RYZ, TY, RZX, RZY, RZZ, TZ]
+rostopic pub -1 /kuka_lwr_right/kuka_simple_cartesian_impedance_controller/setCartesianPose std_msgs/Float64MultiArray "data: [RXX, RXY, RXZ, TX, RYX, RYY, RYZ, TY, RZX, RZY, RZZ, TZ]"
+-> Wrench data to send -> [fx, fy, fz, tx, ty, tz]
+rostopic pub -1 /kuka_lwr_right/kuka_simple_cartesian_impedance_controller/setCartesianWrench std_msgs/Float64MultiArray "data: [0.0, 0.0, 0.01, 0.0, 0.0, 0.0]"
  
 
 

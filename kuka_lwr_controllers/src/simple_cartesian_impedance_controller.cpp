@@ -47,6 +47,9 @@ namespace kuka_lwr_controllers
         
         sub_cart_stiffness_command_ = n.subscribe("setCartesianStiffness", 1, &SimpleCartesianImpedanceController::setCartesianStiffness, this); 
         sub_cart_damping_command_ = n.subscribe("setCartesianDamping", 1, &SimpleCartesianImpedanceController::setCartesianDamping, this); 
+        
+        sub_cart_pose_command_ = n.subscribe("setCartesianPose", 1, &SimpleCartesianImpedanceController::setCartesianPose, this); 
+        sub_cart_wrench_command_ = n.subscribe("setCartesianWrench", 1, &SimpleCartesianImpedanceController::setCartesianWrench, this); 
        
         cur_Pose_FRI_.resize(NUMBER_OF_FRAME_ELEMENTS);
        
@@ -111,6 +114,58 @@ namespace kuka_lwr_controllers
 			 }
 		 #endif
 	 }
+	 
+	 
+	 
+	 void SimpleCartesianImpedanceController::setCartesianPose(const std_msgs::Float64MultiArrayConstPtr& msg)
+	 {
+		#if TRACE_CARTESIAN_IMPENDANCE_CONTROLLER_ACTIVATED
+			ROS_INFO("SimpleCartesianImpedanceController: Start setCartesianPose of robot %s!",robot_namespace_.c_str());
+		#endif
+
+		if(msg->data.size()!=NUMBER_OF_FRAME_ELEMENTS)
+		{ 
+			ROS_ERROR_STREAM("SimpleCartesianImpedanceController: Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of DOF(" << NUMBER_OF_FRAME_ELEMENTS << ")! Not executing!");
+			return; 
+		}
+		
+		#if TRACE_CARTESIAN_IMPENDANCE_CONTROLLER_ACTIVATED
+			ROS_INFO("Get SimpleCartesianImpedanceController/setCartesianPose :");
+			ROS_INFO("[%.3f, %.3f, %.3f, %.3f",msg->data[0],msg->data[1],msg->data[2],msg->data[3]);
+			ROS_INFO("%.3f, %.3f, %.3f, %.3f",msg->data[4],msg->data[5],msg->data[6],msg->data[7]);
+			ROS_INFO("%.3f, %.3f, %.3f, %.3f",msg->data[8],msg->data[9],msg->data[10],msg->data[11]);
+			ROS_INFO("0, 0, 0, 1]");
+		#endif
+		
+		// 0: RXX, 1: RXY, 2: RXZ, 3: TX, 4: RYX, 5: RYY, 6: RYZ, 7: TY, 8: RZX, 9: RZY, 10: RZZ, 11: TZ
+		pose_cur_.M = KDL::Rotation(msg->data[0],msg->data[1],msg->data[2],msg->data[4],msg->data[5],msg->data[6],msg->data[8],msg->data[9],msg->data[10]);
+		pose_cur_.p = KDL::Vector(msg->data[3],msg->data[7],msg->data[11]);
+		
+	 }
+	 
+	 
+	 
+	  void SimpleCartesianImpedanceController::setCartesianWrench(const std_msgs::Float64MultiArrayConstPtr& msg)
+	  {
+		  #if TRACE_CARTESIAN_IMPENDANCE_CONTROLLER_ACTIVATED
+			ROS_INFO("SimpleCartesianImpedanceController: Start setCartesianWrench of robot %s!",robot_namespace_.c_str());
+		  #endif
+
+		 if(msg->data.size()!=NUMBER_OF_CART_DOFS)
+		 { 
+			ROS_ERROR_STREAM("SimpleCartesianImpedanceController: Dimension (of robot " << robot_namespace_.c_str() << ") of command (" << msg->data.size() << ") does not match number of DOF(" << NUMBER_OF_CART_DOFS << ")! Not executing!");
+			return; 
+		 }
+		 
+		 // 0: X, 1: Y, 2: Z, 3: A, 4: B, 5: C
+		 wrench_cur_.force = KDL::Vector(msg->data[0],msg->data[1],msg->data[2]);
+		 wrench_cur_.torque = KDL::Vector(msg->data[3],msg->data[4],msg->data[5]);
+		  
+	  }
+	 
+	 
+	 
+	 
 	 
 	 void SimpleCartesianImpedanceController::setCartesianStiffness(const std_msgs::Float64MultiArrayConstPtr& msg)
 	 {
