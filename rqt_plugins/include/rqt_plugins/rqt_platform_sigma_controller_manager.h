@@ -10,6 +10,7 @@
 #include <QtGui/QLabel>
 #include <QtGui/QComboBox>
 #include <QtGui/QTreeWidget>
+#include <QtCore/QMap>
 
 namespace platform_sigma_plugins_ns {
 	
@@ -44,6 +45,14 @@ namespace platform_sigma_plugins_ns {
 			QTreeWidget* tree_controllers_widget_;
 			
 			QStringList column_names_list_, column_names_pretty_list_;
+			QMap<QString, ros::ServiceClient> map_list_service_client_;
+			QMap<QString, ros::ServiceClient> map_switch_service_client_;
+			
+			
+			void setupROSComponents_();
+			void shutdownROSComponents_();
+			
+			void updateListControllers_();
 		
 	}; // End of class
 

@@ -3,6 +3,7 @@
 
 #include <controller_manager_msgs/ListControllers.h>
 #include <controller_manager_msgs/SwitchController.h>
+// cf /opt/ros/indigo/include/controller_manager_msgs
 
 namespace platform_sigma_plugins_ns {
 	
@@ -14,6 +15,9 @@ namespace platform_sigma_plugins_ns {
 
 	void ControllerManagerPlugin::initPlugin(qt_gui_cpp::PluginContext& context)
 	{
+		
+		setupROSComponents_();
+		
 		// create a main widget named widget_
 		widget_ = new QWidget();
 		widget_->setWindowTitle("Controller Manager");
@@ -63,6 +67,8 @@ namespace platform_sigma_plugins_ns {
 		// set widget_ to main widget
 		widget_->setLayout(vlayout_outer_);
 		context.addWidget(widget_);
+		
+		updateListControllers_();
 	}
 	
 	void ControllerManagerPlugin::tree_controllers_widget_ContextMenu(const QPoint& aPoint)
@@ -72,6 +78,7 @@ namespace platform_sigma_plugins_ns {
 
 	void ControllerManagerPlugin::shutdownPlugin()
 	{
+		shutdownROSComponents_();
 	}
 
 	void ControllerManagerPlugin::saveSettings(qt_gui_cpp::Settings& plugin_settings,
@@ -86,6 +93,59 @@ namespace platform_sigma_plugins_ns {
 	{
 		// TODO restore intrinsic configuration, usually using:
 		// v = instance_settings.value(k)
+	}
+	
+	void ControllerManagerPlugin::setupROSComponents_()
+	{
+		map_list_service_client_.insert("kuka_lwr_left",getNodeHandle().serviceClient<controller_manager_msgs::ListControllers>("/kuka_lwr_left/controller_manager/list_controllers")); 
+		map_list_service_client_.insert("kuka_lwr_right",getNodeHandle().serviceClient<controller_manager_msgs::ListControllers>("/kuka_lwr_right/controller_manager/list_controllers")); 
+	
+		map_switch_service_client_.insert("kuka_lwr_left",getNodeHandle().serviceClient<controller_manager_msgs::SwitchController>("/kuka_lwr_left/controller_manager/switch_controller")); 
+		map_switch_service_client_.insert("kuka_lwr_right",getNodeHandle().serviceClient<controller_manager_msgs::SwitchController>("/kuka_lwr_right/controller_manager/switch_controller"));	
+	}
+	
+	void ControllerManagerPlugin::shutdownROSComponents_()
+	{
+		map_list_service_client_["kuka_lwr_left"].shutdown();
+		map_list_service_client_["kuka_lwr_right"].shutdown();
+		
+		map_switch_service_client_["kuka_lwr_left"].shutdown();
+		map_switch_service_client_["kuka_lwr_right"].shutdown();
+	}
+	
+	void ControllerManagerPlugin::updateListControllers_()
+	{
+		
+		ros::ServiceClient controller_list_client = map_list_service_client_[ns_combo_->currentText()];
+
+		controller_manager_msgs::ListControllers controller_list;
+	
+		controller_list_client.call(controller_list);
+	
+		for (unsigned int i=0;i<controller_list.response.controller.size() ;i++ )
+		{
+			//tree_controllers_widget_->clear();
+			
+			// search by name at column 0
+			QList<QTreeWidgetItem*> items_found = tree_controllers_widget_->findItems(controller_list.response.controller[i].name.c_str(), Qt::MatchExactly, 0);
+			if (items_found.count() == 0)
+			{
+				// Create a new item
+				QTreeWidgetItem* new_item = new QTreeWidgetItem(tree_controllers_widget_);
+                new_item->setText(0, controller_list.response.controller[i].name.c_str());
+			}
+			else
+			{
+				// modify an item
+			}
+			
+		//std::cout << "name = " << controller_list.response.controller[i].name << ", type = " << controller_list.response.controller[i].type << ", hw interface = " << controller_list.response.controller[i].hardware_interface << ", state = " << controller_list.response.controller[i].state << std::endl;
+		/*std::cout << "Ressources :" << std::endl;
+		for (unsigned int j=0;j<controller_list.response.controller[i].resources.size() ;j++ )
+		{
+			std::cout << "-> " << controller_list.response.controller[i].resources[j] << std::endl;
+		}*/
+		}
 	}
 
 } // End of namespace
