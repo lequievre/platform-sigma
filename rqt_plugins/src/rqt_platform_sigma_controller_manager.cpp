@@ -18,14 +18,13 @@
 namespace platform_sigma_plugins_ns {
 	
 	ControllerManagerPlugin::ControllerManagerPlugin()
-	: rqt_gui_cpp::Plugin(), widget_(0)
+	: rqt_gui_cpp::Plugin(), widget_(0),vlayout_outer_(0),hlayout_top_(0),ns_label_(0),ns_combo_(0),tree_controllers_widget_(0)
 	{
 		setObjectName("Plugin Controller Manager");
 	}
 
 	void ControllerManagerPlugin::initPlugin(qt_gui_cpp::PluginContext& context)
 	{
-		
 		setupROSComponents_();
 		
 		// create a main widget named widget_
@@ -90,7 +89,9 @@ namespace platform_sigma_plugins_ns {
 		QString state = itemSelected->text(1);
 		QString name = itemSelected->text(0);
 		
-		ROS_INFO("name = %s, state = %s",name.toStdString().c_str(), state.toStdString().c_str());
+		#if TRACE_ControllerManagerPlugin_ACTIVATED
+			ROS_INFO("name = %s, state = %s",name.toStdString().c_str(), state.toStdString().c_str());
+		#endif
 		
 		QMenu menu(tree_controllers_widget_);
 		QIcon icon_start(QString::fromUtf8(":/icons/media-playback-start.png"));
@@ -115,18 +116,21 @@ namespace platform_sigma_plugins_ns {
 		
 			if (action_menu_selected->text() == action_start->text())
 			{
-				ROS_INFO("action_start !");
+				#if TRACE_ControllerManagerPlugin_ACTIVATED
+					ROS_INFO("action_start !");
+				#endif
 				switchController_(name, ActionController::START);
 			}
 			else
 				if (action_menu_selected->text() == action_stop->text())
 				{
-					ROS_INFO("action_stop !");
+					#if TRACE_ControllerManagerPlugin_ACTIVATED
+						ROS_INFO("action_stop !");
+					#endif
 					switchController_(name, ActionController::STOP);
 				}
 		}
-		else
-		  ROS_INFO("Action selected NULL !");
+		
 	}
 	
 	
@@ -140,13 +144,17 @@ namespace platform_sigma_plugins_ns {
 		
 		if (action == ActionController::START)
 		{
-			ROS_INFO("switch controller Start !");
+			#if TRACE_ControllerManagerPlugin_ACTIVATED
+				ROS_INFO("switch controller Start !");
+			#endif
 			switch_controller.request.start_controllers.push_back(name.toStdString().c_str());
 		}
 		else
 			if (action == ActionController::STOP)
 			{
-				ROS_INFO("switch controller Stop !");
+				#if TRACE_ControllerManagerPlugin_ACTIVATED
+					ROS_INFO("switch controller Stop !");
+				#endif
 				switch_controller.request.stop_controllers.push_back(name.toStdString().c_str());
 			}
 		switch_controller.request.strictness = controller_manager_msgs::SwitchControllerRequest::STRICT;	
@@ -163,6 +171,31 @@ namespace platform_sigma_plugins_ns {
 	void ControllerManagerPlugin::shutdownPlugin()
 	{
 		shutdownROSComponents_();
+		
+		disconnect(ns_combo_, SIGNAL(currentIndexChanged(int)), this, SLOT(ns_combo_changed(int)));
+		
+		disconnect(tree_controllers_widget_, SIGNAL( customContextMenuRequested( const QPoint& ) ),
+             this, SLOT( tree_controllers_widget_ContextMenu( const QPoint& ) ) );
+             
+		vlayout_outer_->removeWidget(tree_controllers_widget_);
+		hlayout_top_->removeWidget(ns_combo_);
+		hlayout_top_->removeWidget(ns_label_);
+		
+		if (ns_label_)
+			delete ns_label_;
+		
+		if (ns_combo_)
+			delete ns_combo_;
+		
+		if (tree_controllers_widget_)
+			delete tree_controllers_widget_;
+			
+		if (hlayout_top_)
+			delete hlayout_top_;
+		 
+		if (vlayout_outer_)
+			delete vlayout_outer_;
+		
 	}
 
 	void ControllerManagerPlugin::saveSettings(qt_gui_cpp::Settings& plugin_settings,
@@ -199,7 +232,9 @@ namespace platform_sigma_plugins_ns {
 	
 	void ControllerManagerPlugin::updateListControllers_()
 	{
-		ROS_INFO("ControllerManagerPlugin::updateListControllers_() !");
+		#if TRACE_ControllerManagerPlugin_ACTIVATED
+			ROS_INFO("ControllerManagerPlugin::updateListControllers_() !");
+		#endif
 		
 		ros::ServiceClient controller_list_client = map_list_service_client_[ns_combo_->currentText()];
 
@@ -213,34 +248,22 @@ namespace platform_sigma_plugins_ns {
 	
 		for (unsigned int i=0;i<controller_list.response.controller.size() ;i++ )
 		{
-			//
+			// Create a new item
+			QTreeWidgetItem* new_item = new QTreeWidgetItem(tree_controllers_widget_);
+			new_item->setText(0, controller_list.response.controller[i].name.c_str());
+			new_item->setText(1, controller_list.response.controller[i].state.c_str());
+			new_item->setText(2, controller_list.response.controller[i].type.c_str());
+			new_item->setText(3, controller_list.response.controller[i].hardware_interface.c_str());
+		   
 			
-			// search by name at column 0
-			//QList<QTreeWidgetItem*> items_found = tree_controllers_widget_->findItems(controller_list.response.controller[i].name.c_str(), Qt::MatchExactly, 0);
-			//if (items_found.count() == 0)
-			//{
-				// Create a new item
-				QTreeWidgetItem* new_item = new QTreeWidgetItem(tree_controllers_widget_);
-                new_item->setText(0, controller_list.response.controller[i].name.c_str());
-                new_item->setText(1, controller_list.response.controller[i].state.c_str());
-                new_item->setText(2, controller_list.response.controller[i].type.c_str());
-                new_item->setText(3, controller_list.response.controller[i].hardware_interface.c_str());
-               
-                
-                strListRessources.clear();
-                for (unsigned int j=0;j<controller_list.response.controller[i].resources.size() ;j++ )
-				{
-					strListRessources << controller_list.response.controller[i].resources[j].c_str();
-				}
-				
-				new_item->setText(4, strListRessources.join(","));
-				
-			/*}
-			else
+			strListRessources.clear();
+			for (unsigned int j=0;j<controller_list.response.controller[i].resources.size() ;j++ )
 			{
-				// modify an item
+				strListRessources << controller_list.response.controller[i].resources[j].c_str();
 			}
-			*/
+			
+			new_item->setText(4, strListRessources.join(","));
+				
 		}
 	}
 

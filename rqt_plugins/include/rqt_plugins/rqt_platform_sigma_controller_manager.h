@@ -20,6 +20,8 @@
 #include <QtGui/QTreeWidget>
 #include <QtCore/QMap>
 
+#define TRACE_ControllerManagerPlugin_ACTIVATED 0
+
 namespace platform_sigma_plugins_ns {
 	
 	class ControllerManagerPlugin : public rqt_gui_cpp::Plugin
