@@ -1,3 +1,11 @@
+/*
+ *  Laurent LEQUIEVRE
+ *  CNRS engineer
+ *  Institut Pascal UMR6602
+ *  laurent.lequievre@uca.fr
+ * 
+*/
+
 #include "rqt_plugins/rqt_platform_sigma_controller_manager.h"
 #include <pluginlib/class_list_macros.h>
 

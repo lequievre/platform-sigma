@@ -1,3 +1,11 @@
+/*
+ *  Laurent LEQUIEVRE
+ *  CNRS engineer
+ *  Institut Pascal UMR6602
+ *  laurent.lequievre@uca.fr
+ * 
+*/
+
 #ifndef controller_manager_plugin_H
 #define controller_manager_plugin_H
 
