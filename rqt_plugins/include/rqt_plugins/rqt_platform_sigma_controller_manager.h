@@ -17,6 +17,8 @@ namespace platform_sigma_plugins_ns {
 	class ControllerManagerPlugin : public rqt_gui_cpp::Plugin
 	{
 		Q_OBJECT
+		
+		enum ActionController { START, STOP };
 			
 		public:
 
@@ -34,6 +36,7 @@ namespace platform_sigma_plugins_ns {
 		 public slots:
 		 
 			void tree_controllers_widget_ContextMenu(const QPoint& aPoint);
+			void ns_combo_changed(int);
 		 
 		 private:
 			QWidget* widget_;
@@ -53,6 +56,7 @@ namespace platform_sigma_plugins_ns {
 			void shutdownROSComponents_();
 			
 			void updateListControllers_();
+			void switchController_(QString & name, ActionController action);
 		
 	}; // End of class
 
