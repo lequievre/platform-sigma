@@ -11,6 +11,7 @@
 
 #include <math.h>
 
+
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
@@ -18,7 +19,7 @@ namespace platform_sigma_plugins_ns {
 	 label_j0_(0), label_j1_(0), label_j2_(0), label_j3_(0), label_j4_(0), label_j5_(0), label_j6_(0), 
 	 button_send_(0), button_reset_(0),
 	 slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
-	 line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0)
+	 line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0), current_time(0), previous_time(0)
 	{
 		setObjectName("Plugin Joint Position");
 	}
@@ -41,6 +42,11 @@ namespace platform_sigma_plugins_ns {
 		hlayout_j0_ = new QHBoxLayout();
         hlayout_j0_->setObjectName("horizontal_layout_j0");
         
+        label_js_j0_ = new QwtTextLabel();
+        label_js_j0_->setObjectName("label_js_j0_");
+        label_js_j0_->setText(QString::number(0));
+        label_js_j0_->setSizePolicy(fixed_policy);
+        
         label_j0_ = new QLabel();
         label_j0_->setObjectName("label_j0_");
         label_j0_->setText("Joint 0 :");
@@ -60,6 +66,8 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j0_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ0()) );
 		
 		hlayout_j0_->addWidget(line_j0_);
+		//hlayout_j0_->addStretch(1);
+		hlayout_j0_->addWidget(label_js_j0_);
 		
 		vlayout_outer_->addLayout(hlayout_j0_);
 		// end j0
@@ -67,6 +75,10 @@ namespace platform_sigma_plugins_ns {
 		// start j1
 		hlayout_j1_ = new QHBoxLayout();
         hlayout_j1_->setObjectName("horizontal_layout_j1");
+        
+        label_js_j1_ = new QwtTextLabel();
+        label_js_j1_->setObjectName("label_js_j1_");
+        label_js_j1_->setText(QString::number(0));
         
         label_j1_ = new QLabel();
         label_j1_->setObjectName("label_j1_");
@@ -87,6 +99,7 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j1_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ1()) );
 		
 		hlayout_j1_->addWidget(line_j1_);
+		hlayout_j1_->addWidget(label_js_j1_);
 		
 		vlayout_outer_->addLayout(hlayout_j1_);
 		// end j1
@@ -94,6 +107,10 @@ namespace platform_sigma_plugins_ns {
 		// start j2
 		hlayout_j2_ = new QHBoxLayout();
         hlayout_j2_->setObjectName("horizontal_layout_j2");
+        
+        label_js_j2_ = new QwtTextLabel();
+        label_js_j2_->setObjectName("label_js_j2_");
+        label_js_j2_->setText(QString::number(0));
         
         label_j2_ = new QLabel();
         label_j2_->setObjectName("label_j2_");
@@ -114,6 +131,7 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j2_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ2()) );
 		
 		hlayout_j2_->addWidget(line_j2_);
+		hlayout_j2_->addWidget(label_js_j2_);
 		
 		vlayout_outer_->addLayout(hlayout_j2_);
 		// end j2
@@ -121,6 +139,10 @@ namespace platform_sigma_plugins_ns {
 		// start j3
 		hlayout_j3_ = new QHBoxLayout();
         hlayout_j3_->setObjectName("horizontal_layout_j3");
+        
+        label_js_j3_ = new QwtTextLabel();
+        label_js_j3_->setObjectName("label_js_j3_");
+        label_js_j3_->setText(QString::number(0));
         
         label_j3_ = new QLabel();
         label_j3_->setObjectName("label_j3_");
@@ -141,6 +163,7 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j3_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ3()) );
 		
 		hlayout_j3_->addWidget(line_j3_);
+		hlayout_j3_->addWidget(label_js_j3_);
 		
 		vlayout_outer_->addLayout(hlayout_j3_);
 		// end j3
@@ -148,6 +171,10 @@ namespace platform_sigma_plugins_ns {
 		// start j4
 		hlayout_j4_ = new QHBoxLayout();
         hlayout_j4_->setObjectName("horizontal_layout_j4");
+        
+        label_js_j4_ = new QwtTextLabel();
+        label_js_j4_->setObjectName("label_js_j4_");
+        label_js_j4_->setText(QString::number(0));
         
         label_j4_ = new QLabel();
         label_j4_->setObjectName("label_j4_");
@@ -168,6 +195,7 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j4_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ4()) );
 		
 		hlayout_j4_->addWidget(line_j4_);
+		hlayout_j4_->addWidget(label_js_j4_);
 		
 		vlayout_outer_->addLayout(hlayout_j4_);
 		// end j4
@@ -175,6 +203,10 @@ namespace platform_sigma_plugins_ns {
 		// start j5
 		hlayout_j5_ = new QHBoxLayout();
         hlayout_j5_->setObjectName("horizontal_layout_j5");
+        
+        label_js_j5_ = new QwtTextLabel();
+        label_js_j5_->setObjectName("label_js_j5_");
+        label_js_j5_->setText(QString::number(0));
         
         label_j5_ = new QLabel();
         label_j5_->setObjectName("label_j5_");
@@ -195,6 +227,7 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j5_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ5()) );
 		
 		hlayout_j5_->addWidget(line_j5_);
+		hlayout_j5_->addWidget(label_js_j5_);
 		
 		vlayout_outer_->addLayout(hlayout_j5_);
 		// end j5
@@ -202,6 +235,10 @@ namespace platform_sigma_plugins_ns {
 		// start j6
 		hlayout_j6_ = new QHBoxLayout();
         hlayout_j6_->setObjectName("horizontal_layout_j6");
+        
+        label_js_j6_ = new QwtTextLabel();
+        label_js_j6_->setObjectName("label_js_j6_");
+        label_js_j6_->setText(QString::number(0));
         
         label_j6_ = new QLabel();
         label_j6_->setObjectName("label_j6_");
@@ -222,6 +259,7 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j6_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ6()) );
 		
 		hlayout_j6_->addWidget(line_j6_);
+		hlayout_j6_->addWidget(label_js_j6_);
 		
 		vlayout_outer_->addLayout(hlayout_j6_);
 		// end j6
@@ -240,6 +278,14 @@ namespace platform_sigma_plugins_ns {
 		
 		vlayout_outer_->addLayout(hlayout_buttons_);
 		
+		connect(this, SIGNAL(updateLabelJs0(double)), this, SLOT(doUpdateLabelJs0(double)));
+		connect(this, SIGNAL(updateLabelJs1(double)), this, SLOT(doUpdateLabelJs1(double)));
+		connect(this, SIGNAL(updateLabelJs2(double)), this, SLOT(doUpdateLabelJs2(double)));
+		connect(this, SIGNAL(updateLabelJs3(double)), this, SLOT(doUpdateLabelJs3(double)));
+		connect(this, SIGNAL(updateLabelJs4(double)), this, SLOT(doUpdateLabelJs4(double)));
+		connect(this, SIGNAL(updateLabelJs5(double)), this, SLOT(doUpdateLabelJs5(double)));
+		connect(this, SIGNAL(updateLabelJs6(double)), this, SLOT(doUpdateLabelJs6(double)));
+		
 		// set widget_ to main widget
 		widget_->setLayout(vlayout_outer_);
 		context.addWidget(widget_);
@@ -251,8 +297,13 @@ namespace platform_sigma_plugins_ns {
 		vect.resize(7);
 		
 		vect[0] = slider_j0_->value();
-		
-				
+		vect[1] = slider_j1_->value();
+		vect[2] = slider_j2_->value();
+		vect[3] = slider_j3_->value();
+		vect[4] = slider_j4_->value();
+		vect[5] = slider_j5_->value();
+		vect[6] = slider_j6_->value();
+			
 		joint_position_msg_.layout.dim.clear();
 		joint_position_msg_.layout.dim.push_back(std_msgs::MultiArrayDimension());
 		joint_position_msg_.layout.dim[0].size = vect.size();
@@ -268,6 +319,13 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::resetPosition()
 	{
+		slider_j0_->setValue(0);
+		slider_j1_->setValue(0);
+		slider_j2_->setValue(0);
+		slider_j3_->setValue(0);
+		slider_j4_->setValue(0);
+		slider_j5_->setValue(0);
+		slider_j6_->setValue(0);
 		
 	}
 	
@@ -361,10 +419,64 @@ namespace platform_sigma_plugins_ns {
 		// v = instance_settings.value(k)
 	}
 	
+	void JointPositionPlugin::jsCallback_(const sensor_msgs::JointState::ConstPtr& msg)
+	{
+		
+		emit updateLabelJs0(msg->position[0]);
+		emit updateLabelJs1(msg->position[1]);
+		emit updateLabelJs2(msg->position[2]);
+		emit updateLabelJs3(msg->position[3]);
+		emit updateLabelJs4(msg->position[4]);
+		emit updateLabelJs5(msg->position[5]);
+		emit updateLabelJs6(msg->position[6]);
+
+	}
+	
+	
+	void JointPositionPlugin::doUpdateLabelJs0(double position)
+	{
+		label_js_j0_->setText(QString::number(position,'f',3));
+	}
+	
+	
+	void JointPositionPlugin::doUpdateLabelJs1(double position)
+	{
+		label_js_j1_->setText(QString::number(position,'f',3));
+	}
+	
+	void JointPositionPlugin::doUpdateLabelJs2(double position)
+	{
+		label_js_j2_->setText(QString::number(position,'f',3));
+	}
+	
+	void JointPositionPlugin::doUpdateLabelJs3(double position)
+	{
+		label_js_j3_->setText(QString::number(position,'f',3));
+	}
+	
+	void JointPositionPlugin::doUpdateLabelJs4(double position)
+	{
+		label_js_j4_->setText(QString::number(position,'f',3));
+	}
+	
+	void JointPositionPlugin::doUpdateLabelJs5(double position)
+	{
+		label_js_j5_->setText(QString::number(position,'f',3));
+	}
+	
+	void JointPositionPlugin::doUpdateLabelJs6(double position)
+	{
+		label_js_j6_->setText(QString::number(position,'f',3));
+	}
+	
+	
 	void JointPositionPlugin::setupROSComponents_()
 	{
 		/* Setup publishers */
 		pub_send_joint_position_ = getNodeHandle().advertise<std_msgs::Float64MultiArray>("/kuka_lwr_left/kuka_group_command_controller_fri/command", 1);
+		
+		/* Setup subscribers */
+		sub_joint_handle = getNodeHandle().subscribe("/kuka_lwr_left/joint_states", 1000, &JointPositionPlugin::jsCallback_, this);
 	}
 	
 	
