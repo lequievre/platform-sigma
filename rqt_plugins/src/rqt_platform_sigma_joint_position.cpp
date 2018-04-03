@@ -9,8 +9,10 @@
 #include "rqt_plugins/rqt_platform_sigma_joint_position.h"
 #include <pluginlib/class_list_macros.h>
 
-#include <math.h>
+#include <controller_manager_msgs/ListControllers.h>
+// cf /opt/ros/indigo/include/controller_manager_msgs
 
+#include <math.h>
 
 namespace platform_sigma_plugins_ns {
 	
@@ -26,7 +28,6 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::initPlugin(qt_gui_cpp::PluginContext& context)
 	{
-		setupROSComponents_();
 		
 		// create a main widget named widget_
 		widget_ = new QWidget();
@@ -37,6 +38,27 @@ namespace platform_sigma_plugins_ns {
 		vlayout_outer_->setObjectName("vertical_layout_outer");
 		
 		QSizePolicy fixed_policy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+		
+		// layout ns
+		hlayout_ns_= new QHBoxLayout();
+		hlayout_ns_->setObjectName("horizontal_layout_ns");
+		
+		ns_label_ = new QLabel();
+        ns_label_->setObjectName("ns_label_");
+        ns_label_->setText("Kuka Namespace :");
+        ns_label_->setSizePolicy(fixed_policy);
+        hlayout_ns_->addWidget(ns_label_);
+        
+        // create a combo box for kuka namespaces
+        ns_combo_ = new QComboBox();
+        ns_combo_->setObjectName("ns_combo_");
+        ns_combo_->addItem("kuka_lwr_left");
+        ns_combo_->addItem("kuka_lwr_right");
+		hlayout_ns_->addWidget(ns_combo_);
+		
+		connect(ns_combo_, SIGNAL(currentIndexChanged(int)), this, SLOT(ns_combo_changed(int)));
+		
+		vlayout_outer_->addLayout(hlayout_ns_);
 		
 		// start j0
 		hlayout_j0_ = new QHBoxLayout();
@@ -289,32 +311,63 @@ namespace platform_sigma_plugins_ns {
 		// set widget_ to main widget
 		widget_->setLayout(vlayout_outer_);
 		context.addWidget(widget_);
+		
+		QVector<double> vect_init_joint_values;
+		vect_init_joint_values.resize(7);
+		vect_init_joint_values.fill(0);
+		
+		map_selected_joint_values_.insert("kuka_lwr_left",vect_init_joint_values);
+		map_selected_joint_values_.insert("kuka_lwr_right",vect_init_joint_values);
+		
+		setupROSComponents_();
+	}
+	
+	void JointPositionPlugin::ns_combo_changed(int index)
+	{
+		slider_j0_->setValue(map_selected_joint_values_[ns_combo_->currentText()][0]);
+		line_j0_->setText(QString::number(map_selected_joint_values_[ns_combo_->currentText()][0]));
+		
+		slider_j1_->setValue(map_selected_joint_values_[ns_combo_->currentText()][1]);
+		line_j1_->setText(QString::number(map_selected_joint_values_[ns_combo_->currentText()][1]));
+		
+		slider_j2_->setValue(map_selected_joint_values_[ns_combo_->currentText()][2]);
+		line_j2_->setText(QString::number(map_selected_joint_values_[ns_combo_->currentText()][2]));
+		
+		slider_j3_->setValue(map_selected_joint_values_[ns_combo_->currentText()][3]);
+		line_j3_->setText(QString::number(map_selected_joint_values_[ns_combo_->currentText()][3]));
+		
+		slider_j4_->setValue(map_selected_joint_values_[ns_combo_->currentText()][4]);
+		line_j4_->setText(QString::number(map_selected_joint_values_[ns_combo_->currentText()][4]));
+		
+		slider_j5_->setValue(map_selected_joint_values_[ns_combo_->currentText()][5]);
+		line_j5_->setText(QString::number(map_selected_joint_values_[ns_combo_->currentText()][5]));
+		
+		slider_j6_->setValue(map_selected_joint_values_[ns_combo_->currentText()][6]);
+		line_j6_->setText(QString::number(map_selected_joint_values_[ns_combo_->currentText()][6]));
+		
 	}
 	
 	void JointPositionPlugin::sendPosition()
 	{
-		std::vector<double> vect;
-		vect.resize(7);
-		
-		vect[0] = slider_j0_->value();
-		vect[1] = slider_j1_->value();
-		vect[2] = slider_j2_->value();
-		vect[3] = slider_j3_->value();
-		vect[4] = slider_j4_->value();
-		vect[5] = slider_j5_->value();
-		vect[6] = slider_j6_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][0] = slider_j0_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][1] = slider_j1_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][2] = slider_j2_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][3] = slider_j3_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][4] = slider_j4_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][5] = slider_j5_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][6] = slider_j6_->value();
 			
 		joint_position_msg_.layout.dim.clear();
 		joint_position_msg_.layout.dim.push_back(std_msgs::MultiArrayDimension());
-		joint_position_msg_.layout.dim[0].size = vect.size();
+		joint_position_msg_.layout.dim[0].size = map_selected_joint_values_[ns_combo_->currentText()].size();
 		joint_position_msg_.layout.dim[0].stride = 1;
 		joint_position_msg_.layout.dim[0].label = "x_values"; // or whatever name you typically use to index vec1
 
 		// copy in the data
 		joint_position_msg_.data.clear();
-		joint_position_msg_.data.insert(joint_position_msg_.data.end(), vect.begin(), vect.end());
+		joint_position_msg_.data.insert(joint_position_msg_.data.end(), map_selected_joint_values_[ns_combo_->currentText()].begin(), map_selected_joint_values_[ns_combo_->currentText()].end());
 		
-		pub_send_joint_position_.publish(joint_position_msg_);
+		map_pub_joint_position_[ns_combo_->currentText()].publish(joint_position_msg_);
 	}
 	
 	void JointPositionPlugin::resetPosition()
@@ -326,7 +379,6 @@ namespace platform_sigma_plugins_ns {
 		slider_j4_->setValue(0);
 		slider_j5_->setValue(0);
 		slider_j6_->setValue(0);
-		
 	}
 	
 	void JointPositionPlugin::setValueLineJ0(double value)
@@ -419,17 +471,32 @@ namespace platform_sigma_plugins_ns {
 		// v = instance_settings.value(k)
 	}
 	
-	void JointPositionPlugin::jsCallback_(const sensor_msgs::JointState::ConstPtr& msg)
+	void JointPositionPlugin::jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg)
 	{
-		
-		emit updateLabelJs0(msg->position[0]);
-		emit updateLabelJs1(msg->position[1]);
-		emit updateLabelJs2(msg->position[2]);
-		emit updateLabelJs3(msg->position[3]);
-		emit updateLabelJs4(msg->position[4]);
-		emit updateLabelJs5(msg->position[5]);
-		emit updateLabelJs6(msg->position[6]);
-
+		if (ns_combo_->currentText() == "kuka_lwr_left")
+		{
+			emit updateLabelJs0(msg->position[0]);
+			emit updateLabelJs1(msg->position[1]);
+			emit updateLabelJs2(msg->position[2]);
+			emit updateLabelJs3(msg->position[3]);
+			emit updateLabelJs4(msg->position[4]);
+			emit updateLabelJs5(msg->position[5]);
+			emit updateLabelJs6(msg->position[6]);
+		}
+	}
+	
+	void JointPositionPlugin::jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg)
+	{
+		if (ns_combo_->currentText() == "kuka_lwr_right")
+		{
+			emit updateLabelJs0(msg->position[0]);
+			emit updateLabelJs1(msg->position[1]);
+			emit updateLabelJs2(msg->position[2]);
+			emit updateLabelJs3(msg->position[3]);
+			emit updateLabelJs4(msg->position[4]);
+			emit updateLabelJs5(msg->position[5]);
+			emit updateLabelJs6(msg->position[6]);
+		}
 	}
 	
 	
@@ -472,11 +539,15 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::setupROSComponents_()
 	{
-		/* Setup publishers */
-		pub_send_joint_position_ = getNodeHandle().advertise<std_msgs::Float64MultiArray>("/kuka_lwr_left/kuka_group_command_controller_fri/command", 1);
+		QString name_of_position_controller = "kuka_group_command_controller_fri";
 		
-		/* Setup subscribers */
-		sub_joint_handle = getNodeHandle().subscribe("/kuka_lwr_left/joint_states", 1000, &JointPositionPlugin::jsCallback_, this);
+		/* Setup publishers */
+		map_pub_joint_position_.insert("kuka_lwr_left",getNodeHandle().advertise<std_msgs::Float64MultiArray>(QString("/kuka_lwr_left/").append(name_of_position_controller).append("/").append("command").toStdString(), 1));
+		map_pub_joint_position_.insert("kuka_lwr_right",getNodeHandle().advertise<std_msgs::Float64MultiArray>(QString("/kuka_lwr_right/").append(name_of_position_controller).append("/").append("command").toStdString(), 1));
+			
+		map_sub_joint_handle_.insert("kuka_lwr_left",getNodeHandle().subscribe(QString("/kuka_lwr_left/").append("joint_states").toStdString(), 1000, &JointPositionPlugin::jsCallback_left_, this));
+		map_sub_joint_handle_.insert("kuka_lwr_right",getNodeHandle().subscribe(QString("/kuka_lwr_right/").append("joint_states").toStdString(), 1000, &JointPositionPlugin::jsCallback_right_, this));
+		
 	}
 	
 	
@@ -484,7 +555,6 @@ namespace platform_sigma_plugins_ns {
 	{
 		
 	}
-
 	
 } // End of namespace
 

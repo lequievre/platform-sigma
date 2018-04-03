@@ -21,17 +21,17 @@
 #include <QtGui/QPushButton>
 #include <QtGui/QSlider>
 #include <QtGui/QLineEdit>
+#include <QtGui/QComboBox>
 
 // Qwt graphics
 #include <qwt_slider.h>
 #include <qwt_text_label.h>
 
-
 // ROS msgs
 #include "std_msgs/Float64MultiArray.h"
 #include "sensor_msgs/JointState.h"
 
-#define TRACE_JointPositionPlugin_ACTIVATED 0
+#define TRACE_JointPositionPlugin_ACTIVATED 1
 
 namespace platform_sigma_plugins_ns {
 	
@@ -81,6 +81,8 @@ namespace platform_sigma_plugins_ns {
 			void doUpdateLabelJs5(double position);
 			void doUpdateLabelJs6(double position);
 			
+			void ns_combo_changed(int);
+			
 		  signals:
 		  
 				void updateLabelJs0(double position);
@@ -94,6 +96,8 @@ namespace platform_sigma_plugins_ns {
 		  private:
 			QWidget* widget_;
 			QVBoxLayout* vlayout_outer_;
+			QHBoxLayout* hlayout_ns_;
+			
 			QHBoxLayout* hlayout_j0_, *hlayout_j1_, *hlayout_j2_, *hlayout_j3_, *hlayout_j4_, *hlayout_j5_, *hlayout_j6_, *hlayout_buttons_;
 			QLabel* label_j0_, *label_j1_, *label_j2_, *label_j3_, *label_j4_, *label_j5_, *label_j6_;
 			QwtSlider* slider_j0_, *slider_j1_, *slider_j2_, *slider_j3_, *slider_j4_, *slider_j5_, *slider_j6_;
@@ -101,9 +105,14 @@ namespace platform_sigma_plugins_ns {
 			QLineEdit* line_j0_, *line_j1_, *line_j2_, *line_j3_, *line_j4_, *line_j5_, *line_j6_;
 			QPushButton* button_send_, *button_reset_;
 			
-			/* Publishers */
-			ros::Publisher  pub_send_joint_position_;
-			ros::Subscriber sub_joint_handle;
+			QLabel* ns_label_;
+			QComboBox* ns_combo_;
+			
+			/* Publishers && Subscribers */
+			QMap<QString, ros::Publisher> map_pub_joint_position_;
+			QMap<QString, ros::Subscriber> map_sub_joint_handle_;
+			
+			QMap<QString, QVector<double> > map_selected_joint_values_;
 			
 			ros::Time current_time, previous_time;
 			
@@ -113,7 +122,8 @@ namespace platform_sigma_plugins_ns {
 			void setupROSComponents_();
 			void shutdownROSComponents_();
 			
-			void jsCallback_(const sensor_msgs::JointState::ConstPtr& msg);
+			void jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg);
+			void jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg);
 			
 		
 	}; // End of class
