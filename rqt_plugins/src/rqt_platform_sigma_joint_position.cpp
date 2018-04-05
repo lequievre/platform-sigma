@@ -13,25 +13,28 @@
 // cf /opt/ros/indigo/include/controller_manager_msgs
 
 #include <math.h>
+#include <QtCore/QTextStream>
+#include <QtCore/QMetaType>
 
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
-	: rqt_gui_cpp::Plugin(), widget_(0), hlayout_j0_(0), hlayout_j1_(0), hlayout_j2_(0), hlayout_j3_(0), hlayout_j4_(0), hlayout_j5_(0), hlayout_j6_(0), 
+	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0), hlayout_j0_(0), hlayout_j1_(0), hlayout_j2_(0), hlayout_j3_(0), hlayout_j4_(0), hlayout_j5_(0), hlayout_j6_(0), 
 	 label_j0_(0), label_j1_(0), label_j2_(0), label_j3_(0), label_j4_(0), label_j5_(0), label_j6_(0), 
 	 button_send_(0), button_reset_(0),
 	 slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
 	 line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0), current_time(0), previous_time(0)
 	{
 		setObjectName("Plugin Joint Position");
+		qRegisterMetaType<QVector<double> >("QVector<double>");
 	}
 	
 	void JointPositionPlugin::initPlugin(qt_gui_cpp::PluginContext& context)
 	{
 		
 		// create a main widget named widget_
-		widget_ = new QWidget();
-		widget_->setWindowTitle("Joint Position");
+		widget_sliders_ = new QWidget();
+		widget_sliders_->setWindowTitle("Joint Position");
 	
 		// create layouts
 		vlayout_outer_ = new QVBoxLayout();
@@ -64,18 +67,13 @@ namespace platform_sigma_plugins_ns {
 		hlayout_j0_ = new QHBoxLayout();
         hlayout_j0_->setObjectName("horizontal_layout_j0");
         
-        label_js_j0_ = new QwtTextLabel();
-        label_js_j0_->setObjectName("label_js_j0_");
-        label_js_j0_->setText(QString::number(0));
-        label_js_j0_->setSizePolicy(fixed_policy);
-        
         label_j0_ = new QLabel();
         label_j0_->setObjectName("label_j0_");
         label_j0_->setText("Joint 0 :");
         label_j0_->setSizePolicy(fixed_policy);
         hlayout_j0_->addWidget(label_j0_);
         
-        slider_j0_ = new QwtSlider(widget_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
+        slider_j0_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
         slider_j0_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
 		slider_j0_->setValue( 0 );
 		connect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
@@ -89,7 +87,6 @@ namespace platform_sigma_plugins_ns {
 		
 		hlayout_j0_->addWidget(line_j0_);
 		//hlayout_j0_->addStretch(1);
-		hlayout_j0_->addWidget(label_js_j0_);
 		
 		vlayout_outer_->addLayout(hlayout_j0_);
 		// end j0
@@ -98,17 +95,13 @@ namespace platform_sigma_plugins_ns {
 		hlayout_j1_ = new QHBoxLayout();
         hlayout_j1_->setObjectName("horizontal_layout_j1");
         
-        label_js_j1_ = new QwtTextLabel();
-        label_js_j1_->setObjectName("label_js_j1_");
-        label_js_j1_->setText(QString::number(0));
-        
         label_j1_ = new QLabel();
         label_j1_->setObjectName("label_j1_");
         label_j1_->setText("Joint 1 :");
         label_j1_->setSizePolicy(fixed_policy);
         hlayout_j1_->addWidget(label_j1_);
         
-        slider_j1_ = new QwtSlider(widget_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
+        slider_j1_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
         slider_j1_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
 		slider_j1_->setValue( 0 );
 		connect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
@@ -121,7 +114,6 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j1_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ1()) );
 		
 		hlayout_j1_->addWidget(line_j1_);
-		hlayout_j1_->addWidget(label_js_j1_);
 		
 		vlayout_outer_->addLayout(hlayout_j1_);
 		// end j1
@@ -130,17 +122,13 @@ namespace platform_sigma_plugins_ns {
 		hlayout_j2_ = new QHBoxLayout();
         hlayout_j2_->setObjectName("horizontal_layout_j2");
         
-        label_js_j2_ = new QwtTextLabel();
-        label_js_j2_->setObjectName("label_js_j2_");
-        label_js_j2_->setText(QString::number(0));
-        
         label_j2_ = new QLabel();
         label_j2_->setObjectName("label_j2_");
         label_j2_->setText("Joint 2 :");
         label_j2_->setSizePolicy(fixed_policy);
         hlayout_j2_->addWidget(label_j2_);
         
-        slider_j2_ = new QwtSlider(widget_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
+        slider_j2_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
         slider_j2_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
 		slider_j2_->setValue( 0 );
 		connect( slider_j2_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ2(double)) );
@@ -153,7 +141,6 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j2_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ2()) );
 		
 		hlayout_j2_->addWidget(line_j2_);
-		hlayout_j2_->addWidget(label_js_j2_);
 		
 		vlayout_outer_->addLayout(hlayout_j2_);
 		// end j2
@@ -162,17 +149,13 @@ namespace platform_sigma_plugins_ns {
 		hlayout_j3_ = new QHBoxLayout();
         hlayout_j3_->setObjectName("horizontal_layout_j3");
         
-        label_js_j3_ = new QwtTextLabel();
-        label_js_j3_->setObjectName("label_js_j3_");
-        label_js_j3_->setText(QString::number(0));
-        
         label_j3_ = new QLabel();
         label_j3_->setObjectName("label_j3_");
         label_j3_->setText("Joint 3 :");
         label_j3_->setSizePolicy(fixed_policy);
         hlayout_j3_->addWidget(label_j3_);
         
-        slider_j3_ = new QwtSlider(widget_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
+        slider_j3_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
         slider_j3_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
 		slider_j3_->setValue( 0 );
 		connect( slider_j3_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ3(double)) );
@@ -185,7 +168,6 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j3_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ3()) );
 		
 		hlayout_j3_->addWidget(line_j3_);
-		hlayout_j3_->addWidget(label_js_j3_);
 		
 		vlayout_outer_->addLayout(hlayout_j3_);
 		// end j3
@@ -194,17 +176,13 @@ namespace platform_sigma_plugins_ns {
 		hlayout_j4_ = new QHBoxLayout();
         hlayout_j4_->setObjectName("horizontal_layout_j4");
         
-        label_js_j4_ = new QwtTextLabel();
-        label_js_j4_->setObjectName("label_js_j4_");
-        label_js_j4_->setText(QString::number(0));
-        
         label_j4_ = new QLabel();
         label_j4_->setObjectName("label_j4_");
         label_j4_->setText("Joint 4 :");
         label_j4_->setSizePolicy(fixed_policy);
         hlayout_j4_->addWidget(label_j4_);
         
-        slider_j4_ = new QwtSlider(widget_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
+        slider_j4_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
         slider_j4_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
 		slider_j4_->setValue( 0 );
 		connect( slider_j4_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ4(double)) );
@@ -217,7 +195,6 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j4_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ4()) );
 		
 		hlayout_j4_->addWidget(line_j4_);
-		hlayout_j4_->addWidget(label_js_j4_);
 		
 		vlayout_outer_->addLayout(hlayout_j4_);
 		// end j4
@@ -225,18 +202,14 @@ namespace platform_sigma_plugins_ns {
 		// start j5
 		hlayout_j5_ = new QHBoxLayout();
         hlayout_j5_->setObjectName("horizontal_layout_j5");
-        
-        label_js_j5_ = new QwtTextLabel();
-        label_js_j5_->setObjectName("label_js_j5_");
-        label_js_j5_->setText(QString::number(0));
-        
+           
         label_j5_ = new QLabel();
         label_j5_->setObjectName("label_j5_");
         label_j5_->setText("Joint 5 :");
         label_j5_->setSizePolicy(fixed_policy);
         hlayout_j5_->addWidget(label_j5_);
         
-        slider_j5_ = new QwtSlider(widget_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
+        slider_j5_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
         slider_j5_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
 		slider_j5_->setValue( 0 );
 		connect( slider_j5_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ5(double)) );
@@ -249,7 +222,6 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j5_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ5()) );
 		
 		hlayout_j5_->addWidget(line_j5_);
-		hlayout_j5_->addWidget(label_js_j5_);
 		
 		vlayout_outer_->addLayout(hlayout_j5_);
 		// end j5
@@ -257,18 +229,14 @@ namespace platform_sigma_plugins_ns {
 		// start j6
 		hlayout_j6_ = new QHBoxLayout();
         hlayout_j6_->setObjectName("horizontal_layout_j6");
-        
-        label_js_j6_ = new QwtTextLabel();
-        label_js_j6_->setObjectName("label_js_j6_");
-        label_js_j6_->setText(QString::number(0));
-        
+         
         label_j6_ = new QLabel();
         label_j6_->setObjectName("label_j6_");
         label_j6_->setText("Joint 6 :");
         label_j6_->setSizePolicy(fixed_policy);
         hlayout_j6_->addWidget(label_j6_);
         
-        slider_j6_ = new QwtSlider(widget_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
+        slider_j6_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
         slider_j6_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
 		slider_j6_->setValue( 0 );
 		connect( slider_j6_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ6(double)) );
@@ -281,7 +249,6 @@ namespace platform_sigma_plugins_ns {
 		connect( line_j6_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ6()) );
 		
 		hlayout_j6_->addWidget(line_j6_);
-		hlayout_j6_->addWidget(label_js_j6_);
 		
 		vlayout_outer_->addLayout(hlayout_j6_);
 		// end j6
@@ -300,17 +267,46 @@ namespace platform_sigma_plugins_ns {
 		
 		vlayout_outer_->addLayout(hlayout_buttons_);
 		
-		connect(this, SIGNAL(updateLabelJs0(double)), this, SLOT(doUpdateLabelJs0(double)));
+		/*connect(this, SIGNAL(updateLabelJs0(double)), this, SLOT(doUpdateLabelJs0(double)));
 		connect(this, SIGNAL(updateLabelJs1(double)), this, SLOT(doUpdateLabelJs1(double)));
 		connect(this, SIGNAL(updateLabelJs2(double)), this, SLOT(doUpdateLabelJs2(double)));
 		connect(this, SIGNAL(updateLabelJs3(double)), this, SLOT(doUpdateLabelJs3(double)));
 		connect(this, SIGNAL(updateLabelJs4(double)), this, SLOT(doUpdateLabelJs4(double)));
 		connect(this, SIGNAL(updateLabelJs5(double)), this, SLOT(doUpdateLabelJs5(double)));
-		connect(this, SIGNAL(updateLabelJs6(double)), this, SLOT(doUpdateLabelJs6(double)));
+		connect(this, SIGNAL(updateLabelJs6(double)), this, SLOT(doUpdateLabelJs6(double)));*/
+		
+		connect(this, SIGNAL(updateLabelJs(QVector<double>)), this, SLOT(doUpdateLabelJs(QVector<double>)));
 		
 		// set widget_ to main widget
-		widget_->setLayout(vlayout_outer_);
-		context.addWidget(widget_);
+		widget_sliders_->setLayout(vlayout_outer_);
+		
+		table_widget_state_ = new QTableWidget();
+		table_widget_state_->setObjectName("table_widget_state_");
+		table_widget_state_->setRowCount(7);
+		table_widget_state_->setColumnCount(2);
+		
+		table_widget_state_->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+	
+		//Set Header Label Texts Here
+		table_widget_state_->setHorizontalHeaderLabels(QString("Joint name;Joint State").split(";"));
+		
+		QString string_name_of_joint;
+		QTextStream stream_name_of_joint(&string_name_of_joint);
+		
+		for (size_t i=0; i<7; i++)
+		{
+			stream_name_of_joint << "Joint" << i;
+			table_widget_state_->setItem(i,0,new QTableWidgetItem(stream_name_of_joint.readAll()));
+			table_widget_state_->setItem(i,1,new QTableWidgetItem("0"));
+			
+			stream_name_of_joint.flush();
+		}
+		
+		tab_widget_ = new QTabWidget();
+		tab_widget_->addTab(widget_sliders_,"Sliders Position");
+		tab_widget_->addTab(table_widget_state_,"Joint State");
+		
+		context.addWidget(tab_widget_);
 		
 		QVector<double> vect_init_joint_values;
 		vect_init_joint_values.resize(7);
@@ -475,13 +471,16 @@ namespace platform_sigma_plugins_ns {
 	{
 		if (ns_combo_->currentText() == "kuka_lwr_left")
 		{
-			emit updateLabelJs0(msg->position[0]);
+			/*emit updateLabelJs0(msg->position[0]);
 			emit updateLabelJs1(msg->position[1]);
 			emit updateLabelJs2(msg->position[2]);
 			emit updateLabelJs3(msg->position[3]);
 			emit updateLabelJs4(msg->position[4]);
 			emit updateLabelJs5(msg->position[5]);
-			emit updateLabelJs6(msg->position[6]);
+			emit updateLabelJs6(msg->position[6]);*/
+			QVector<double> v = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
+			emit updateLabelJs(v);
+			
 		}
 	}
 	
@@ -489,53 +488,72 @@ namespace platform_sigma_plugins_ns {
 	{
 		if (ns_combo_->currentText() == "kuka_lwr_right")
 		{
-			emit updateLabelJs0(msg->position[0]);
+			/*emit updateLabelJs0(msg->position[0]);
 			emit updateLabelJs1(msg->position[1]);
 			emit updateLabelJs2(msg->position[2]);
 			emit updateLabelJs3(msg->position[3]);
 			emit updateLabelJs4(msg->position[4]);
 			emit updateLabelJs5(msg->position[5]);
-			emit updateLabelJs6(msg->position[6]);
+			emit updateLabelJs6(msg->position[6]);*/
+			//std::vector<double> sv(std::begin(msg->position), std::end(msg->position));
+			QVector<double> v = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
+			emit updateLabelJs(v);
 		}
 	}
 	
 	
-	void JointPositionPlugin::doUpdateLabelJs0(double position)
+	void JointPositionPlugin::doUpdateLabelJs(QVector<double> positions)
 	{
-		label_js_j0_->setText(QString::number(position,'f',3));
+		for (size_t i=0; i<positions.size(); i++)
+		{
+			table_widget_state_->item(i,1)->setText(QString::number(positions[i],'f',5));
+		}
+	}
+	
+	
+	/*void JointPositionPlugin::doUpdateLabelJs0(double position)
+	{
+		//label_js_j0_->setText(QString::number(position,'f',3));
+		table_widget_state_->item(0,1)->setText(QString::number(position,'f',5));
 	}
 	
 	
 	void JointPositionPlugin::doUpdateLabelJs1(double position)
 	{
-		label_js_j1_->setText(QString::number(position,'f',3));
+		//label_js_j1_->setText(QString::number(position,'f',3));
+		table_widget_state_->item(1,1)->setText(QString::number(position,'f',5));
 	}
 	
 	void JointPositionPlugin::doUpdateLabelJs2(double position)
 	{
-		label_js_j2_->setText(QString::number(position,'f',3));
+		//label_js_j2_->setText(QString::number(position,'f',3));
+		table_widget_state_->item(2,1)->setText(QString::number(position,'f',5));
 	}
 	
 	void JointPositionPlugin::doUpdateLabelJs3(double position)
 	{
-		label_js_j3_->setText(QString::number(position,'f',3));
+		//label_js_j3_->setText(QString::number(position,'f',3));
+		table_widget_state_->item(3,1)->setText(QString::number(position,'f',5));
 	}
 	
 	void JointPositionPlugin::doUpdateLabelJs4(double position)
 	{
-		label_js_j4_->setText(QString::number(position,'f',3));
+		//label_js_j4_->setText(QString::number(position,'f',3));
+		table_widget_state_->item(4,1)->setText(QString::number(position,'f',5));
 	}
 	
 	void JointPositionPlugin::doUpdateLabelJs5(double position)
 	{
-		label_js_j5_->setText(QString::number(position,'f',3));
+		//label_js_j5_->setText(QString::number(position,'f',3));
+		table_widget_state_->item(5,1)->setText(QString::number(position,'f',5));
 	}
 	
 	void JointPositionPlugin::doUpdateLabelJs6(double position)
 	{
-		label_js_j6_->setText(QString::number(position,'f',3));
+		//label_js_j6_->setText(QString::number(position,'f',3));
+		table_widget_state_->item(6,1)->setText(QString::number(position,'f',5));
 	}
-	
+	*/
 	
 	void JointPositionPlugin::setupROSComponents_()
 	{

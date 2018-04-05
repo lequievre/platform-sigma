@@ -22,6 +22,8 @@
 #include <QtGui/QSlider>
 #include <QtGui/QLineEdit>
 #include <QtGui/QComboBox>
+#include <QtGui/QTabWidget>
+#include <QtGui/QTableWidget>
 
 // Qwt graphics
 #include <qwt_slider.h>
@@ -73,35 +75,42 @@ namespace platform_sigma_plugins_ns {
 			void resetPosition();
 			void sendPosition();
 			
-			void doUpdateLabelJs0(double position);
+			/*void doUpdateLabelJs0(double position);
 			void doUpdateLabelJs1(double position);
 			void doUpdateLabelJs2(double position);
 			void doUpdateLabelJs3(double position);
 			void doUpdateLabelJs4(double position);
 			void doUpdateLabelJs5(double position);
-			void doUpdateLabelJs6(double position);
+			void doUpdateLabelJs6(double position);*/
+			
+			void doUpdateLabelJs(QVector<double> positions);
 			
 			void ns_combo_changed(int);
 			
 		  signals:
 		  
-				void updateLabelJs0(double position);
+				/*void updateLabelJs0(double position);
 				void updateLabelJs1(double position);
 				void updateLabelJs2(double position);
 				void updateLabelJs3(double position);
 				void updateLabelJs4(double position);
 				void updateLabelJs5(double position);
-				void updateLabelJs6(double position);
+				void updateLabelJs6(double position);*/
+				
+				void updateLabelJs(QVector<double> positions);
 		 
 		  private:
-			QWidget* widget_;
-			QVBoxLayout* vlayout_outer_;
+		  
+			QTabWidget* tab_widget_;
+			QTableWidget* table_widget_state_;
+			QWidget* widget_sliders_;
+			
+			QVBoxLayout* vlayout_outer_, * vlayout_state_;
 			QHBoxLayout* hlayout_ns_;
 			
 			QHBoxLayout* hlayout_j0_, *hlayout_j1_, *hlayout_j2_, *hlayout_j3_, *hlayout_j4_, *hlayout_j5_, *hlayout_j6_, *hlayout_buttons_;
 			QLabel* label_j0_, *label_j1_, *label_j2_, *label_j3_, *label_j4_, *label_j5_, *label_j6_;
 			QwtSlider* slider_j0_, *slider_j1_, *slider_j2_, *slider_j3_, *slider_j4_, *slider_j5_, *slider_j6_;
-			QwtTextLabel* label_js_j0_, * label_js_j1_,* label_js_j2_,* label_js_j3_,* label_js_j4_,* label_js_j5_,* label_js_j6_;
 			QLineEdit* line_j0_, *line_j1_, *line_j2_, *line_j3_, *line_j4_, *line_j5_, *line_j6_;
 			QPushButton* button_send_, *button_reset_;
 			
