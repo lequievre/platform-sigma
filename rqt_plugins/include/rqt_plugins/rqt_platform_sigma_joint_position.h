@@ -72,49 +72,30 @@ namespace platform_sigma_plugins_ns {
 			void updateValueSliderJ5();
 			void updateValueSliderJ6();
 			
-			void resetPosition();
 			void sendPosition();
-			
-			/*void doUpdateLabelJs0(double position);
-			void doUpdateLabelJs1(double position);
-			void doUpdateLabelJs2(double position);
-			void doUpdateLabelJs3(double position);
-			void doUpdateLabelJs4(double position);
-			void doUpdateLabelJs5(double position);
-			void doUpdateLabelJs6(double position);*/
 			
 			void doUpdateLabelJs(QVector<double> positions);
 			
 			void ns_combo_changed(int);
+			void resetSlidersPositions();
 			
 		  signals:
-		  
-				/*void updateLabelJs0(double position);
-				void updateLabelJs1(double position);
-				void updateLabelJs2(double position);
-				void updateLabelJs3(double position);
-				void updateLabelJs4(double position);
-				void updateLabelJs5(double position);
-				void updateLabelJs6(double position);*/
 				
-				void updateLabelJs(QVector<double> positions);
+			void updateLabelJs(QVector<double> positions);
 		 
 		  private:
 		  
 			QTabWidget* tab_widget_;
-			QTableWidget* table_widget_state_;
+			QTableWidget* table_widget_global_;
 			QWidget* widget_sliders_;
 			
-			QVBoxLayout* vlayout_outer_, * vlayout_state_;
+			QVBoxLayout* vlayout_global_;
 			QHBoxLayout* hlayout_ns_;
 			
-			QHBoxLayout* hlayout_j0_, *hlayout_j1_, *hlayout_j2_, *hlayout_j3_, *hlayout_j4_, *hlayout_j5_, *hlayout_j6_, *hlayout_buttons_;
-			QLabel* label_j0_, *label_j1_, *label_j2_, *label_j3_, *label_j4_, *label_j5_, *label_j6_;
 			QwtSlider* slider_j0_, *slider_j1_, *slider_j2_, *slider_j3_, *slider_j4_, *slider_j5_, *slider_j6_;
 			QLineEdit* line_j0_, *line_j1_, *line_j2_, *line_j3_, *line_j4_, *line_j5_, *line_j6_;
 			QPushButton* button_send_, *button_reset_;
 			
-			QLabel* ns_label_;
 			QComboBox* ns_combo_;
 			
 			/* Publishers && Subscribers */
@@ -122,8 +103,8 @@ namespace platform_sigma_plugins_ns {
 			QMap<QString, ros::Subscriber> map_sub_joint_handle_;
 			
 			QMap<QString, QVector<double> > map_selected_joint_values_;
-			
-			ros::Time current_time, previous_time;
+			QMap<QString, QVector<double> > map_current_joint_state_values_;
+			QMap<QString, bool > map_sliders_is_init_;
 			
 			/* Ros msg */
 			std_msgs::Float64MultiArray joint_position_msg_;
