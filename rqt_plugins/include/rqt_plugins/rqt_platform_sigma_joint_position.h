@@ -90,7 +90,6 @@ namespace platform_sigma_plugins_ns {
 			QWidget* widget_sliders_;
 			
 			QVBoxLayout* vlayout_global_;
-			QHBoxLayout* hlayout_ns_;
 			
 			QwtSlider* slider_j0_, *slider_j1_, *slider_j2_, *slider_j3_, *slider_j4_, *slider_j5_, *slider_j6_;
 			QLineEdit* line_j0_, *line_j1_, *line_j2_, *line_j3_, *line_j4_, *line_j5_, *line_j6_;

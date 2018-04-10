@@ -20,7 +20,7 @@
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
-	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0),
+	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0), vlayout_global_(0), table_widget_global_(0),
 	 button_send_(0), button_reset_(0),
 	 slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
 	 line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0)
@@ -345,10 +345,103 @@ namespace platform_sigma_plugins_ns {
 		((QwtSlider*)(table_widget_global_->cellWidget(6, 1)))->setValue(line_j6_->text().toDouble());
 	}
 	
-	
 	void JointPositionPlugin::shutdownPlugin()
 	{
 		shutdownROSComponents_();
+		
+		disconnect(this, SIGNAL(updateLabelJs(QVector<double>)), this, SLOT(doUpdateLabelJs(QVector<double>)));
+		
+		disconnect( line_j0_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ0()) );
+		disconnect( line_j1_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ1()) );
+		disconnect( line_j2_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ2()) );
+		disconnect( line_j3_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ3()) );
+		disconnect( line_j4_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ4()) );
+		disconnect( line_j5_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ5()) );
+		disconnect( line_j6_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ6()) );
+		
+		disconnect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
+		disconnect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
+		disconnect( slider_j2_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ2(double)) );
+		disconnect( slider_j3_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ3(double)) );
+		disconnect( slider_j4_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ4(double)) );
+		disconnect( slider_j5_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ5(double)) );
+		disconnect( slider_j6_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ6(double)) );
+		
+		disconnect(button_send_, SIGNAL(pressed()), this, SLOT(sendPosition()));
+		disconnect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersPositions()));
+		
+		for (size_t i=0; i<7; i++)
+		{
+			table_widget_global_->removeRow(i);
+		}
+		
+		if (slider_j0_)
+			delete slider_j0_;
+			
+		if (slider_j1_)
+			delete slider_j1_;
+		
+		if (slider_j2_)
+			delete slider_j2_;
+		
+		if (slider_j3_)
+			delete slider_j3_;
+		
+		if (slider_j4_)
+			delete slider_j4_;
+		
+		if (slider_j5_)
+			delete slider_j5_;
+		
+		if (slider_j6_)
+			delete slider_j6_;
+			
+		if (line_j0_)
+			delete line_j0_;
+		
+		if (line_j1_)
+			delete line_j1_;
+			
+		if (line_j2_)
+			delete line_j2_;
+		
+		if (line_j3_)
+			delete line_j3_;
+		
+		if (line_j4_)
+			delete line_j4_;
+		
+		if (line_j5_)
+			delete line_j5_;
+		
+		if (line_j6_)
+			delete line_j6_;
+			
+		vlayout_global_->removeWidget(ns_combo_);
+		vlayout_global_->removeWidget(table_widget_global_);
+		vlayout_global_->removeWidget(button_send_);
+		vlayout_global_->removeWidget(button_reset_);
+		
+		if (table_widget_global_)
+			delete table_widget_global_;
+			
+		tab_widget_->removeTab(0);
+			
+		if (button_send_)
+			delete button_send_;
+				
+		if (button_reset_)
+			delete button_reset_;
+			
+		if (ns_combo_)
+			delete ns_combo_;
+			
+		if (vlayout_global_)
+			delete vlayout_global_;
+			
+		if (widget_sliders_)
+			delete widget_sliders_;
+		
 	}
 	
 	void JointPositionPlugin::saveSettings(qt_gui_cpp::Settings& plugin_settings,
@@ -399,7 +492,6 @@ namespace platform_sigma_plugins_ns {
 		}
 	}
 	
-	
 	void JointPositionPlugin::doUpdateLabelJs(QVector<double> positions)
 	{
 		for (size_t i=0; i<positions.size(); i++)
@@ -421,9 +513,14 @@ namespace platform_sigma_plugins_ns {
 		
 	}
 	
-	
 	void JointPositionPlugin::shutdownROSComponents_()
 	{
+		
+		map_pub_joint_position_["kuka_lwr_left"].shutdown();
+		map_pub_joint_position_["kuka_lwr_right"].shutdown();
+			
+		map_sub_joint_handle_["kuka_lwr_left"].shutdown();
+		map_sub_joint_handle_["kuka_lwr_right"].shutdown();		
 		
 	}
 	
