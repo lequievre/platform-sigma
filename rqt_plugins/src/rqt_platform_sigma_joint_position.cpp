@@ -17,13 +17,15 @@
 #include <QtCore/QMetaType>
 #include <QtGui/QHeaderView>
 
+
+
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
 	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0), vlayout_global_(0), table_widget_global_(0),
 	 button_send_(0), button_reset_(0),
 	 slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
-	 line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0)
+	 line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0), firstTime_(0)
 	{
 		setObjectName("Plugin Joint Position");
 		qRegisterMetaType<QVector<double> >("QVector<double>");
@@ -187,6 +189,48 @@ namespace platform_sigma_plugins_ns {
 		
 		vlayout_global_->addWidget(table_widget_global_);
 		
+		/* Start : Plot and Curve specifications */
+		
+		datas_curve_j0.resize(50);
+		//datas_curve_j0.fill(0);
+		times_curve_j0.resize(50);
+		//times_curve_j0.fill(0);
+		
+		
+		curve_ = new QwtPlotCurve("Joint 0");
+		curve_symbol_ = new QwtSymbol(QwtSymbol::Ellipse, QBrush(Qt::blue), QPen(Qt::black), QSize(4,4));
+		curve_->setSymbol(curve_symbol_);
+		
+		plot_ = new QwtPlot(table_widget_global_);
+		plot_->setCanvasBackground(Qt::white);
+		plot_->setAxisTitle(QwtPlot::yLeft,"Joint Value (radian)");
+        plot_->setAxisTitle(QwtPlot::xBottom,"Time");
+		
+		plot_legend_ = new QwtLegend();
+		plot_->insertLegend(plot_legend_, QwtPlot::BottomLegend);
+		
+		plot_grid_ = new QwtPlotGrid();
+		plot_grid_->setPen(QPen(QColor(196,196,196)));
+        plot_grid_->attach(plot_);
+        
+		curve_->setRawSamples(times_curve_j0.data(),datas_curve_j0.data(),50);
+		curve_->attach(plot_);
+		
+		curve_->setPen( QColor( Qt::green ) );
+		//plot_->setAxisScale( QwtPlot::xBottom, 1.0, 500.0 );
+		//plot_->setAxisScale( QwtPlot::yLeft, 1.0, 500.0 );
+		//plot_->setAxisAutoScale(QwtPlot::yLeft);
+		//plot_->setAxisAutoScale(QwtPlot::yRight);
+		plot_->setAxisScale(QwtPlot::yLeft, (-170 * M_PI / 180), (170 * M_PI / 180));  
+		plot_->setTitle( "Plot title" );
+
+		//plot_->replot();
+		plot_->show();
+		
+		vlayout_global_->addWidget(plot_);
+		
+		/* End : Plot and Curve specifications */
+		
 		button_send_ = new QPushButton("Send");
 		button_send_->setToolTip("Send sliders positions to ROS position controller");
 		connect(button_send_, SIGNAL(pressed()), this, SLOT(sendPosition()));
@@ -220,7 +264,19 @@ namespace platform_sigma_plugins_ns {
 		map_sliders_is_init_.insert("kuka_lwr_left",false);
 		map_sliders_is_init_.insert("kuka_lwr_right",false);
 		
+		
 		setupROSComponents_();
+		
+		//connect(this, SIGNAL(updateCurves()), this, SLOT(doUpdateCurves()));
+		
+		timer_ = new QTimer(this);
+
+		// setup signal and slot
+		connect(timer_, SIGNAL(timeout()),
+          this, SLOT(doUpdateCurves()));
+
+		// msec
+		timer_->start(100);
 	}
 	
 	void JointPositionPlugin::ns_combo_changed(int index)
@@ -458,10 +514,51 @@ namespace platform_sigma_plugins_ns {
 		// v = instance_settings.value(k)
 	}
 	
+	void JointPositionPlugin::doUpdateCurves()
+	{
+		
+		//double min_data = *std::min_element(datas_curve_j0.begin(), datas_curve_j0.end());
+		//double max_data = *std::max_element(datas_curve_j0.begin(), datas_curve_j0.end());
+		
+		
+		//double min_time = *std::min_element(times_curve_j0.begin(), times_curve_j0.end());
+		//double max_time = *std::max_element(times_curve_j0.begin(), times_curve_j0.end());
+		
+		plot_->setAxisScale(QwtPlot::xBottom, times_curve_j0[0], times_curve_j0[times_curve_j0.size()-1]);
+		
+		
+		plot_->replot();
+	}
+	
 	void JointPositionPlugin::jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg)
 	{
 		QVector<double> v = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
 		map_current_joint_state_values_["kuka_lwr_left"] = v;
+		
+		if (v[0] < 0.1)
+			ROS_INFO("v[0]  = %f" , v[0] );
+		
+		
+		double time = msg->header.stamp.sec + (msg->header.stamp.nsec/1e9);
+
+        if (firstTime_ == 0)
+        {
+             firstTime_ = time;
+		}
+
+        double timeDuration = time - firstTime_;
+		
+		
+		if (datas_curve_j0.size() > 50)
+		{
+			datas_curve_j0.remove(0);
+			times_curve_j0.remove(0);
+		}
+		
+						
+		datas_curve_j0.append(v[0]);
+		times_curve_j0.append(timeDuration);
+				
 		
 		if (ns_combo_->currentText() == "kuka_lwr_left")
 		{
@@ -473,6 +570,7 @@ namespace platform_sigma_plugins_ns {
 			
 			emit updateLabelJs(v);	
 		}
+		
 	}
 	
 	void JointPositionPlugin::jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg)

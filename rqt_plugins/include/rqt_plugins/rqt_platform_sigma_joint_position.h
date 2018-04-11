@@ -24,10 +24,18 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QTabWidget>
 #include <QtGui/QTableWidget>
+#include <QtCore/QTimer>
 
 // Qwt graphics
 #include <qwt_slider.h>
 #include <qwt_text_label.h>
+
+#include <qwt_plot_grid.h>
+#include <qwt_legend.h>
+#include <qwt_symbol.h>
+
+#include <qwt/qwt_plot.h>
+#include <qwt/qwt_plot_curve.h>
 
 // ROS msgs
 #include "std_msgs/Float64MultiArray.h"
@@ -79,9 +87,12 @@ namespace platform_sigma_plugins_ns {
 			void ns_combo_changed(int);
 			void resetSlidersPositions();
 			
+			void doUpdateCurves();
+			
 		  signals:
 				
 			void updateLabelJs(QVector<double> positions);
+			void updateCurves();
 		 
 		  private:
 		  
@@ -113,6 +124,19 @@ namespace platform_sigma_plugins_ns {
 			
 			void jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg);
 			void jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg);
+			
+			QwtPlot      *plot_;
+			QwtPlotCurve *curve_;
+			QwtLegend *plot_legend_;
+			QwtSymbol *curve_symbol_;
+			QwtPlotGrid *plot_grid_;
+			
+			QTimer * timer_;
+			
+			QVector<double> datas_curve_j0;
+			QVector<double> times_curve_j0;
+			
+			double firstTime_;
 			
 		
 	}; // End of class
