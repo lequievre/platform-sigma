@@ -119,6 +119,7 @@ namespace lwr_hw
 							  //const double effort = stiffness_effort + joint_effort_command_[j] + gravity_effort_(j);
 							  const double effort = joint_effort_command_[j];
 							  sim_joints_[j]->SetForce(0, effort);
+							  
 							  //ROS_INFO("LWRHWGazebo -> write,  JOINT_IMPEDANCE effort =%f",effort);
 							  #if GAZEBO_MAJOR_VERSION >= 4
 									  sim_joints_[j]->SetPosition(0, joint_position_command_[j]);

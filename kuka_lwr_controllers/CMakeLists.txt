@@ -100,6 +100,7 @@ add_library(${PROJECT_NAME}
   src/computed_torque_controller.cpp
   src/cartesian_computed_torque_controller.cpp
   src/basic_torque_controller.cpp
+  src/operational_space_controller.cpp
 )
 
 # Link a target to given libraries.

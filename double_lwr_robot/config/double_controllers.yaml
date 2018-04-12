@@ -88,6 +88,12 @@ kuka_lwr_left:
     type: kuka_lwr_controllers/BasicTorqueController
     root_name: kuka_lwr_left_base_link
     tip_name: kuka_lwr_left_7_link
+    
+  # Operational Space Controller
+  operational_space_controller:
+    type: kuka_lwr_controllers/OperationalSpaceController
+    root_name: kuka_lwr_left_base_link
+    tip_name: kuka_lwr_left_7_link
 
 kuka_lwr_right:
 
@@ -179,4 +185,9 @@ kuka_lwr_right:
     type: kuka_lwr_controllers/BasicTorqueController
     root_name: kuka_lwr_right_base_link
     tip_name: kuka_lwr_right_7_link
-
+    
+  # Operational Space Controller
+  operational_space_controller:
+    type: kuka_lwr_controllers/OperationalSpaceController
+    root_name: kuka_lwr_right_base_link
+    tip_name: kuka_lwr_right_7_link
