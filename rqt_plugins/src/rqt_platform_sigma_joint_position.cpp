@@ -191,6 +191,7 @@ namespace platform_sigma_plugins_ns {
 		
 		/* Start : Plot and Curve specifications */
 		
+		/*
 		datas_curve_j0.resize(50);
 		//datas_curve_j0.fill(0);
 		times_curve_j0.resize(50);
@@ -227,7 +228,13 @@ namespace platform_sigma_plugins_ns {
 		//plot_->replot();
 		plot_->show();
 		
+		
 		vlayout_global_->addWidget(plot_);
+		*/
+		
+		plot_checked_ = new platform_sigma_plugins_ns::QtPlotChecked(table_widget_global_, QString("Movement of the KUKA Joints"), QString("Joint Value (radian)"), QString("Time (sec)"), QPair<double,double>((-170 * M_PI / 180), (170 * M_PI / 180)));
+		
+		vlayout_global_->addWidget(plot_checked_);
 		
 		/* End : Plot and Curve specifications */
 		
@@ -516,65 +523,72 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::doUpdateCurves()
 	{
-		
-		//double min_data = *std::min_element(datas_curve_j0.begin(), datas_curve_j0.end());
-		//double max_data = *std::max_element(datas_curve_j0.begin(), datas_curve_j0.end());
-		
-		
-		//double min_time = *std::min_element(times_curve_j0.begin(), times_curve_j0.end());
-		//double max_time = *std::max_element(times_curve_j0.begin(), times_curve_j0.end());
-		
+		plot_checked_->updateAxisScale();
+		/*
 		plot_->setAxisScale(QwtPlot::xBottom, times_curve_j0[0], times_curve_j0[times_curve_j0.size()-1]);
 		
 		
-		plot_->replot();
+		plot_->replot();*/
 	}
 	
 	void JointPositionPlugin::jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg)
 	{
-		QVector<double> v = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
-		map_current_joint_state_values_["kuka_lwr_left"] = v;
 		
-		if (v[0] < 0.1)
-			ROS_INFO("v[0]  = %f" , v[0] );
+		QVector<double> values = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
 		
+		bool zeros = std::all_of(values.begin(), values.end(), [](int i) { return i==0; });
 		
-		double time = msg->header.stamp.sec + (msg->header.stamp.nsec/1e9);
-
-        if (firstTime_ == 0)
-        {
-             firstTime_ = time;
-		}
-
-        double timeDuration = time - firstTime_;
-		
-		
-		if (datas_curve_j0.size() > 50)
+		if (!zeros)
 		{
-			datas_curve_j0.remove(0);
-			times_curve_j0.remove(0);
-		}
-		
-						
-		datas_curve_j0.append(v[0]);
-		times_curve_j0.append(timeDuration);
-				
-		
-		if (ns_combo_->currentText() == "kuka_lwr_left")
-		{
-			if (map_sliders_is_init_["kuka_lwr_left"]==false)
+			map_current_joint_state_values_["kuka_lwr_left"] = values;
+			
+			double time = msg->header.stamp.sec + (msg->header.stamp.nsec/1e9);
+			
+			//if (values[1] < 0.1)
+				ROS_INFO("time = %f, values[1]  = %f, msg->position[1] = %f" , time, values[1], msg->position[1]);
+			
+			
+			
+
+			if (firstTime_ == 0)
 			{
-				resetSlidersPositions();
-				map_sliders_is_init_["kuka_lwr_left"]=true;
+				 firstTime_ = time;
+			}
+
+			double timeDuration = time - firstTime_;
+			
+			/*
+			if (datas_curve_j0.size() > 50)
+			{
+				datas_curve_j0.remove(0);
+				times_curve_j0.remove(0);
 			}
 			
-			emit updateLabelJs(v);	
+							
+			datas_curve_j0.append(v[0]);
+			times_curve_j0.append(timeDuration);
+				*/
+				
+			plot_checked_->updateDataCurves(values, timeDuration);
+			
+			if (ns_combo_->currentText() == "kuka_lwr_left")
+			{
+				if (map_sliders_is_init_["kuka_lwr_left"]==false)
+				{
+					resetSlidersPositions();
+					map_sliders_is_init_["kuka_lwr_left"]=true;
+				}
+				
+				emit updateLabelJs(values);	
+			}
 		}
 		
 	}
 	
 	void JointPositionPlugin::jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg)
 	{	
+		
+		/*
 		QVector<double> v = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
 		map_current_joint_state_values_["kuka_lwr_right"] = v;
 		
@@ -588,6 +602,7 @@ namespace platform_sigma_plugins_ns {
 			
 			emit updateLabelJs(v);
 		}
+		*/
 	}
 	
 	void JointPositionPlugin::doUpdateLabelJs(QVector<double> positions)
