@@ -34,9 +34,18 @@ namespace platform_sigma_plugins_ns {
 		
 		curve_size_ = 4;
 		
+		vlayout_cb_curves_ = new QVBoxLayout();
+		vect_cb_curves_.resize(7);
+		
 		for (size_t i=0; i<7; i++)
 		{
 			map_curve_[i] = new QwtPlotCurve(QString("Joint%1").arg(i));
+			list_cb_curves_.append(QString("Joint%1").arg(i));
+			
+			vect_cb_curves_[i] = new QCheckBox(list_cb_curves_[i]);
+			vect_cb_curves_[i]->setChecked(true);
+			
+			vlayout_cb_curves_->addWidget(vect_cb_curves_[i]);
 			
 			map_data_curve_[i].resize(50);
 			vect_time_curve_.resize(50);
@@ -49,15 +58,111 @@ namespace platform_sigma_plugins_ns {
 			//map_curve_symbol_.insert(curve_name,aCurveSymbol);
 		}
 		
+		connect( vect_cb_curves_[0], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ0_(int)) );
+		connect( vect_cb_curves_[1], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ1_(int)) );
+		connect( vect_cb_curves_[2], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ2_(int)) );
+		connect( vect_cb_curves_[3], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ3_(int)) );
+		connect( vect_cb_curves_[4], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ4_(int)) );
+		connect( vect_cb_curves_[5], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ5_(int)) );
+		connect( vect_cb_curves_[6], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ6_(int)) );
+		
 		plot_->show();
 		plot_->replot();
 		
-		vlayout_global_ = new QVBoxLayout();
+		hlayout_gobal_ = new QHBoxLayout();
+		hlayout_gobal_->addWidget(plot_);
+		hlayout_gobal_->addLayout(vlayout_cb_curves_);
 		
-		vlayout_global_->addWidget(plot_);
+		vlayout_global_ = new QVBoxLayout();
+		vlayout_global_->addLayout(hlayout_gobal_);
 		
 		setLayout(vlayout_global_);
     }
+    
+    
+    void QtPlotChecked::checkedSlotJ0_(int value)
+    {
+		if (value == Qt::Checked)
+		{
+			map_curve_[0]->show();
+		}
+		else
+		{
+			map_curve_[0]->hide();
+		}
+	}
+	
+	void QtPlotChecked::checkedSlotJ1_(int value)
+    {
+		if (value == Qt::Checked)
+		{
+			map_curve_[1]->show();
+		}
+		else
+		{
+			map_curve_[1]->hide();
+		}
+	}
+	
+	void QtPlotChecked::checkedSlotJ2_(int value)
+    {
+		if (value == Qt::Checked)
+		{
+			map_curve_[2]->show();
+		}
+		else
+		{
+			map_curve_[2]->hide();
+		}
+	}
+	
+	void QtPlotChecked::checkedSlotJ3_(int value)
+    {
+		if (value == Qt::Checked)
+		{
+			map_curve_[3]->show();
+		}
+		else
+		{
+			map_curve_[3]->hide();
+		}
+	}
+	
+	void QtPlotChecked::checkedSlotJ4_(int value)
+    {
+		if (value == Qt::Checked)
+		{
+			map_curve_[4]->show();
+		}
+		else
+		{
+			map_curve_[4]->hide();
+		}
+	}
+	
+	void QtPlotChecked::checkedSlotJ5_(int value)
+    {
+		if (value == Qt::Checked)
+		{
+			map_curve_[5]->show();
+		}
+		else
+		{
+			map_curve_[5]->hide();
+		}
+	}
+	
+	void QtPlotChecked::checkedSlotJ6_(int value)
+    {
+		if (value == Qt::Checked)
+		{
+			map_curve_[6]->show();
+		}
+		else
+		{
+			map_curve_[6]->hide();
+		}
+	}
     
     void QtPlotChecked::setVectCurveColor_()
     {
@@ -73,8 +178,6 @@ namespace platform_sigma_plugins_ns {
 
 	void QtPlotChecked::updateDataCurves(QVector<double> values, double timeDuration)
 	{
-		
-		
 		if (vect_time_curve_.size() > 49)
 		{
 			vect_time_curve_.remove(0);

@@ -127,18 +127,9 @@ namespace platform_sigma_plugins_ns {
 			void jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg);
 			void jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg);
 			
-			/*QwtPlot      *plot_;
-			QwtPlotCurve *curve_;
-			QwtLegend *plot_legend_;
-			QwtSymbol *curve_symbol_;
-			QwtPlotGrid *plot_grid_;*/
-			
 			platform_sigma_plugins_ns::QtPlotChecked *plot_checked_;
 			
 			QTimer * timer_;
-			
-			/*QVector<double> datas_curve_j0;
-			QVector<double> times_curve_j0;*/
 			
 			double firstTime_;
 			

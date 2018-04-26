@@ -13,7 +13,10 @@
 #include <QtGui/QWidget>
 #include <QtCore/QPair>
 #include <QtCore/QMap>
+#include <QtCore/QVector>
 #include <QtGui/QVBoxLayout>
+#include <QtGui/QHBoxLayout>
+#include <QtGui/QCheckBox>
 
 // Qwt graphics
 #include <qwt_plot_grid.h>
@@ -22,6 +25,8 @@
 
 #include <qwt/qwt_plot.h>
 #include <qwt/qwt_plot_curve.h>
+
+#include "ros/ros.h"
 
 namespace platform_sigma_plugins_ns {
 	
@@ -46,17 +51,30 @@ namespace platform_sigma_plugins_ns {
 			QVector<double> vect_time_curve_;
 			
 			QMap<int,QwtPlotCurve *> map_curve_;
+			QStringList  			list_cb_curves_;
+			QVector<QCheckBox *> 		vect_cb_curves_;
 			//QMap<QString,QwtSymbol*> map_curve_symbol_;
 			
 			QwtPlot      	*plot_;
 			QwtPlotGrid 	*plot_grid_;
 			QwtLegend		*plot_legend_;
 			
-			QVBoxLayout* vlayout_global_;
+			QVBoxLayout		*vlayout_global_, *vlayout_cb_curves_;
+			QHBoxLayout		*hlayout_gobal_;
+			
 			QVector<QColor> vect_curve_color_;
 			int curve_size_;
 			
-			void setVectCurveColor_();
+			void setVectCurveColor_();	
+		
+		private slots:	
+			void checkedSlotJ0_(int value);
+			void checkedSlotJ1_(int value);
+			void checkedSlotJ2_(int value);
+			void checkedSlotJ3_(int value);
+			void checkedSlotJ4_(int value);
+			void checkedSlotJ5_(int value);
+			void checkedSlotJ6_(int value);
 			
 		
 	}; // End of class

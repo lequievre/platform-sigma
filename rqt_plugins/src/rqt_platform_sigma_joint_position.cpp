@@ -17,8 +17,6 @@
 #include <QtCore/QMetaType>
 #include <QtGui/QHeaderView>
 
-
-
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
@@ -125,7 +123,6 @@ namespace platform_sigma_plugins_ns {
 		
 		table_widget_global_->setCellWidget(6, 1, slider_j6_);
 		
-		
 		line_j0_ = new QLineEdit();
 		line_j0_->setObjectName("line_j0_");
 		line_j0_->setSizePolicy(fixed_policy);
@@ -189,49 +186,6 @@ namespace platform_sigma_plugins_ns {
 		
 		vlayout_global_->addWidget(table_widget_global_);
 		
-		/* Start : Plot and Curve specifications */
-		
-		/*
-		datas_curve_j0.resize(50);
-		//datas_curve_j0.fill(0);
-		times_curve_j0.resize(50);
-		//times_curve_j0.fill(0);
-		
-		
-		curve_ = new QwtPlotCurve("Joint 0");
-		curve_symbol_ = new QwtSymbol(QwtSymbol::Ellipse, QBrush(Qt::blue), QPen(Qt::black), QSize(4,4));
-		curve_->setSymbol(curve_symbol_);
-		
-		plot_ = new QwtPlot(table_widget_global_);
-		plot_->setCanvasBackground(Qt::white);
-		plot_->setAxisTitle(QwtPlot::yLeft,"Joint Value (radian)");
-        plot_->setAxisTitle(QwtPlot::xBottom,"Time");
-		
-		plot_legend_ = new QwtLegend();
-		plot_->insertLegend(plot_legend_, QwtPlot::BottomLegend);
-		
-		plot_grid_ = new QwtPlotGrid();
-		plot_grid_->setPen(QPen(QColor(196,196,196)));
-        plot_grid_->attach(plot_);
-        
-		curve_->setRawSamples(times_curve_j0.data(),datas_curve_j0.data(),50);
-		curve_->attach(plot_);
-		
-		curve_->setPen( QColor( Qt::green ) );
-		//plot_->setAxisScale( QwtPlot::xBottom, 1.0, 500.0 );
-		//plot_->setAxisScale( QwtPlot::yLeft, 1.0, 500.0 );
-		//plot_->setAxisAutoScale(QwtPlot::yLeft);
-		//plot_->setAxisAutoScale(QwtPlot::yRight);
-		plot_->setAxisScale(QwtPlot::yLeft, (-170 * M_PI / 180), (170 * M_PI / 180));  
-		plot_->setTitle( "Plot title" );
-
-		//plot_->replot();
-		plot_->show();
-		
-		
-		vlayout_global_->addWidget(plot_);
-		*/
-		
 		plot_checked_ = new platform_sigma_plugins_ns::QtPlotChecked(table_widget_global_, QString("Movement of the KUKA Joints"), QString("Joint Value (radian)"), QString("Time (sec)"), QPair<double,double>((-170 * M_PI / 180), (170 * M_PI / 180)));
 		
 		vlayout_global_->addWidget(plot_checked_);
@@ -271,16 +225,12 @@ namespace platform_sigma_plugins_ns {
 		map_sliders_is_init_.insert("kuka_lwr_left",false);
 		map_sliders_is_init_.insert("kuka_lwr_right",false);
 		
-		
 		setupROSComponents_();
-		
-		//connect(this, SIGNAL(updateCurves()), this, SLOT(doUpdateCurves()));
 		
 		timer_ = new QTimer(this);
 
 		// setup signal and slot
-		connect(timer_, SIGNAL(timeout()),
-          this, SLOT(doUpdateCurves()));
+		connect(timer_, SIGNAL(timeout()), this, SLOT(doUpdateCurves()));
 
 		// msec
 		timer_->start(100);
@@ -524,55 +474,34 @@ namespace platform_sigma_plugins_ns {
 	void JointPositionPlugin::doUpdateCurves()
 	{
 		plot_checked_->updateAxisScale();
-		/*
-		plot_->setAxisScale(QwtPlot::xBottom, times_curve_j0[0], times_curve_j0[times_curve_j0.size()-1]);
-		
-		
-		plot_->replot();*/
 	}
 	
 	void JointPositionPlugin::jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg)
 	{
-		
 		QVector<double> values = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
 		
-		bool zeros = std::all_of(values.begin(), values.end(), [](int i) { return i==0; });
+		bool zeros = std::all_of(values.begin(), values.end(), [](double position) { return position==0.0; });
 		
 		if (!zeros)
 		{
-			map_current_joint_state_values_["kuka_lwr_left"] = values;
-			
-			double time = msg->header.stamp.sec + (msg->header.stamp.nsec/1e9);
-			
-			//if (values[1] < 0.1)
-				ROS_INFO("time = %f, values[1]  = %f, msg->position[1] = %f" , time, values[1], msg->position[1]);
-			
-			
-			
-
-			if (firstTime_ == 0)
+				map_current_joint_state_values_["kuka_lwr_left"] = values;
+		}
+		
+		if (ns_combo_->currentText() == "kuka_lwr_left")
+		{
+			if (!zeros)
 			{
-				 firstTime_ = time;
-			}
+				double time = msg->header.stamp.sec + (msg->header.stamp.nsec/1e9);
+			
+				if (firstTime_ == 0)
+				{
+					firstTime_ = time;
+				}
 
-			double timeDuration = time - firstTime_;
+				double timeDuration = time - firstTime_;
 			
-			/*
-			if (datas_curve_j0.size() > 50)
-			{
-				datas_curve_j0.remove(0);
-				times_curve_j0.remove(0);
-			}
-			
-							
-			datas_curve_j0.append(v[0]);
-			times_curve_j0.append(timeDuration);
-				*/
+				plot_checked_->updateDataCurves(values, timeDuration);
 				
-			plot_checked_->updateDataCurves(values, timeDuration);
-			
-			if (ns_combo_->currentText() == "kuka_lwr_left")
-			{
 				if (map_sliders_is_init_["kuka_lwr_left"]==false)
 				{
 					resetSlidersPositions();
@@ -582,27 +511,43 @@ namespace platform_sigma_plugins_ns {
 				emit updateLabelJs(values);	
 			}
 		}
-		
 	}
 	
 	void JointPositionPlugin::jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg)
 	{	
+		QVector<double> values = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
 		
-		/*
-		QVector<double> v = QVector<double>::fromStdVector(std::vector<double>(std::begin(msg->position), std::end(msg->position)));
-		map_current_joint_state_values_["kuka_lwr_right"] = v;
+		bool zeros = std::all_of(values.begin(), values.end(), [](double position) { return position==0.0; });
+		
+		if (!zeros)
+		{
+				map_current_joint_state_values_["kuka_lwr_right"] = values;
+		}
 		
 		if (ns_combo_->currentText() == "kuka_lwr_right")
 		{
-			if (map_sliders_is_init_["kuka_lwr_right"]==false)
+			if (!zeros)
 			{
-				resetSlidersPositions();
-				map_sliders_is_init_["kuka_lwr_right"]=true;
-			}
+				double time = msg->header.stamp.sec + (msg->header.stamp.nsec/1e9);
 			
-			emit updateLabelJs(v);
+				if (firstTime_ == 0)
+				{
+					firstTime_ = time;
+				}
+
+				double timeDuration = time - firstTime_;
+			
+				plot_checked_->updateDataCurves(values, timeDuration);
+				
+				if (map_sliders_is_init_["kuka_lwr_right"]==false)
+				{
+					resetSlidersPositions();
+					map_sliders_is_init_["kuka_lwr_right"]=true;
+				}
+				
+				emit updateLabelJs(values);	
+			}
 		}
-		*/
 	}
 	
 	void JointPositionPlugin::doUpdateLabelJs(QVector<double> positions)
@@ -621,8 +566,8 @@ namespace platform_sigma_plugins_ns {
 		map_pub_joint_position_.insert("kuka_lwr_left",getNodeHandle().advertise<std_msgs::Float64MultiArray>(QString("/kuka_lwr_left/").append(name_of_position_controller).append("/").append("command").toStdString(), 1));
 		map_pub_joint_position_.insert("kuka_lwr_right",getNodeHandle().advertise<std_msgs::Float64MultiArray>(QString("/kuka_lwr_right/").append(name_of_position_controller).append("/").append("command").toStdString(), 1));
 			
-		map_sub_joint_handle_.insert("kuka_lwr_left",getNodeHandle().subscribe(QString("/kuka_lwr_left/").append("joint_states").toStdString(), 1000, &JointPositionPlugin::jsCallback_left_, this));
-		map_sub_joint_handle_.insert("kuka_lwr_right",getNodeHandle().subscribe(QString("/kuka_lwr_right/").append("joint_states").toStdString(), 1000, &JointPositionPlugin::jsCallback_right_, this));
+		map_sub_joint_handle_.insert("kuka_lwr_left",getNodeHandle().subscribe(QString("/kuka_lwr_left/").append("joint_states").toStdString(), 100000, &JointPositionPlugin::jsCallback_left_, this));
+		map_sub_joint_handle_.insert("kuka_lwr_right",getNodeHandle().subscribe(QString("/kuka_lwr_right/").append("joint_states").toStdString(), 100000, &JointPositionPlugin::jsCallback_right_, this));
 		
 	}
 	
