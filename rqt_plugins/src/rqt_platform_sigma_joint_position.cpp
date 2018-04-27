@@ -20,10 +20,7 @@
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
-	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0), vlayout_global_(0), table_widget_global_(0),
-	 button_send_(0), button_reset_(0),
-	 slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
-	 line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0), firstTime_(0)
+	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0), vlayout_global_(0), button_send_(0), button_reset_(0), firstTime_(0)
 	{
 		setObjectName("Plugin Joint Position");
 		qRegisterMetaType<QVector<double> >("QVector<double>");
@@ -39,8 +36,6 @@ namespace platform_sigma_plugins_ns {
 		vlayout_global_ = new QVBoxLayout();
 		vlayout_global_->setObjectName("vertical_layout_global");
 		
-		QSizePolicy fixed_policy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-		
 		 // create a combo box for kuka namespaces
         ns_combo_ = new QComboBox();
         ns_combo_->setObjectName("ns_combo_");
@@ -51,142 +46,11 @@ namespace platform_sigma_plugins_ns {
 		
 		vlayout_global_->addWidget(ns_combo_);
 		
-		table_widget_global_ = new QTableWidget();
-		table_widget_global_->setObjectName("table_widget_global");
-		table_widget_global_->setRowCount(7);
-		table_widget_global_->setColumnCount(4);
+		position_sliders_ = new QtPositionSliders();
 		
-		//Set Header Label Texts Here
-		table_widget_global_->setHorizontalHeaderLabels(QString("Joint name;Slider Position;Edit Position;Joint State").split(";"));
-		table_widget_global_->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+		vlayout_global_->addWidget(position_sliders_);
 		
-		QString name_of_joint;
-		QTextStream stream_name_of_joint(&name_of_joint);
-		
-		for (size_t i=0; i<7; i++)
-		{
-			stream_name_of_joint << "Joint" << i;
-			table_widget_global_->setItem(i,0,new QTableWidgetItem(stream_name_of_joint.readAll()));
-			table_widget_global_->item(i,0)->setFlags(Qt::ItemIsEnabled );
-			table_widget_global_->setItem(i,3,new QTableWidgetItem("0"));
-			table_widget_global_->item(i,3)->setFlags(Qt::ItemIsEnabled );
-			
-			stream_name_of_joint.flush();
-		}
-		
-		slider_j0_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j0_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
-		slider_j0_->setValue( 0 );
-		connect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
-		
-		table_widget_global_->setCellWidget(0, 1, slider_j0_);
-		
-		slider_j1_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j1_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
-		slider_j1_->setValue( 0 );
-		connect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
-		
-		table_widget_global_->setCellWidget(1, 1, slider_j1_);
-		
-		slider_j2_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j2_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
-		slider_j2_->setValue( 0 );
-		connect( slider_j2_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ2(double)) );
-		
-		table_widget_global_->setCellWidget(2, 1, slider_j2_);
-		
-		slider_j3_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j3_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
-		slider_j3_->setValue( 0 );
-		connect( slider_j3_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ3(double)) );
-		
-		table_widget_global_->setCellWidget(3, 1, slider_j3_);
-		
-		slider_j4_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j4_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
-		slider_j4_->setValue( 0 );
-		connect( slider_j4_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ4(double)) );
-		
-		table_widget_global_->setCellWidget(4, 1, slider_j4_);
-		
-		slider_j5_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j5_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
-		slider_j5_->setValue( 0 );
-		connect( slider_j5_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ5(double)) );
-		
-		table_widget_global_->setCellWidget(5, 1, slider_j5_);
-		
-		slider_j6_ = new QwtSlider(widget_sliders_, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j6_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
-		slider_j6_->setValue( 0 );
-		connect( slider_j6_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ6(double)) );
-		
-		table_widget_global_->setCellWidget(6, 1, slider_j6_);
-		
-		line_j0_ = new QLineEdit();
-		line_j0_->setObjectName("line_j0_");
-		line_j0_->setSizePolicy(fixed_policy);
-		line_j0_->setText(QString::number(slider_j0_->value() ));
-		connect( line_j0_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ0()) );
-		
-		table_widget_global_->setCellWidget(0, 2, line_j0_);
-		
-		line_j1_ = new QLineEdit();
-		line_j1_->setObjectName("line_j1_");
-		line_j1_->setSizePolicy(fixed_policy);
-		line_j1_->setText(QString::number(slider_j1_->value() ));
-		connect( line_j1_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ1()) );
-		
-		table_widget_global_->setCellWidget(1, 2, line_j1_);
-		
-		line_j2_ = new QLineEdit();
-		line_j2_->setObjectName("line_j2_");
-		line_j2_->setSizePolicy(fixed_policy);
-		line_j2_->setText(QString::number(slider_j2_->value() ));
-		connect( line_j2_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ2()) );
-		
-		table_widget_global_->setCellWidget(2, 2, line_j2_);
-		
-		line_j3_ = new QLineEdit();
-		line_j3_->setObjectName("line_j3_");
-		line_j3_->setSizePolicy(fixed_policy);
-		line_j3_->setText(QString::number(slider_j3_->value() ));
-		connect( line_j3_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ3()) );
-		
-		table_widget_global_->setCellWidget(3, 2, line_j3_);
-		
-		line_j4_ = new QLineEdit();
-		line_j4_->setObjectName("line_j4_");
-		line_j4_->setSizePolicy(fixed_policy);
-		line_j4_->setText(QString::number(slider_j4_->value() ));
-		connect( line_j4_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ4()) );
-		
-		table_widget_global_->setCellWidget(4, 2, line_j4_);
-		
-		line_j5_ = new QLineEdit();
-		line_j5_->setObjectName("line_j5_");
-		line_j5_->setSizePolicy(fixed_policy);
-		line_j5_->setText(QString::number(slider_j5_->value() ));
-		connect( line_j5_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ5()) );
-		
-		table_widget_global_->setCellWidget(5, 2, line_j5_);
-		
-		line_j6_ = new QLineEdit();
-		line_j6_->setObjectName("line_j6_");
-		line_j6_->setSizePolicy(fixed_policy);
-		line_j6_->setText(QString::number(slider_j6_->value() ));
-		connect( line_j6_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ6()) );
-		
-		table_widget_global_->setCellWidget(6, 2, line_j6_);
-		//table_widget_global_->resizeColumnsToContents();
-		
-		table_widget_global_->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-		table_widget_global_->verticalHeader()->setResizeMode(QHeaderView::Stretch);
-
-		
-		vlayout_global_->addWidget(table_widget_global_);
-		
-		plot_checked_ = new platform_sigma_plugins_ns::QtPlotChecked(table_widget_global_, QString("Movement of the KUKA Joints"), QString("Joint Value (radian)"), QString("Time (sec)"), QPair<double,double>((-170 * M_PI / 180), (170 * M_PI / 180)));
+		plot_checked_ = new platform_sigma_plugins_ns::QtPlotChecked(widget_sliders_, QString("Movement of the KUKA Joints"), QString("Joint Value (radian)"), QString("Time (sec)"), QPair<double,double>((-170 * M_PI / 180), (170 * M_PI / 180)));
 		
 		vlayout_global_->addWidget(plot_checked_);
 		
@@ -243,13 +107,13 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::sendPosition()
 	{
-		map_selected_joint_values_[ns_combo_->currentText()][0] = slider_j0_->value();
-		map_selected_joint_values_[ns_combo_->currentText()][1] = slider_j1_->value();
-		map_selected_joint_values_[ns_combo_->currentText()][2] = slider_j2_->value();
-		map_selected_joint_values_[ns_combo_->currentText()][3] = slider_j3_->value();
-		map_selected_joint_values_[ns_combo_->currentText()][4] = slider_j4_->value();
-		map_selected_joint_values_[ns_combo_->currentText()][5] = slider_j5_->value();
-		map_selected_joint_values_[ns_combo_->currentText()][6] = slider_j6_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][0] = position_sliders_->slider_j0_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][1] = position_sliders_->slider_j1_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][2] = position_sliders_->slider_j2_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][3] = position_sliders_->slider_j3_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][4] = position_sliders_->slider_j4_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][5] = position_sliders_->slider_j5_->value();
+		map_selected_joint_values_[ns_combo_->currentText()][6] = position_sliders_->slider_j6_->value();
 			
 		joint_position_msg_.layout.dim.clear();
 		joint_position_msg_.layout.dim.push_back(std_msgs::MultiArrayDimension());
@@ -266,96 +130,7 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::resetSlidersPositions()
 	{
-		if (ns_combo_->currentText() == "kuka_lwr_left")
-		{
-			slider_j0_->setValue(map_current_joint_state_values_["kuka_lwr_left"][0]);
-			slider_j1_->setValue(map_current_joint_state_values_["kuka_lwr_left"][1]);
-			slider_j2_->setValue(map_current_joint_state_values_["kuka_lwr_left"][2]);
-			slider_j3_->setValue(map_current_joint_state_values_["kuka_lwr_left"][3]);
-			slider_j4_->setValue(map_current_joint_state_values_["kuka_lwr_left"][4]);
-			slider_j5_->setValue(map_current_joint_state_values_["kuka_lwr_left"][5]);
-			slider_j6_->setValue(map_current_joint_state_values_["kuka_lwr_left"][6]);
-		}
-		else
-		{
-			slider_j0_->setValue(map_current_joint_state_values_["kuka_lwr_right"][0]);
-			slider_j1_->setValue(map_current_joint_state_values_["kuka_lwr_right"][1]);
-			slider_j2_->setValue(map_current_joint_state_values_["kuka_lwr_right"][2]);
-			slider_j3_->setValue(map_current_joint_state_values_["kuka_lwr_right"][3]);
-			slider_j4_->setValue(map_current_joint_state_values_["kuka_lwr_right"][4]);
-			slider_j5_->setValue(map_current_joint_state_values_["kuka_lwr_right"][5]);
-			slider_j6_->setValue(map_current_joint_state_values_["kuka_lwr_right"][6]);
-		}
-	}
-	
-	void JointPositionPlugin::setValueLineJ0(double value)
-	{
-		((QLineEdit*)(table_widget_global_->cellWidget(0, 2)))->setText(QString::number( value ));
-	}
-	
-	void JointPositionPlugin::updateValueSliderJ0()
-	{
-		((QwtSlider*)(table_widget_global_->cellWidget(0, 1)))->setValue(line_j0_->text().toDouble());
-	}
-	
-	void JointPositionPlugin::setValueLineJ1(double value)
-	{
-		((QLineEdit*)(table_widget_global_->cellWidget(1, 2)))->setText(QString::number( value ));
-	}
-	
-	void JointPositionPlugin::updateValueSliderJ1()
-	{
-		((QwtSlider*)(table_widget_global_->cellWidget(1, 1)))->setValue(line_j1_->text().toDouble());
-	}
-	
-	void JointPositionPlugin::setValueLineJ2(double value)
-	{
-		((QLineEdit*)(table_widget_global_->cellWidget(2, 2)))->setText(QString::number( value ));
-	}
-	
-	void JointPositionPlugin::updateValueSliderJ2()
-	{
-		((QwtSlider*)(table_widget_global_->cellWidget(2, 1)))->setValue(line_j2_->text().toDouble());
-	}
-	
-	void JointPositionPlugin::setValueLineJ3(double value)
-	{
-		((QLineEdit*)(table_widget_global_->cellWidget(3, 2)))->setText(QString::number( value ));
-	}
-	
-	void JointPositionPlugin::updateValueSliderJ3()
-	{
-		((QwtSlider*)(table_widget_global_->cellWidget(3, 1)))->setValue(line_j3_->text().toDouble());
-	}
-	
-	void JointPositionPlugin::setValueLineJ4(double value)
-	{
-		((QLineEdit*)(table_widget_global_->cellWidget(4, 2)))->setText(QString::number( value ));
-	}
-	
-	void JointPositionPlugin::updateValueSliderJ4()
-	{
-		((QwtSlider*)(table_widget_global_->cellWidget(4, 1)))->setValue(line_j4_->text().toDouble());
-	}
-	
-	void JointPositionPlugin::setValueLineJ5(double value)
-	{
-		((QLineEdit*)(table_widget_global_->cellWidget(5, 2)))->setText(QString::number( value ));
-	}
-	
-	void JointPositionPlugin::updateValueSliderJ5()
-	{
-		((QwtSlider*)(table_widget_global_->cellWidget(5, 1)))->setValue(line_j5_->text().toDouble());
-	}
-	
-	void JointPositionPlugin::setValueLineJ6(double value)
-	{
-		((QLineEdit*)(table_widget_global_->cellWidget(6, 2)))->setText(QString::number( value ));
-	}
-	
-	void JointPositionPlugin::updateValueSliderJ6()
-	{
-		((QwtSlider*)(table_widget_global_->cellWidget(6, 1)))->setValue(line_j6_->text().toDouble());
+		position_sliders_->updateSliders(map_current_joint_state_values_[ns_combo_->currentText()]);	
 	}
 	
 	void JointPositionPlugin::shutdownPlugin()
@@ -363,80 +138,13 @@ namespace platform_sigma_plugins_ns {
 		shutdownROSComponents_();
 		
 		disconnect(this, SIGNAL(updateLabelJs(QVector<double>)), this, SLOT(doUpdateLabelJs(QVector<double>)));
-		
-		disconnect( line_j0_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ0()) );
-		disconnect( line_j1_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ1()) );
-		disconnect( line_j2_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ2()) );
-		disconnect( line_j3_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ3()) );
-		disconnect( line_j4_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ4()) );
-		disconnect( line_j5_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ5()) );
-		disconnect( line_j6_, SIGNAL(returnPressed()), this, SLOT(updateValueSliderJ6()) );
-		
-		disconnect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
-		disconnect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
-		disconnect( slider_j2_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ2(double)) );
-		disconnect( slider_j3_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ3(double)) );
-		disconnect( slider_j4_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ4(double)) );
-		disconnect( slider_j5_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ5(double)) );
-		disconnect( slider_j6_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ6(double)) );
-		
+	
 		disconnect(button_send_, SIGNAL(pressed()), this, SLOT(sendPosition()));
 		disconnect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersPositions()));
-		
-		for (size_t i=0; i<7; i++)
-		{
-			table_widget_global_->removeRow(i);
-		}
-		
-		if (slider_j0_)
-			delete slider_j0_;
-			
-		if (slider_j1_)
-			delete slider_j1_;
-		
-		if (slider_j2_)
-			delete slider_j2_;
-		
-		if (slider_j3_)
-			delete slider_j3_;
-		
-		if (slider_j4_)
-			delete slider_j4_;
-		
-		if (slider_j5_)
-			delete slider_j5_;
-		
-		if (slider_j6_)
-			delete slider_j6_;
-			
-		if (line_j0_)
-			delete line_j0_;
-		
-		if (line_j1_)
-			delete line_j1_;
-			
-		if (line_j2_)
-			delete line_j2_;
-		
-		if (line_j3_)
-			delete line_j3_;
-		
-		if (line_j4_)
-			delete line_j4_;
-		
-		if (line_j5_)
-			delete line_j5_;
-		
-		if (line_j6_)
-			delete line_j6_;
 			
 		vlayout_global_->removeWidget(ns_combo_);
-		vlayout_global_->removeWidget(table_widget_global_);
 		vlayout_global_->removeWidget(button_send_);
 		vlayout_global_->removeWidget(button_reset_);
-		
-		if (table_widget_global_)
-			delete table_widget_global_;
 			
 		tab_widget_->removeTab(0);
 			
@@ -454,7 +162,6 @@ namespace platform_sigma_plugins_ns {
 			
 		if (widget_sliders_)
 			delete widget_sliders_;
-		
 	}
 	
 	void JointPositionPlugin::saveSettings(qt_gui_cpp::Settings& plugin_settings,
@@ -552,10 +259,7 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::doUpdateLabelJs(QVector<double> positions)
 	{
-		for (size_t i=0; i<positions.size(); i++)
-		{
-			table_widget_global_->item(i,3)->setText(QString::number(positions[i],'f',5));
-		}
+		position_sliders_->updateLabelJs(positions);
 	}
 	
 	void JointPositionPlugin::setupROSComponents_()
@@ -568,18 +272,15 @@ namespace platform_sigma_plugins_ns {
 			
 		map_sub_joint_handle_.insert("kuka_lwr_left",getNodeHandle().subscribe(QString("/kuka_lwr_left/").append("joint_states").toStdString(), 100000, &JointPositionPlugin::jsCallback_left_, this));
 		map_sub_joint_handle_.insert("kuka_lwr_right",getNodeHandle().subscribe(QString("/kuka_lwr_right/").append("joint_states").toStdString(), 100000, &JointPositionPlugin::jsCallback_right_, this));
-		
 	}
 	
 	void JointPositionPlugin::shutdownROSComponents_()
 	{
-		
 		map_pub_joint_position_["kuka_lwr_left"].shutdown();
 		map_pub_joint_position_["kuka_lwr_right"].shutdown();
 			
 		map_sub_joint_handle_["kuka_lwr_left"].shutdown();
-		map_sub_joint_handle_["kuka_lwr_right"].shutdown();		
-		
+		map_sub_joint_handle_["kuka_lwr_right"].shutdown();
 	}
 	
 } // End of namespace

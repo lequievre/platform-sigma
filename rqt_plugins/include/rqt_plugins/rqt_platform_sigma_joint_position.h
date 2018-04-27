@@ -9,8 +9,7 @@
 #ifndef joint_position_plugin_H
 #define joint_position_plugin_H
 
-#include "ros/ros.h"
-
+// rqt
 #include <rqt_gui_cpp/plugin.h>
 
 // Qt graphics
@@ -24,6 +23,8 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QTabWidget>
 #include <QtGui/QTableWidget>
+
+// Qt core
 #include <QtCore/QTimer>
 
 // Qwt graphics
@@ -41,7 +42,14 @@
 #include "std_msgs/Float64MultiArray.h"
 #include "sensor_msgs/JointState.h"
 
+// ROS
+#include "ros/ros.h"
+
+// Curves widget
 #include "qtplotchecked.h"
+
+// Joint Position Sliders widget
+#include "qtpositionsliders.h"
 
 #define TRACE_JointPositionPlugin_ACTIVATED 1
 
@@ -99,13 +107,11 @@ namespace platform_sigma_plugins_ns {
 		  private:
 		  
 			QTabWidget* tab_widget_;
-			QTableWidget* table_widget_global_;
+			
 			QWidget* widget_sliders_;
 			
 			QVBoxLayout* vlayout_global_;
 			
-			QwtSlider* slider_j0_, *slider_j1_, *slider_j2_, *slider_j3_, *slider_j4_, *slider_j5_, *slider_j6_;
-			QLineEdit* line_j0_, *line_j1_, *line_j2_, *line_j3_, *line_j4_, *line_j5_, *line_j6_;
 			QPushButton* button_send_, *button_reset_;
 			
 			QComboBox* ns_combo_;
@@ -128,6 +134,8 @@ namespace platform_sigma_plugins_ns {
 			void jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg);
 			
 			platform_sigma_plugins_ns::QtPlotChecked *plot_checked_;
+			platform_sigma_plugins_ns::QtPositionSliders *position_sliders_;
+			
 			
 			QTimer * timer_;
 			

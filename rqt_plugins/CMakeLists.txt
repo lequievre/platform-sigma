@@ -26,12 +26,14 @@ set(rqt_plugins_SRCS
   src/rqt_platform_sigma_controller_manager.cpp
   src/rqt_platform_sigma_joint_position.cpp
   src/qtplotchecked.cpp
+  src/qtpositionsliders.cpp
 )
 
 set(rqt_plugins_HDRS
   include/rqt_plugins/rqt_platform_sigma_controller_manager.h
   include/rqt_plugins/rqt_platform_sigma_joint_position.h
   include/rqt_plugins/qtplotchecked.h
+  include/rqt_plugins/qtpositionsliders.h
 )
 
 set(rqt_plugins_QRC

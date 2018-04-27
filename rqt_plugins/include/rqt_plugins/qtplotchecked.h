@@ -11,21 +11,23 @@
 
 // Qt graphics
 #include <QtGui/QWidget>
-#include <QtCore/QPair>
-#include <QtCore/QMap>
-#include <QtCore/QVector>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QCheckBox>
+
+// Qt core
+#include <QtCore/QPair>
+#include <QtCore/QMap>
+#include <QtCore/QVector>
 
 // Qwt graphics
 #include <qwt_plot_grid.h>
 #include <qwt_legend.h>
 #include <qwt_symbol.h>
-
 #include <qwt/qwt_plot.h>
 #include <qwt/qwt_plot_curve.h>
 
+// ros
 #include "ros/ros.h"
 
 namespace platform_sigma_plugins_ns {
