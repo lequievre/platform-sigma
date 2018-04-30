@@ -12,7 +12,7 @@
 namespace platform_sigma_plugins_ns {
 
 	QtPlotChecked::QtPlotChecked( QWidget *parent, const QString& title_plot, const QString& axis_title_left, const QString& axis_title_bottom, const QPair<double, double>& axis_left_scales )
-        : QWidget(parent), title_plot_(title_plot), axis_title_left_(axis_title_left), axis_title_bottom_(axis_title_bottom), axis_left_scales_(axis_left_scales)
+        : QWidget(parent), title_plot_(title_plot), axis_title_left_(axis_title_left), axis_title_bottom_(axis_title_bottom), axis_left_scales_(axis_left_scales), plot_(0), hlayout_gobal_(0), vlayout_global_(0)
     {
 		setVectCurveColor_();
 			
@@ -79,6 +79,38 @@ namespace platform_sigma_plugins_ns {
 		setLayout(vlayout_global_);
     }
     
+    QtPlotChecked::~QtPlotChecked()
+    {
+		disconnect( vect_cb_curves_[0], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ0_(int)) );
+		disconnect( vect_cb_curves_[1], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ1_(int)) );
+		disconnect( vect_cb_curves_[2], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ2_(int)) );
+		disconnect( vect_cb_curves_[3], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ3_(int)) );
+		disconnect( vect_cb_curves_[4], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ4_(int)) );
+		disconnect( vect_cb_curves_[5], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ5_(int)) );
+		disconnect( vect_cb_curves_[6], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ6_(int)) );
+		
+		for (size_t i=0; i<7; i++)
+		{
+			vlayout_cb_curves_->removeWidget(vect_cb_curves_[i]);
+			delete vect_cb_curves_[i];
+			
+			map_curve_[i]->detach();
+			delete map_curve_[i];
+		}
+		
+		delete vlayout_cb_curves_;
+		hlayout_gobal_->removeWidget(plot_);
+		
+		delete hlayout_gobal_;
+
+		plot_grid_->detach();
+		
+		delete plot_grid_;
+		delete plot_legend_;
+		delete plot_;
+		
+		delete vlayout_global_;
+	}
     
     void QtPlotChecked::checkedSlotJ0_(int value)
     {
@@ -198,9 +230,12 @@ namespace platform_sigma_plugins_ns {
 	
 	void QtPlotChecked::updateAxisScale()
 	{
-		plot_->setAxisScale(QwtPlot::xBottom, vect_time_curve_[0], vect_time_curve_[vect_time_curve_.size()-1]);
+		if (plot_)
+		{
+			plot_->setAxisScale(QwtPlot::xBottom, vect_time_curve_[0], vect_time_curve_[vect_time_curve_.size()-1]);
 		
-		plot_->replot();
+			plot_->replot();
+		}
 	}
     
 } // End of namespace

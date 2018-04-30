@@ -38,7 +38,7 @@ namespace platform_sigma_plugins_ns {
 		
 		public:
 			QtPlotChecked( QWidget *parent = 0, const QString& title_plot =  QString(), const QString& axis_title_left =  QString(), const QString& axis_title_bottom =  QString(), const QPair<double, double>& axis_left_scales = QPair<double,double>(0.0,0.0) );
-			~QtPlotChecked() {}
+			~QtPlotChecked();
 			
 			void updateDataCurves(QVector<double> values, double timeDuration);
 			void updateAxisScale(); 
