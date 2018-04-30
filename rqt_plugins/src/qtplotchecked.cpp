@@ -12,7 +12,8 @@
 namespace platform_sigma_plugins_ns {
 
 	QtPlotChecked::QtPlotChecked( QWidget *parent, const QString& title_plot, const QString& axis_title_left, const QString& axis_title_bottom, const QPair<double, double>& axis_left_scales )
-        : QWidget(parent), title_plot_(title_plot), axis_title_left_(axis_title_left), axis_title_bottom_(axis_title_bottom), axis_left_scales_(axis_left_scales), plot_(0), hlayout_gobal_(0), vlayout_global_(0)
+        : QWidget(parent), title_plot_(title_plot), axis_title_left_(axis_title_left), axis_title_bottom_(axis_title_bottom), axis_left_scales_(axis_left_scales), 
+        plot_(0), plot_grid_(0), plot_legend_(0), hlayout_gobal_(0), vlayout_global_(0), vlayout_cb_curves_(0)
     {
 		setVectCurveColor_();
 			
