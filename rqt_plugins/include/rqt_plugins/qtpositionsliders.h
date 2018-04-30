@@ -27,7 +27,7 @@ namespace platform_sigma_plugins_ns {
 		
 		public:
 			QtPositionSliders( QWidget *parent = 0 );
-			~QtPositionSliders() {}
+			~QtPositionSliders();
 			
 			void updateLabelJs(const QVector<double> & positions);
 			void updateSliders(const QVector<double> & positions);

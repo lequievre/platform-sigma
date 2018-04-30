@@ -17,9 +17,48 @@
 
 namespace platform_sigma_plugins_ns {
 	
-	QtPositionSliders::QtPositionSliders( QWidget *parent) : QWidget(parent) 
+	QtPositionSliders::QtPositionSliders( QWidget *parent) : QWidget(parent), slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
+	line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0), table_widget_global_(0), vlayout_global_(0)
 	{
 		createWidget_();
+	}
+	
+	QtPositionSliders::~QtPositionSliders()
+	{
+		disconnect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
+		disconnect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
+		disconnect( slider_j2_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ2(double)) );
+		disconnect( slider_j3_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ3(double)) );
+		disconnect( slider_j4_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ4(double)) );
+		disconnect( slider_j5_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ5(double)) );
+		disconnect( slider_j6_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ6(double)) );
+		
+		disconnect( line_j0_, SIGNAL(editingFinished()), this, SLOT(updateValueSliderJ0()) );
+		disconnect( line_j1_, SIGNAL(editingFinished()), this, SLOT(updateValueSliderJ1()) );
+		disconnect( line_j2_, SIGNAL(editingFinished()), this, SLOT(updateValueSliderJ2()) );
+		disconnect( line_j3_, SIGNAL(editingFinished()), this, SLOT(updateValueSliderJ3()) );
+		disconnect( line_j4_, SIGNAL(editingFinished()), this, SLOT(updateValueSliderJ4()) );
+		disconnect( line_j5_, SIGNAL(editingFinished()), this, SLOT(updateValueSliderJ5()) );
+		disconnect( line_j6_, SIGNAL(editingFinished()), this, SLOT(updateValueSliderJ6()) );
+		
+		// Deselects all selected items
+		table_widget_global_->clearSelection();
+
+		// Disconnect all signals from table widget ! important !
+		table_widget_global_->disconnect();
+
+		// Remove all items
+		table_widget_global_->clearContents();
+
+		// Set row count to 0 (remove rows)
+		table_widget_global_->setRowCount(0);
+		
+		vlayout_global_->removeWidget(table_widget_global_);
+		
+		delete table_widget_global_;
+		
+		delete vlayout_global_;
+		
 	}
 	
 	void QtPositionSliders::createWidget_()
