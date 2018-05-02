@@ -17,7 +17,7 @@
 
 // Qwt graphics
 #include <qwt_slider.h>
-#include <qwt_text_label.h>
+
 
 namespace platform_sigma_plugins_ns {
 	
@@ -51,8 +51,6 @@ namespace platform_sigma_plugins_ns {
 			void updateValueSliderJ4();
 			void updateValueSliderJ5();
 			void updateValueSliderJ6();
-		
-		signals:
 			
 		private:
 			QTableWidget* table_widget_global_;

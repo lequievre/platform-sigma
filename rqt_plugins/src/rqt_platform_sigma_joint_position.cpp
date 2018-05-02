@@ -20,7 +20,7 @@
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
-	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0), vlayout_global_(0), button_send_(0), button_reset_(0), firstTime_(0)
+	: rqt_gui_cpp::Plugin(), widget_sliders_(0), tab_widget_(0), vlayout_global_(0), button_send_(0), button_reset_(0), firstTime_(0), plot_checked_(0), position_sliders_(0)
 	{
 		setObjectName("Plugin Joint Position");
 		qRegisterMetaType<QVector<double> >("QVector<double>");
@@ -61,8 +61,8 @@ namespace platform_sigma_plugins_ns {
 		connect(button_send_, SIGNAL(pressed()), this, SLOT(sendPosition()));
 		vlayout_global_->addWidget(button_send_);
 		
-		button_reset_ = new QPushButton("Reset");
-		button_reset_->setToolTip("Reset sliders position from 'Joint State'");
+		button_reset_ = new QPushButton("Reset Position to Zero");
+		button_reset_->setToolTip("Reset sliders position to zero");
 		connect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersPositions()));
 		vlayout_global_->addWidget(button_reset_);
 		
@@ -135,33 +135,39 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::shutdownPlugin()
 	{
+		disconnect(timer_, SIGNAL(timeout()), this, SLOT(doUpdateCurves()));
+		
+		timer_->stop();
+		
+		delete timer_;
+		
 		shutdownROSComponents_();
 		
 		disconnect(this, SIGNAL(updateLabelJs(QVector<double>)), this, SLOT(doUpdateLabelJs(QVector<double>)));
+		disconnect(ns_combo_, SIGNAL(currentIndexChanged(int)), this, SLOT(ns_combo_changed(int)));
 	
 		disconnect(button_send_, SIGNAL(pressed()), this, SLOT(sendPosition()));
 		disconnect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersPositions()));
 			
 		vlayout_global_->removeWidget(ns_combo_);
+		vlayout_global_->removeWidget(position_sliders_);
 		vlayout_global_->removeWidget(button_send_);
 		vlayout_global_->removeWidget(button_reset_);
+		vlayout_global_->removeWidget(plot_checked_);
+		
+		delete plot_checked_;
+		delete position_sliders_;
 			
 		tab_widget_->removeTab(0);
 			
-		if (button_send_)
-			delete button_send_;
-				
-		if (button_reset_)
-			delete button_reset_;
+		delete button_send_;
+		delete button_reset_;
 			
-		if (ns_combo_)
-			delete ns_combo_;
+		delete ns_combo_;
 			
-		if (vlayout_global_)
-			delete vlayout_global_;
+		delete vlayout_global_;
 			
-		if (widget_sliders_)
-			delete widget_sliders_;
+		delete widget_sliders_;
 	}
 	
 	void JointPositionPlugin::saveSettings(qt_gui_cpp::Settings& plugin_settings,
@@ -181,6 +187,11 @@ namespace platform_sigma_plugins_ns {
 	void JointPositionPlugin::doUpdateCurves()
 	{
 		plot_checked_->updateAxisScale();
+	}
+	
+	void JointPositionPlugin::setPositionToZero_()
+	{
+		
 	}
 	
 	void JointPositionPlugin::jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg)

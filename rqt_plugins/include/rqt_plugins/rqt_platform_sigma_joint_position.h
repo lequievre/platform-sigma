@@ -129,6 +129,7 @@ namespace platform_sigma_plugins_ns {
 			
 			void setupROSComponents_();
 			void shutdownROSComponents_();
+			void setPositionToZero_();
 			
 			void jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg);
 			void jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg);
@@ -136,12 +137,9 @@ namespace platform_sigma_plugins_ns {
 			platform_sigma_plugins_ns::QtPlotChecked *plot_checked_;
 			platform_sigma_plugins_ns::QtPositionSliders *position_sliders_;
 			
-			
 			QTimer * timer_;
 			
 			double firstTime_;
-			
-		
 	}; // End of class
 	
 } // End of namespace
