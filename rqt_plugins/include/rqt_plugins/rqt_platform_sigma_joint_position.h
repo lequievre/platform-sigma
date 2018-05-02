@@ -96,6 +96,7 @@ namespace platform_sigma_plugins_ns {
 			
 			void ns_combo_changed(int);
 			void resetSlidersPositions();
+			void resetSlidersToPositionZero();
 			
 			void doUpdateCurves();
 			
@@ -124,12 +125,14 @@ namespace platform_sigma_plugins_ns {
 			QMap<QString, QVector<double> > map_current_joint_state_values_;
 			QMap<QString, bool > map_sliders_is_init_;
 			
+			QVector<double> vect_zero_position_;
+			
 			/* Ros msg */
 			std_msgs::Float64MultiArray joint_position_msg_;
 			
 			void setupROSComponents_();
 			void shutdownROSComponents_();
-			void setPositionToZero_();
+			
 			
 			void jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg);
 			void jsCallback_right_(const sensor_msgs::JointState::ConstPtr& msg);

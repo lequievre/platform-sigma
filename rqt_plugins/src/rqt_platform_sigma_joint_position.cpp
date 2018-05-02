@@ -28,6 +28,12 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::initPlugin(qt_gui_cpp::PluginContext& context)
 	{
+		// Initialise vector of zero position
+		vect_zero_position_.resize(7);
+		for (size_t i=0; i<7; i++)
+		{
+			vect_zero_position_[i] = 0;
+		}
 		
 		// create a main widget for sliders position
 		widget_sliders_ = new QWidget();
@@ -63,7 +69,7 @@ namespace platform_sigma_plugins_ns {
 		
 		button_reset_ = new QPushButton("Reset Position to Zero");
 		button_reset_->setToolTip("Reset sliders position to zero");
-		connect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersPositions()));
+		connect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersToPositionZero()));
 		vlayout_global_->addWidget(button_reset_);
 		
 		connect(this, SIGNAL(updateLabelJs(QVector<double>)), this, SLOT(doUpdateLabelJs(QVector<double>)));
@@ -189,9 +195,9 @@ namespace platform_sigma_plugins_ns {
 		plot_checked_->updateAxisScale();
 	}
 	
-	void JointPositionPlugin::setPositionToZero_()
+	void JointPositionPlugin::resetSlidersToPositionZero()
 	{
-		
+		position_sliders_->updateSliders(vect_zero_position_);	
 	}
 	
 	void JointPositionPlugin::jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg)
