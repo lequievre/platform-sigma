@@ -52,9 +52,11 @@ namespace kuka_lwr_controllers
 			
 		private:
 			void commandCB(const std_msgs::Float64MultiArrayConstPtr& msg); // function associate to a subscribe command topic
-			ros::Subscriber sub_command_;
+			void setMaxVelocityCB(const std_msgs::Float64MultiArrayConstPtr& msg); // function associate to a subscribe setMaxVelocity topic
+			ros::Subscriber sub_command_, sub_max_velovity_;
 			int cmd_flag_;  // flag set only to 1 when the controller receive a message to the command topic
 			std::string robot_namespace_;
+			std::vector<double> v_max_acc_;
 			
 			TypeIRML *RML_;
 			TypeIRMLInputParameters *IP_;

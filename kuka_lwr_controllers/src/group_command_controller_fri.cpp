@@ -44,9 +44,31 @@ namespace kuka_lwr_controllers
 		OP_ = new TypeIRMLOutputParameters(joint_handles_.size());
 
 		sub_command_ = nh_.subscribe("command", 1, &GroupCommandControllerFRI::commandCB, this);
+		sub_max_velovity_ = nh_.subscribe("setMaxVelocity", 1, &GroupCommandControllerFRI::setMaxVelocityCB, this);
 
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
-
+		
+		v_max_acc_.resize(joint_handles_.size());
+		
+		// The max velocity of kuka lwr4 joints is
+		/*
+		Joint0 = 110;
+		Joint1 = 110;
+		Joint2 = 128;
+		Joint3 = 128;
+		Joint4 = 204;
+		Joint5 = 184;
+		Joint6 = 184;
+		 */
+		
+		v_max_acc_[0] = 5;
+		v_max_acc_[1] = 5;
+		v_max_acc_[2] = 5;
+		v_max_acc_[3] = 5;
+		v_max_acc_[4] = 5;
+		v_max_acc_[5] = 5;
+		v_max_acc_[6] = 5;
+		
 		return true;
 	}
 	
@@ -57,7 +79,6 @@ namespace kuka_lwr_controllers
 		#endif
 		
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
-		
     }
     
     void GroupCommandControllerFRI::stopping(const ros::Time& time)
@@ -102,6 +123,28 @@ namespace kuka_lwr_controllers
 		}
 	}
 	
+	void GroupCommandControllerFRI::setMaxVelocityCB(const std_msgs::Float64MultiArrayConstPtr& msg)
+	{
+		#if TRACE_GroupCommandController_ACTIVATED
+			ROS_INFO("GroupCommandControllerFRI: start setMaxVelocityCB of robot %s!",robot_namespace_.c_str());
+		#endif
+		
+		if(msg->data.size()!=joint_handles_.size())
+		{ 
+			ROS_ERROR_STREAM("GroupCommandControllerFRI: Dimension (of robot " << robot_namespace_.c_str() << ") of set max velocity command (" << msg->data.size() << ") does not match number of joints (" << joint_handles_.size() << ")! Not executing!");
+			return; 
+		}
+		
+		for (size_t i=0; i<joint_handles_.size(); ++i)
+		{
+			v_max_acc_[i] = (double)DEG(msg->data[i]);
+			ROS_INFO("GroupCommandControllerFRI::setMaxVelocityCB Joint[%zu] = %f rad , %f ° !",i, msg->data[i], v_max_acc_[i]);
+		}
+		
+		
+		
+	}
+	
 	void GroupCommandControllerFRI::commandCB(const std_msgs::Float64MultiArrayConstPtr& msg)
     	{
 		#if TRACE_GroupCommandController_ACTIVATED
@@ -120,9 +163,15 @@ namespace kuka_lwr_controllers
 		{
 			IP_->CurrentPosition->VecData[i] = (double)DEG(joint_handles_[i].getPosition());  // set current position (transfrom to degrees) with current position of joint handles
 			IP_->TargetPosition->VecData[i]	= (double)DEG(msg->data[i]); // set desired position (get it from msg data of topic)
-			IP_->MaxVelocity->VecData[i] = (double)5.0;
-			IP_->MaxAcceleration->VecData[i] = (double)20.0;
+			//IP_->MaxVelocity->VecData[i] = (double)5.0;
+			//IP_->MaxAcceleration->VecData[i] = (double)20.0;
+			IP_->MaxVelocity->VecData[i] = v_max_acc_[i];
+			IP_->MaxAcceleration->VecData[i] = 0.5*v_max_acc_[i];
 			IP_->SelectionVector->VecData[i] = true;
+			
+			ROS_INFO("GroupCommandControllerFRI::commandCB current Pos Joint[%zu] = %f rad , %f ° !",i, joint_handles_[i].getPosition(), (double)DEG(joint_handles_[i].getPosition()));
+			ROS_INFO("GroupCommandControllerFRI::commandCB Joint[%zu] = %f rad , %f ° !",i, msg->data[i], (double)DEG(msg->data[i]));
+			
 		}
 
 		resultValue_ = TypeIRML::RML_WORKING;
