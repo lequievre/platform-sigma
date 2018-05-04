@@ -27,6 +27,7 @@ set(rqt_plugins_SRCS
   src/rqt_platform_sigma_joint_position.cpp
   src/qtplotchecked.cpp
   src/qtpositionsliders.cpp
+  src/qtvelocitysliders.cpp
 )
 
 set(rqt_plugins_HDRS
@@ -34,6 +35,7 @@ set(rqt_plugins_HDRS
   include/rqt_plugins/rqt_platform_sigma_joint_position.h
   include/rqt_plugins/qtplotchecked.h
   include/rqt_plugins/qtpositionsliders.h
+  include/rqt_plugins/qtvelocitysliders.h
 )
 
 set(rqt_plugins_QRC

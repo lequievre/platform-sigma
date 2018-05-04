@@ -51,6 +51,9 @@
 // Joint Position Sliders widget
 #include "qtpositionsliders.h"
 
+// Velocity sliders widget
+#include "qtvelocitysliders.h"
+
 #define TRACE_JointPositionPlugin_ACTIVATED 1
 
 namespace platform_sigma_plugins_ns {
@@ -91,6 +94,7 @@ namespace platform_sigma_plugins_ns {
 			void updateValueSliderJ6();
 			
 			void sendPosition();
+			void sendMaxVelocity();
 			
 			void doUpdateLabelJs(QVector<double> positions);
 			
@@ -109,26 +113,29 @@ namespace platform_sigma_plugins_ns {
 		  
 			QTabWidget* tab_widget_;
 			
-			QWidget* widget_sliders_;
+			QWidget* widget_positions_, * widget_velocities_, * widget_global_;
 			
-			QVBoxLayout* vlayout_global_;
+			QVBoxLayout* vlayout_global_, * vlayout_positions_, * vlayout_velocities_;
 			
-			QPushButton* button_send_, *button_reset_;
+			QPushButton* button_send_positions_, *button_reset_, *button_send_max_velocity_;
 			
 			QComboBox* ns_combo_;
 			
 			/* Publishers && Subscribers */
 			QMap<QString, ros::Publisher> map_pub_joint_position_;
+			QMap<QString, ros::Publisher> map_pub_joint_velocity_;
 			QMap<QString, ros::Subscriber> map_sub_joint_handle_;
 			
 			QMap<QString, QVector<double> > map_selected_joint_values_;
+			QMap<QString, QVector<double> > map_selected_joint_velocities_;
+			
 			QMap<QString, QVector<double> > map_current_joint_state_values_;
 			QMap<QString, bool > map_sliders_is_init_;
 			
 			QVector<double> vect_zero_position_;
 			
 			/* Ros msg */
-			std_msgs::Float64MultiArray joint_position_msg_;
+			std_msgs::Float64MultiArray joint_position_msg_, joint_velocity_msg_;
 			
 			void setupROSComponents_();
 			void shutdownROSComponents_();
@@ -139,6 +146,7 @@ namespace platform_sigma_plugins_ns {
 			
 			platform_sigma_plugins_ns::QtPlotChecked *plot_checked_;
 			platform_sigma_plugins_ns::QtPositionSliders *position_sliders_;
+			platform_sigma_plugins_ns::QtVelocitySliders *velocity_sliders_;
 			
 			QTimer * timer_;
 			

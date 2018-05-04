@@ -6,7 +6,7 @@
  * 
 */
 
-#include "rqt_plugins/qtpositionsliders.h"
+#include "rqt_plugins/qtvelocitysliders.h"
 
 // Qt core
 #include <QtCore/QTextStream>
@@ -17,13 +17,13 @@
 
 namespace platform_sigma_plugins_ns {
 	
-	QtPositionSliders::QtPositionSliders( QWidget *parent) : QWidget(parent), slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
+	QtVelocitySliders::QtVelocitySliders( QWidget *parent) : QWidget(parent), slider_j0_(0), slider_j1_(0), slider_j2_(0), slider_j3_(0), slider_j4_(0), slider_j5_(0), slider_j6_(0),
 	line_j0_(0), line_j1_(0), line_j2_(0), line_j3_(0), line_j4_(0), line_j5_(0), line_j6_(0), table_widget_global_(0), vlayout_global_(0)
 	{
 		createWidget_();
 	}
 	
-	QtPositionSliders::~QtPositionSliders()
+	QtVelocitySliders::~QtVelocitySliders()
 	{
 		disconnect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
 		disconnect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
@@ -61,7 +61,7 @@ namespace platform_sigma_plugins_ns {
 		
 	}
 	
-	void QtPositionSliders::createWidget_()
+	void QtVelocitySliders::createWidget_()
 	{
 		QSizePolicy fixed_policy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 	
@@ -71,10 +71,10 @@ namespace platform_sigma_plugins_ns {
 		table_widget_global_ = new QTableWidget();
 		table_widget_global_->setObjectName("table_widget_global");
 		table_widget_global_->setRowCount(7);
-		table_widget_global_->setColumnCount(4);
+		table_widget_global_->setColumnCount(3);
 		
 		//Set Header Label Texts Here
-		table_widget_global_->setHorizontalHeaderLabels(QString("Joint name;Slider Position;Edit Position;Joint State").split(";"));
+		table_widget_global_->setHorizontalHeaderLabels(QString("Joint name;Slider Max Velocity;Edit Velocity").split(";"));
 		table_widget_global_->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 		
 		QString name_of_joint;
@@ -85,58 +85,56 @@ namespace platform_sigma_plugins_ns {
 			stream_name_of_joint << "Joint" << i;
 			table_widget_global_->setItem(i,0,new QTableWidgetItem(stream_name_of_joint.readAll()));
 			table_widget_global_->item(i,0)->setFlags(Qt::ItemIsEnabled );
-			table_widget_global_->setItem(i,3,new QTableWidgetItem("0"));
-			table_widget_global_->item(i,3)->setFlags(Qt::ItemIsEnabled );
+			//table_widget_global_->setItem(i,3,new QTableWidgetItem("0"));
+			//table_widget_global_->item(i,3)->setFlags(Qt::ItemIsEnabled );
 			
 			stream_name_of_joint.flush();
 		}
 		
 		slider_j0_ = new QwtSlider(this, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j0_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
+        slider_j0_->setRange((0), (110 * M_PI / 180), 0.1, 1);
 		slider_j0_->setValue( 0 );
 		connect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
-		
-		QSize size_of_slider = slider_j0_->sizeHint();
 		
 		table_widget_global_->setCellWidget(0, 1, slider_j0_);
 		
 		slider_j1_ = new QwtSlider(this, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j1_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
+        slider_j1_->setRange((0), (110 * M_PI / 180), 0.1, 1);
 		slider_j1_->setValue( 0 );
 		connect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
 		
 		table_widget_global_->setCellWidget(1, 1, slider_j1_);
 		
 		slider_j2_ = new QwtSlider(this, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j2_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
+        slider_j2_->setRange((0), (128 * M_PI / 180), 0.1, 1);
 		slider_j2_->setValue( 0 );
 		connect( slider_j2_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ2(double)) );
 		
 		table_widget_global_->setCellWidget(2, 1, slider_j2_);
 		
 		slider_j3_ = new QwtSlider(this, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j3_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
+        slider_j3_->setRange((0), (128 * M_PI / 180), 0.1, 1);
 		slider_j3_->setValue( 0 );
 		connect( slider_j3_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ3(double)) );
 		
 		table_widget_global_->setCellWidget(3, 1, slider_j3_);
 		
 		slider_j4_ = new QwtSlider(this, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j4_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
+        slider_j4_->setRange((0), (204 * M_PI / 180), 0.1, 1);
 		slider_j4_->setValue( 0 );
 		connect( slider_j4_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ4(double)) );
 		
 		table_widget_global_->setCellWidget(4, 1, slider_j4_);
 		
 		slider_j5_ = new QwtSlider(this, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j5_->setRange((-120 * M_PI / 180), (120 * M_PI / 180), 0.1, 1);
+        slider_j5_->setRange((0), (184 * M_PI / 180), 0.1, 1);
 		slider_j5_->setValue( 0 );
 		connect( slider_j5_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ5(double)) );
 		
 		table_widget_global_->setCellWidget(5, 1, slider_j5_);
 		
 		slider_j6_ = new QwtSlider(this, Qt::Horizontal, QwtSlider::TopScale, QwtSlider::Trough );
-        slider_j6_->setRange((-170 * M_PI / 180), (170 * M_PI / 180), 0.1, 1);
+        slider_j6_->setRange((0), (184 * M_PI / 180), 0.1, 1);
 		slider_j6_->setValue( 0 );
 		connect( slider_j6_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ6(double)) );
 		
@@ -207,92 +205,84 @@ namespace platform_sigma_plugins_ns {
 		setLayout(vlayout_global_);
 	}
 	
-	void QtPositionSliders::setValueLineJ0(double value)
+	void QtVelocitySliders::setValueLineJ0(double value)
 	{
 		((QLineEdit*)(table_widget_global_->cellWidget(0, 2)))->setText(QString::number( value ));
 	}
 	
-	void QtPositionSliders::updateValueSliderJ0()
+	void QtVelocitySliders::updateValueSliderJ0()
 	{
 		((QwtSlider*)(table_widget_global_->cellWidget(0, 1)))->setValue(line_j0_->text().toDouble());
 	}
 	
-	void QtPositionSliders::setValueLineJ1(double value)
+	void QtVelocitySliders::setValueLineJ1(double value)
 	{
 		((QLineEdit*)(table_widget_global_->cellWidget(1, 2)))->setText(QString::number( value ));
 	}
 	
-	void QtPositionSliders::updateValueSliderJ1()
+	void QtVelocitySliders::updateValueSliderJ1()
 	{
 		((QwtSlider*)(table_widget_global_->cellWidget(1, 1)))->setValue(line_j1_->text().toDouble());
 	}
 	
-	void QtPositionSliders::setValueLineJ2(double value)
+	void QtVelocitySliders::setValueLineJ2(double value)
 	{
 		((QLineEdit*)(table_widget_global_->cellWidget(2, 2)))->setText(QString::number( value ));
 	}
 	
-	void QtPositionSliders::updateValueSliderJ2()
+	void QtVelocitySliders::updateValueSliderJ2()
 	{
 		((QwtSlider*)(table_widget_global_->cellWidget(2, 1)))->setValue(line_j2_->text().toDouble());
 	}
 	
-	void QtPositionSliders::setValueLineJ3(double value)
+	void QtVelocitySliders::setValueLineJ3(double value)
 	{
 		((QLineEdit*)(table_widget_global_->cellWidget(3, 2)))->setText(QString::number( value ));
 	}
 	
-	void QtPositionSliders::updateValueSliderJ3()
+	void QtVelocitySliders::updateValueSliderJ3()
 	{
 		((QwtSlider*)(table_widget_global_->cellWidget(3, 1)))->setValue(line_j3_->text().toDouble());
 	}
 	
-	void QtPositionSliders::setValueLineJ4(double value)
+	void QtVelocitySliders::setValueLineJ4(double value)
 	{
 		((QLineEdit*)(table_widget_global_->cellWidget(4, 2)))->setText(QString::number( value ));
 	}
 	
-	void QtPositionSliders::updateValueSliderJ4()
+	void QtVelocitySliders::updateValueSliderJ4()
 	{
 		((QwtSlider*)(table_widget_global_->cellWidget(4, 1)))->setValue(line_j4_->text().toDouble());
 	}
 	
-	void QtPositionSliders::setValueLineJ5(double value)
+	void QtVelocitySliders::setValueLineJ5(double value)
 	{
 		((QLineEdit*)(table_widget_global_->cellWidget(5, 2)))->setText(QString::number( value ));
 	}
 	
-	void QtPositionSliders::updateValueSliderJ5()
+	void QtVelocitySliders::updateValueSliderJ5()
 	{
 		((QwtSlider*)(table_widget_global_->cellWidget(5, 1)))->setValue(line_j5_->text().toDouble());
 	}
 	
-	void QtPositionSliders::setValueLineJ6(double value)
+	void QtVelocitySliders::setValueLineJ6(double value)
 	{
 		((QLineEdit*)(table_widget_global_->cellWidget(6, 2)))->setText(QString::number( value ));
 	}
 	
-	void QtPositionSliders::updateValueSliderJ6()
+	void QtVelocitySliders::updateValueSliderJ6()
 	{
 		((QwtSlider*)(table_widget_global_->cellWidget(6, 1)))->setValue(line_j6_->text().toDouble());
 	}
 	
-	void QtPositionSliders::updateLabelJs(const QVector<double> & positions)
+	void QtVelocitySliders::updateSliders(const QVector<double> & velocities)
 	{
-		for (size_t i=0; i<positions.size(); i++)
-		{
-			table_widget_global_->item(i,3)->setText(QString::number(positions[i],'f',5));
-		}
-	}
-	
-	void QtPositionSliders::updateSliders(const QVector<double> & positions)
-	{
-		slider_j0_->setValue(positions[0]);
-		slider_j1_->setValue(positions[1]);
-		slider_j2_->setValue(positions[2]);
-		slider_j3_->setValue(positions[3]);
-		slider_j4_->setValue(positions[4]);
-		slider_j5_->setValue(positions[5]);
-		slider_j6_->setValue(positions[6]);
+		slider_j0_->setValue(velocities[0]);
+		slider_j1_->setValue(velocities[1]);
+		slider_j2_->setValue(velocities[2]);
+		slider_j3_->setValue(velocities[3]);
+		slider_j4_->setValue(velocities[4]);
+		slider_j5_->setValue(velocities[5]);
+		slider_j6_->setValue(velocities[6]);
 	}
 }
