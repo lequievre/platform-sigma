@@ -53,6 +53,12 @@ add_message_files(
    StiffnessDamping.msg
 )
 
+# Add service files
+add_service_files(
+  FILES
+ GetJointVelocity.srv
+)
+
 # Generate source files from your msg definition.
 generate_messages(
   DEPENDENCIES

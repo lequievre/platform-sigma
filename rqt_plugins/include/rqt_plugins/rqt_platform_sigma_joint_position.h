@@ -116,6 +116,7 @@ namespace platform_sigma_plugins_ns {
 			
 			void ns_combo_changed(int);
 			void resetSlidersPositions();
+			void resetSlidersVelocity();
 			
 			void doUpdateCurves();
 			
@@ -140,6 +141,7 @@ namespace platform_sigma_plugins_ns {
 			QMap<QString, ros::Publisher> map_pub_joint_position_;
 			QMap<QString, ros::Publisher> map_pub_joint_velocity_;
 			QMap<QString, ros::Subscriber> map_sub_joint_handle_;
+			QMap<QString, ros::ServiceClient> map_get_velocity_service_client_;
 			
 			QMap<QString, QVector<double> > map_selected_joint_values_;
 			QMap<QString, QVector<double> > map_selected_joint_velocities_;

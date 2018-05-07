@@ -45,6 +45,8 @@ namespace kuka_lwr_controllers
 
 		sub_command_ = nh_.subscribe("command", 1, &GroupCommandControllerFRI::commandCB, this);
 		sub_max_velovity_ = nh_.subscribe("setMaxVelocity", 1, &GroupCommandControllerFRI::setMaxVelocityCB, this);
+		
+		srv_get_velocity_ = n.advertiseService("get_joint_velocity", &GroupCommandControllerFRI::getCurrentJointVelocity, this);
 
 		cmd_flag_ = 0;  // set this flag to 0 to not run the update method
 		
@@ -183,6 +185,20 @@ namespace kuka_lwr_controllers
 			ROS_INFO("GroupCommandControllerFRI: of robot %s -> j0=%f, j1=%f, j2=%f, j3=%f, j4=%f, j5=%f, j6=%f",robot_namespace_.c_str(),msg->data[0],msg->data[1],msg->data[2],msg->data[3],msg->data[4],msg->data[5],msg->data[6]);
 		#endif
 		 
+	}
+	
+	
+	bool GroupCommandControllerFRI::getCurrentJointVelocity(kuka_lwr_controllers::GetJointVelocity::Request& req, kuka_lwr_controllers::GetJointVelocity::Response& resp)
+	{
+		
+		resp.arrayVelocities.data.resize(joint_handles_.size());
+		
+		for (size_t i=0; i<joint_handles_.size(); ++i)
+		{
+			resp.arrayVelocities.data[i] = RAD(v_max_acc_[i]);
+		}
+		
+		return true;
 	}
 	
 }

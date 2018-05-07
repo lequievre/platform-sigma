@@ -12,6 +12,9 @@
 #include <controller_manager_msgs/ListControllers.h>
 // cf /opt/ros/indigo/include/controller_manager_msgs
 
+// Service GetJointVelocity
+#include <kuka_lwr_controllers/GetJointVelocity.h>
+
 #include <math.h>
 /*#include <QtCore/QTextStream>
 #include <QtCore/QMetaType>
@@ -127,6 +130,8 @@ namespace platform_sigma_plugins_ns {
 		
 		setupROSComponents_();
 		
+		resetSlidersVelocity();
+		
 		timer_ = new QTimer(this);
 
 		// setup signal and slot
@@ -138,7 +143,25 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::ns_combo_changed(int index)
 	{
-		resetSlidersPositions();	
+		resetSlidersPositions();
+		resetSlidersVelocity();	
+	}
+	
+	void JointPositionPlugin::resetSlidersVelocity()
+	{
+		ros::ServiceClient get_joint_velovity_client = map_get_velocity_service_client_[ns_combo_->currentText()];
+		
+		kuka_lwr_controllers::GetJointVelocity joints_velocities;
+	
+		get_joint_velovity_client.call(joints_velocities);
+		
+		velocity_sliders_->slider_j0_->setValue(joints_velocities.response.arrayVelocities.data[0]);
+		velocity_sliders_->slider_j1_->setValue(joints_velocities.response.arrayVelocities.data[1]);
+		velocity_sliders_->slider_j2_->setValue(joints_velocities.response.arrayVelocities.data[2]);
+		velocity_sliders_->slider_j3_->setValue(joints_velocities.response.arrayVelocities.data[3]);
+		velocity_sliders_->slider_j4_->setValue(joints_velocities.response.arrayVelocities.data[4]);
+		velocity_sliders_->slider_j5_->setValue(joints_velocities.response.arrayVelocities.data[5]);
+		velocity_sliders_->slider_j6_->setValue(joints_velocities.response.arrayVelocities.data[6]);
 	}
 	
 	void JointPositionPlugin::sendMaxVelocity()
@@ -350,6 +373,10 @@ namespace platform_sigma_plugins_ns {
 			
 		map_sub_joint_handle_.insert("kuka_lwr_left",getNodeHandle().subscribe(QString("/kuka_lwr_left/").append("joint_states").toStdString(), 100000, &JointPositionPlugin::jsCallback_left_, this));
 		map_sub_joint_handle_.insert("kuka_lwr_right",getNodeHandle().subscribe(QString("/kuka_lwr_right/").append("joint_states").toStdString(), 100000, &JointPositionPlugin::jsCallback_right_, this));
+	
+		map_get_velocity_service_client_.insert("kuka_lwr_left",getNodeHandle().serviceClient<kuka_lwr_controllers::GetJointVelocity>("/kuka_lwr_left/kuka_group_command_controller_fri/get_joint_velocity")); 
+		map_get_velocity_service_client_.insert("kuka_lwr_right",getNodeHandle().serviceClient<kuka_lwr_controllers::GetJointVelocity>("/kuka_lwr_right/kuka_group_command_controller_fri/get_joint_velocity")); 
+	
 	}
 	
 	void JointPositionPlugin::shutdownROSComponents_()
@@ -362,6 +389,9 @@ namespace platform_sigma_plugins_ns {
 			
 		map_sub_joint_handle_["kuka_lwr_left"].shutdown();
 		map_sub_joint_handle_["kuka_lwr_right"].shutdown();
+		
+		map_get_velocity_service_client_["kuka_lwr_left"].shutdown();
+		map_get_velocity_service_client_["kuka_lwr_right"].shutdown();
 	}
 	
 } // End of namespace
