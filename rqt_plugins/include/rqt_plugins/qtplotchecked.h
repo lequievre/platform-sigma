@@ -10,15 +10,15 @@
 #define Qt_Plot_Checked_Widget_H
 
 // Qt graphics
-#include <QtGui/QWidget>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QHBoxLayout>
-#include <QtGui/QCheckBox>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QCheckBox>
 
 // Qt core
-#include <QtCore/QPair>
-#include <QtCore/QMap>
-#include <QtCore/QVector>
+#include <QPair>
+#include <QMap>
+#include <QVector>
 
 // Qwt graphics
 #include <qwt_plot_grid.h>

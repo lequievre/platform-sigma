@@ -54,9 +54,7 @@ namespace platform_sigma_plugins_ns {
 			map_curve_[i]->setPen(QPen(QColor(vect_curve_color_[i]), curve_size_, Qt::SolidLine));
 			map_curve_[i]->setRawSamples(vect_time_curve_.data(), map_data_curve_[i].data(), 50);
 			map_curve_[i]->attach(plot_);
-			
-			//QwtSymbol * aCurveSymbol = new QwtSymbol(QwtSymbol::Ellipse, QBrush(color_curve), QPen(Qt::black), QSize(4,4));
-			//map_curve_symbol_.insert(curve_name,aCurveSymbol);
+
 		}
 		
 		connect( vect_cb_curves_[0], SIGNAL(stateChanged(int)), this, SLOT(checkedSlotJ0_(int)) );

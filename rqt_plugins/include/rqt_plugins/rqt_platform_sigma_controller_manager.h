@@ -12,13 +12,13 @@
 #include "ros/ros.h"
 
 #include <rqt_gui_cpp/plugin.h>
-#include <QtGui/QWidget>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QHBoxLayout>
-#include <QtGui/QLabel>
-#include <QtGui/QComboBox>
-#include <QtGui/QTreeWidget>
-#include <QtCore/QMap>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QComboBox>
+#include <QTreeWidget>
+#include <QMap>
 
 #define TRACE_ControllerManagerPlugin_ACTIVATED 0
 

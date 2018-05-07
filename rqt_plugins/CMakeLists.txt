@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8.11)
 project(rqt_plugins)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -196,6 +196,8 @@ add_library(${PROJECT_NAME}
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+
 
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}

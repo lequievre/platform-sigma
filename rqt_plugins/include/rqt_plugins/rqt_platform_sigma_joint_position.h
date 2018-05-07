@@ -13,7 +13,7 @@
 #include <rqt_gui_cpp/plugin.h>
 
 // Qt graphics
-#include <QtGui/QWidget>
+/*#include <QtGui/QWidget>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
@@ -25,7 +25,23 @@
 #include <QtGui/QTableWidget>
 
 // Qt core
-#include <QtCore/QTimer>
+#include <QtCore/QTimer>*/
+
+// Qt graphics
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QSlider>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QTabWidget>
+#include <QTableWidget>
+
+// Qt core
+#include <QTimer>
+
 
 // Qwt graphics
 #include <qwt_slider.h>
@@ -100,7 +116,6 @@ namespace platform_sigma_plugins_ns {
 			
 			void ns_combo_changed(int);
 			void resetSlidersPositions();
-			void resetSlidersToPositionZero();
 			
 			void doUpdateCurves();
 			
@@ -117,7 +132,7 @@ namespace platform_sigma_plugins_ns {
 			
 			QVBoxLayout* vlayout_global_, * vlayout_positions_, * vlayout_velocities_;
 			
-			QPushButton* button_send_positions_, *button_reset_, *button_send_max_velocity_;
+			QPushButton* button_send_positions_, *button_send_max_velocity_;
 			
 			QComboBox* ns_combo_;
 			

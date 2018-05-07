@@ -13,14 +13,18 @@
 // cf /opt/ros/indigo/include/controller_manager_msgs
 
 #include <math.h>
-#include <QtCore/QTextStream>
+/*#include <QtCore/QTextStream>
 #include <QtCore/QMetaType>
-#include <QtGui/QHeaderView>
+#include <QtGui/QHeaderView>*/
+
+#include <QTextStream>
+#include <QMetaType>
+#include <QHeaderView>
 
 namespace platform_sigma_plugins_ns {
 	
 	JointPositionPlugin::JointPositionPlugin()
-	: rqt_gui_cpp::Plugin(), widget_global_(0), widget_positions_(0), widget_velocities_(0), tab_widget_(0), vlayout_global_(0), vlayout_positions_(0), vlayout_velocities_(0), button_send_positions_(0), button_reset_(0), button_send_max_velocity_(0), firstTime_(0), plot_checked_(0), position_sliders_(0)
+	: rqt_gui_cpp::Plugin(), widget_global_(0), widget_positions_(0), widget_velocities_(0), tab_widget_(0), vlayout_global_(0), vlayout_positions_(0), vlayout_velocities_(0), button_send_positions_(0), button_send_max_velocity_(0), firstTime_(0), plot_checked_(0), position_sliders_(0)
 	{
 		setObjectName("Plugin Joint Position");
 		qRegisterMetaType<QVector<double> >("QVector<double>");
@@ -28,13 +32,6 @@ namespace platform_sigma_plugins_ns {
 	
 	void JointPositionPlugin::initPlugin(qt_gui_cpp::PluginContext& context)
 	{
-		// Initialise vector of zero position
-		vect_zero_position_.resize(7);
-		for (size_t i=0; i<7; i++)
-		{
-			vect_zero_position_[i] = 0;
-		}
-		
 		// create a main widget
 		widget_global_ = new QWidget();
 		widget_global_->setWindowTitle("Main widget");
@@ -77,11 +74,6 @@ namespace platform_sigma_plugins_ns {
 		connect(button_send_positions_, SIGNAL(pressed()), this, SLOT(sendPosition()));
 		vlayout_positions_->addWidget(button_send_positions_);
 		
-		button_reset_ = new QPushButton("Reset Position to Zero");
-		button_reset_->setToolTip("Reset sliders position to zero");
-		connect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersToPositionZero()));
-		vlayout_positions_->addWidget(button_reset_);
-		
 		// set widget_positions_  layout
 		widget_positions_->setLayout(vlayout_positions_);
 		
@@ -102,9 +94,9 @@ namespace platform_sigma_plugins_ns {
 		
 		tab_widget_->addTab(widget_positions_,"Sliders Position");
 		tab_widget_->addTab(widget_velocities_,"Sliders Max Velocity");
-		tab_widget_->setMinimumSize(200,500); // set minimum width and height size to see much more easily the range values of sliders
 		
 		vlayout_global_->addWidget(tab_widget_);
+		vlayout_global_->setStretchFactor(tab_widget_, 1);
 		
 		plot_checked_ = new platform_sigma_plugins_ns::QtPlotChecked(widget_global_, QString("Movement of the KUKA Joints"), QString("Joint Value (radian)"), QString("Time (sec)"), QPair<double,double>((-170 * M_PI / 180), (170 * M_PI / 180)));
 		
@@ -198,7 +190,7 @@ namespace platform_sigma_plugins_ns {
 	void JointPositionPlugin::resetSlidersPositions()
 	{
 		position_sliders_->updateSliders(map_current_joint_state_values_[ns_combo_->currentText()]);	
-	}
+}
 	
 	void JointPositionPlugin::shutdownPlugin()
 	{
@@ -215,11 +207,9 @@ namespace platform_sigma_plugins_ns {
 	
 		disconnect(button_send_positions_, SIGNAL(pressed()), this, SLOT(sendPosition()));
 		disconnect(button_send_max_velocity_, SIGNAL(pressed()), this, SLOT(sendMaxVelocity()));
-		disconnect(button_reset_, SIGNAL(pressed()), this, SLOT(resetSlidersPositions()));
 		
 		vlayout_positions_->removeWidget(position_sliders_);
 		vlayout_positions_->removeWidget(button_send_positions_);
-		vlayout_positions_->removeWidget(button_reset_);
 		
 		vlayout_velocities_->removeWidget(velocity_sliders_);
 		vlayout_velocities_->removeWidget(button_send_max_velocity_);
@@ -234,7 +224,6 @@ namespace platform_sigma_plugins_ns {
 		tab_widget_->removeTab(0);
 			
 		delete button_send_positions_;
-		delete button_reset_;
 		
 		delete button_send_max_velocity_;
 			
@@ -267,10 +256,6 @@ namespace platform_sigma_plugins_ns {
 		plot_checked_->updateAxisScale();
 	}
 	
-	void JointPositionPlugin::resetSlidersToPositionZero()
-	{
-		position_sliders_->updateSliders(vect_zero_position_);	
-	}
 	
 	void JointPositionPlugin::jsCallback_left_(const sensor_msgs::JointState::ConstPtr& msg)
 	{

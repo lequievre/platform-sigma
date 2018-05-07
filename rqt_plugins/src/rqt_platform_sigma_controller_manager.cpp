@@ -13,7 +13,7 @@
 #include <controller_manager_msgs/SwitchController.h>
 // cf /opt/ros/indigo/include/controller_manager_msgs
 
-#include <QtGui/QMenu>
+#include <QMenu>
 
 namespace platform_sigma_plugins_ns {
 	

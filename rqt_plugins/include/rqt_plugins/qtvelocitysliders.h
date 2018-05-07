@@ -10,10 +10,10 @@
 #define Qt_Velocity_Sliders_Widget_H
 
 // Qt graphics
-#include <QtGui/QWidget>
-#include <QtGui/QLineEdit>
-#include <QtGui/QTableWidget>
-#include <QtGui/QVBoxLayout>
+#include <QWidget>
+#include <QLineEdit>
+#include <QTableWidget>
+#include <QVBoxLayout>
 
 // Qwt graphics
 #include <qwt_slider.h>
