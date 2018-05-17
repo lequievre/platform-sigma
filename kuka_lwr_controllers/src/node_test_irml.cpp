@@ -6,10 +6,10 @@
 */
 
 
-#include <ReflexxesAPI.h>
-#include <RMLPositionFlags.h>
-#include <RMLPositionInputParameters.h>
-#include <RMLPositionOutputParameters.h>
+#include <reflexxes/ReflexxesAPI.h>
+#include <reflexxes/RMLPositionFlags.h>
+#include <reflexxes/RMLPositionInputParameters.h>
+#include <reflexxes/RMLPositionOutputParameters.h>
 
 // ROS headers
 #include <ros/ros.h>

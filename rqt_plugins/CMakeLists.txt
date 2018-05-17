@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.11)
 project(rqt_plugins)
 
+#message(STATUS, "RQT_PLUGIN --------> ${CATKIN_DEVEL_PREFIX}")
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
 
@@ -131,7 +133,7 @@ set(rqt_plugins_QRC
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES rqt_plugins
-#  CATKIN_DEPENDS roscpp rqt_gui rqt_gui_cpp
+  CATKIN_DEPENDS kuka_lwr_controllers roscpp rqt_gui rqt_gui_cpp
 #  DEPENDS system_lib
 )
 
@@ -157,9 +159,11 @@ set(rqt_plugins_INCLUDE_DIRECTORIES
 ## Your package locations should be listed before other locations
 include_directories(
 # include
+	${CATKIN_DEVEL_PREFIX}/include
 	${rqt_plugins_INCLUDE_DIRECTORIES}
 	${catkin_INCLUDE_DIRS}
 )
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -190,7 +194,7 @@ add_library(${PROJECT_NAME}
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(${PROJECT_NAME} kuka_lwr_controllers)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
