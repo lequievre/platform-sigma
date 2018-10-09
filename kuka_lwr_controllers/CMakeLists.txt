@@ -38,7 +38,7 @@ add_definitions(${FRIL_DEFS} -std=c++11) #The -std=c++11 tells the compiler to c
 include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${CATKIN_DEVEL_PREFIX}/include ${CATKIN_DEVEL_PREFIX}/include/fril ${CATKIN_DEVEL_PREFIX}/include/RML  ${CATKIN_DEVEL_PREFIX}/include/reflexxes)
 
 # Specify the paths in which the linker should search for libraries.
-link_directories(${catkin_LIBRARY_DIRS} ${CATKIN_DEVEL_PREFIX}/lib/x86_64-linux-gnu  ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/shared)
+link_directories(${catkin_LIBRARY_DIRS} ${CATKIN_DEVEL_PREFIX}/lib  ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/shared)
 
 # Add messages files defined in the 'msg' folder.
 # il faut ajouter ceci dans le fichier package.xml :
