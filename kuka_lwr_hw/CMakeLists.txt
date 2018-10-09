@@ -112,27 +112,27 @@ ExternalProject_Add(
   CONFIGURE_COMMAND ""
   BINARY_DIR reflexxes-prefix/src/reflexxes/Linux
   BUILD_COMMAND make clean64 all64
-  #INSTALL_COMMAND 
-#	${CMAKE_COMMAND} -E copy_directory ${RML_HEADER_DIR} ${CATKIN_DEVEL_PREFIX}/include/reflexxes 
-#	COMMAND 
-#  	${CMAKE_COMMAND} -E copy ${RML_RELEASE_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/shared/libReflexxesTypeII.so
-# 	COMMAND
-#	${CMAKE_COMMAND} -E copy ${RML_RELEASE_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/static/libReflexxesTypeII.a
-# 	COMMAND
-#	${CMAKE_COMMAND} -E copy ${RML_DEBUG_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/shared/libReflexxesTypeII.so
-#	COMMAND
-#	${CMAKE_COMMAND} -E copy ${RML_DEBUG_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/static/libReflexxesTypeII.a
+  INSTALL_COMMAND 
+	${CMAKE_COMMAND} -E copy_directory ${RML_HEADER_DIR} ${CATKIN_DEVEL_PREFIX}/include/reflexxes 
+	COMMAND 
+  	${CMAKE_COMMAND} -E copy ${RML_RELEASE_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/shared/libReflexxesTypeII.so
+ 	COMMAND
+	${CMAKE_COMMAND} -E copy ${RML_RELEASE_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/static/libReflexxesTypeII.a
+ 	COMMAND
+	${CMAKE_COMMAND} -E copy ${RML_DEBUG_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/shared/libReflexxesTypeII.so
+	COMMAND
+	${CMAKE_COMMAND} -E copy ${RML_DEBUG_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/static/libReflexxesTypeII.a
   )
   
-ExternalProject_Add_Step(
-  reflexxes CopyToCatkinDevelDirectory
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${RML_HEADER_DIR} ${CATKIN_DEVEL_PREFIX}/include/reflexxes 
-  COMMAND ${CMAKE_COMMAND} -E copy ${RML_RELEASE_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/shared/libReflexxesTypeII.so
-  COMMAND ${CMAKE_COMMAND} -E copy ${RML_RELEASE_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/static/libReflexxesTypeII.a
-  COMMAND ${CMAKE_COMMAND} -E copy ${RML_DEBUG_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/shared/libReflexxesTypeII.so
-  COMMAND ${CMAKE_COMMAND} -E copy ${RML_DEBUG_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/static/libReflexxesTypeII.a
-  DEPENDEES build install
-)  
+#ExternalProject_Add_Step(
+#  reflexxes CopyToCatkinDevelDirectory
+#  COMMAND ${CMAKE_COMMAND} -E copy_directory ${RML_HEADER_DIR} ${CATKIN_DEVEL_PREFIX}/include/reflexxes 
+#  COMMAND ${CMAKE_COMMAND} -E copy ${RML_RELEASE_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/shared/libReflexxesTypeII.so
+#  COMMAND ${CMAKE_COMMAND} -E copy ${RML_RELEASE_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/release/static/libReflexxesTypeII.a
+#  COMMAND ${CMAKE_COMMAND} -E copy ${RML_DEBUG_SHARED_LIBRARY_DIR}/libReflexxesTypeII.so ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/shared/libReflexxesTypeII.so
+#  COMMAND ${CMAKE_COMMAND} -E copy ${RML_DEBUG_STATIC_LIBRARY_DIR}/libReflexxesTypeII.a ${CATKIN_DEVEL_PREFIX}/lib/reflexxes/debug/static/libReflexxesTypeII.a
+#  DEPENDEES build
+#)  
 
 #INSTALL (
 #    DIRECTORY ${RML_HEADER_DIR}
