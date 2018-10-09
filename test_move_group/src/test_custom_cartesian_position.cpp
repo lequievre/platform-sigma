@@ -54,8 +54,11 @@ int main(int argc, char **argv)
 	
 	// call the planner to compute the plan and visualize it.
 	moveit::planning_interface::MoveGroup::Plan my_plan;
-	bool success = group.plan(my_plan);
-	ROS_INFO("Visualizing plan 1 (pose goal) %s",success?"":"FAILED");
+
+	moveit::planning_interface::MoveItErrorCode success = group.plan(my_plan);
+
+	ROS_INFO("Visualizing plan 1 (pose goal) %s",success == moveit_msgs::MoveItErrorCodes::SUCCESS ? "" : "FAILED");
+	
 	// then move the group to the sampled target
 	group.move();
 	// wait for shutdown
