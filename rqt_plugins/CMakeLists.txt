@@ -210,6 +210,9 @@ target_link_libraries(${PROJECT_NAME}
   ${QWT_LIBRARY}
 )
 
+
+#message(STATUS "***************** ====> QWT_LIBRARY = ${QWT_LIBRARY}, QT_QTCORE_LIBRARY = ${QT_QTCORE_LIBRARY}, QT_QTGUI_LIBRARY = ${QT_QTGUI_LIBRARY}")
+
 #############
 ## Install ##
 #############

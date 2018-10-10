@@ -89,6 +89,7 @@ target_link_libraries(${PROJECT_NAME}_gazebo
 
 include(ExternalProject)
 
+
 # Reflexxes type 2 library ----------------------------------------------------------------
 
 message(WARNING "ATTENTION: This project supports the fork of the reflexxes type 2 motion library in https://github.com/lequievre/reflexxes_type2, and install the libraries in your catkin workspace, not in the system")
@@ -147,6 +148,8 @@ message(WARNING "ATTENTION: This project supports the fork of the Standford libr
 
 ExternalProject_Add(FRILibrary
 	GIT_REPOSITORY https://github.com/lequievre/FRI_IP.git
+    # disables auto update on every build
+    UPDATE_DISCONNECTED 1
 	GIT_TAG master
 	BUILD_COMMAND make
 	BUILD_IN_SOURCE 1
