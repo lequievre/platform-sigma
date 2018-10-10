@@ -241,29 +241,34 @@ namespace platform_sigma_plugins_ns {
 		controller_manager_msgs::ListControllers controller_list;
 	
 		controller_list_client.call(controller_list);
-		QString ressources;
+		
 		QStringList strListRessources;
+		QStringList strListHWInterfaces;
 		
 		tree_controllers_widget_->clear();
 	
-		for (unsigned int i=0;i<controller_list.response.controller.size() ;i++ )
+		for (unsigned int i=0;i<controller_list.response.controller.size() ;i++)
 		{
 			// Create a new item
 			QTreeWidgetItem* new_item = new QTreeWidgetItem(tree_controllers_widget_);
 			new_item->setText(0, controller_list.response.controller[i].name.c_str());
 			new_item->setText(1, controller_list.response.controller[i].state.c_str());
 			new_item->setText(2, controller_list.response.controller[i].type.c_str());
-			new_item->setText(3, controller_list.response.controller[i].hardware_interface.c_str());
-		   
-			
+
+			strListHWInterfaces.clear();
 			strListRessources.clear();
-			for (unsigned int j=0;j<controller_list.response.controller[i].resources.size() ;j++ )
+
+			for (unsigned int j=0;j<controller_list.response.controller[i].claimed_resources.size() ;j++)
 			{
-				strListRessources << controller_list.response.controller[i].resources[j].c_str();
+				strListHWInterfaces << controller_list.response.controller[i].claimed_resources[j].hardware_interface.c_str();
+				for (unsigned int k=0;k<controller_list.response.controller[i].claimed_resources[j].resources.size() ;k++)
+				{
+					strListRessources << controller_list.response.controller[i].claimed_resources[j].resources[k].c_str();
+				}
 			}
-			
-			new_item->setText(4, strListRessources.join(","));
-				
+
+			new_item->setText(3, strListHWInterfaces.join(","));
+			new_item->setText(4, strListRessources.join(","));	
 		}
 	}
 
