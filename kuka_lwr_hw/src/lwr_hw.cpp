@@ -516,20 +516,20 @@ namespace lwr_hw
     for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = start_list.begin(); it != start_list.end(); ++it )
     {
       // If any of the controllers in the start list works on a velocity interface, the switch can't be done.
-      if( it->type == "hardware_interface::VelocityJointInterface" )
+      if( it->claimed_resources[0].hardware_interface == "hardware_interface::VelocityJointInterface" )
       {
         std::cout << "The given controllers to start work on a velocity joint interface, and this robot does not have such an interface."
                   << "The switch can't be done" << std::endl;
         return false;
       }
 
-      if( it->type == "hardware_interface::PositionJointInterface" )
+      if( it->claimed_resources[0].hardware_interface == "hardware_interface::PositionJointInterface" )
       {
         // Debug
         // std::cout << "One controller wants to work on hardware_interface::PositionJointInterface" << std::endl;
         desired_strategies.push_back( JOINT_POSITION );
       }
-      else if( it->type == "hardware_interface::EffortJointInterface" )
+      else if( it->claimed_resources[0].hardware_interface == "hardware_interface::EffortJointInterface" )
       {
         // Debug
         // std::cout << "One controller wants to work on hardware_interface::EffortJointInterface" << std::endl;
@@ -563,13 +563,13 @@ namespace lwr_hw
     // If any of the controllers in the start list works on a velocity interface, the switch can't be done.
     for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = start_list.begin(); it != start_list.end(); ++it )
     {
-      if( it->type == "hardware_interface::PositionJointInterface" )
+      if( it->claimed_resources[0].hardware_interface == "hardware_interface::PositionJointInterface" )
       {
         std::cout << "Request to switch to hardware_interface::PositionJointInterface (JOINT_POSITION)" << std::endl;
         desired_strategy = JOINT_POSITION;
         break;
       }
-      else if( it->type == "hardware_interface::EffortJointInterface" )
+      else if( it->claimed_resources[0].hardware_interface == "hardware_interface::EffortJointInterface" )
       {
         std::cout << "Request to switch to hardware_interface::EffortJointInterface (JOINT_IMPEDANCE)" << std::endl;
         desired_strategy = JOINT_IMPEDANCE;

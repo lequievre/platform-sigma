@@ -142,14 +142,14 @@ namespace lwr_hw
 				
 				for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = start_list.begin(); it != start_list.end(); ++it )
 				{
-					ROS_INFO("\n%s",it->type.c_str());
+					ROS_INFO("\ntype = %s, hardware_interface = %s",it->type.c_str(), it->claimed_resources[0].hardware_interface.c_str());
 				}
 				
 				ROS_INFO("\nStop Interfaces :");
 				
 				for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = stop_list.begin(); it != stop_list.end(); ++it )
 				{
-					ROS_INFO("\n%s",it->type.c_str());
+					ROS_INFO("\ntype = %s, hardware_interface = %s",it->type.c_str(), it->claimed_resources[0].hardware_interface.c_str());
 				}
 				
 			}
@@ -161,19 +161,19 @@ namespace lwr_hw
 				// If any of the controllers in the start list works on a velocity interface, the switch can't be done.
 				for ( std::list<hardware_interface::ControllerInfo>::const_iterator it = start_list.begin(); it != start_list.end(); ++it )
 				{
-					if( it->type == "hardware_interface::PositionJointInterface" )
+					if( it->claimed_resources[0].hardware_interface == "hardware_interface::PositionJointInterface" )
 					{
 						std::cout << "Request to switch to hardware_interface::PositionJointInterface (JOINT_POSITION)" << std::endl;
 						desired_strategy = JOINT_POSITION;
 						break;
 					}
-					else if( (it->type == "hardware_interface::KUKAJointInterface") || (it->type == "hardware_interface::EffortJointInterface") )
+					else if( (it->claimed_resources[0].hardware_interface == "hardware_interface::KUKAJointInterface") || (it->type == "hardware_interface::EffortJointInterface") )
 					{
 						std::cout << "Request to switch to hardware_interface::KUKAJointInterface (JOINT_IMPEDANCE)" << std::endl;
 						desired_strategy = JOINT_IMPEDANCE;
 						break;
 					}
-					else if( it->type == "hardware_interface::PositionCartesianInterface" )
+					else if( it->claimed_resources[0].hardware_interface == "hardware_interface::PositionCartesianInterface" )
 					{
 						std::cout << "Request to switch to hardware_interface::PositionCartesianInterface (CARTESIAN_IMPEDANCE)" << std::endl;
 						desired_strategy = CARTESIAN_IMPEDANCE;
