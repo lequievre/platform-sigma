@@ -25,7 +25,7 @@ namespace platform_sigma_plugins_ns {
 
 	void ControllerManagerPlugin::initPlugin(qt_gui_cpp::PluginContext& context)
 	{
-		/*setupROSComponents_();
+		setupROSComponents_();
 		
 		// create a main widget named widget_
 		widget_ = new QWidget();
@@ -80,7 +80,7 @@ namespace platform_sigma_plugins_ns {
 		widget_->setLayout(vlayout_outer_);
 		context.addWidget(widget_);
 		
-		updateListControllers_();*/
+		updateListControllers_();
 	}
 	
 	void ControllerManagerPlugin::tree_controllers_widget_ContextMenu(const QPoint& aPoint)
@@ -136,7 +136,7 @@ namespace platform_sigma_plugins_ns {
 	
 	void ControllerManagerPlugin::switchController_(QString & name, ActionController action)
 	{
-		/*ros::ServiceClient switch_client = map_switch_service_client_[ns_combo_->currentText()];
+		ros::ServiceClient switch_client = map_switch_service_client_[ns_combo_->currentText()];
 		
 		controller_manager_msgs::SwitchController switch_controller;
 		switch_controller.request.start_controllers.clear();
@@ -160,7 +160,7 @@ namespace platform_sigma_plugins_ns {
 		switch_controller.request.strictness = controller_manager_msgs::SwitchControllerRequest::STRICT;	
 		switch_client.call(switch_controller);
 		
-		updateListControllers_();*/
+		updateListControllers_();
     }
 	
 	void ControllerManagerPlugin::ns_combo_changed(int index)
@@ -170,7 +170,7 @@ namespace platform_sigma_plugins_ns {
 
 	void ControllerManagerPlugin::shutdownPlugin()
 	{
-		/*shutdownROSComponents_();
+		shutdownROSComponents_();
 		
 		disconnect(ns_combo_, SIGNAL(currentIndexChanged(int)), this, SLOT(ns_combo_changed(int)));
 		
@@ -194,7 +194,7 @@ namespace platform_sigma_plugins_ns {
 			delete hlayout_top_;
 		 
 		if (vlayout_outer_)
-			delete vlayout_outer_;*/
+			delete vlayout_outer_;
 		
 	}
 
@@ -214,25 +214,25 @@ namespace platform_sigma_plugins_ns {
 	
 	void ControllerManagerPlugin::setupROSComponents_()
 	{
-		/*map_list_service_client_.insert("kuka_lwr_left",getNodeHandle().serviceClient<controller_manager_msgs::ListControllers>("/kuka_lwr_left/controller_manager/list_controllers")); 
+		map_list_service_client_.insert("kuka_lwr_left",getNodeHandle().serviceClient<controller_manager_msgs::ListControllers>("/kuka_lwr_left/controller_manager/list_controllers")); 
 		map_list_service_client_.insert("kuka_lwr_right",getNodeHandle().serviceClient<controller_manager_msgs::ListControllers>("/kuka_lwr_right/controller_manager/list_controllers")); 
 	
 		map_switch_service_client_.insert("kuka_lwr_left",getNodeHandle().serviceClient<controller_manager_msgs::SwitchController>("/kuka_lwr_left/controller_manager/switch_controller")); 
-		map_switch_service_client_.insert("kuka_lwr_right",getNodeHandle().serviceClient<controller_manager_msgs::SwitchController>("/kuka_lwr_right/controller_manager/switch_controller"));	*/
+		map_switch_service_client_.insert("kuka_lwr_right",getNodeHandle().serviceClient<controller_manager_msgs::SwitchController>("/kuka_lwr_right/controller_manager/switch_controller"));
 	}
 	
 	void ControllerManagerPlugin::shutdownROSComponents_()
 	{
-		/*map_list_service_client_["kuka_lwr_left"].shutdown();
+		map_list_service_client_["kuka_lwr_left"].shutdown();
 		map_list_service_client_["kuka_lwr_right"].shutdown();
 		
 		map_switch_service_client_["kuka_lwr_left"].shutdown();
-		map_switch_service_client_["kuka_lwr_right"].shutdown();*/
+		map_switch_service_client_["kuka_lwr_right"].shutdown();
 	}
 	
 	void ControllerManagerPlugin::updateListControllers_()
 	{
-/*
+
 		#if TRACE_ControllerManagerPlugin_ACTIVATED
 			ROS_INFO("ControllerManagerPlugin::updateListControllers_() !");
 		#endif
@@ -270,7 +270,7 @@ namespace platform_sigma_plugins_ns {
 
 			new_item->setText(3, strListHWInterfaces.join(","));
 			new_item->setText(4, strListRessources.join(","));	
-		}*/
+		}
 	}
 
 } // End of namespace

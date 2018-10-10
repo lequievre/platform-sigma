@@ -73,7 +73,7 @@ namespace platform_sigma_plugins_ns {
 		table_widget_global_->setRowCount(7);
 		table_widget_global_->setColumnCount(3);
 		table_widget_global_->horizontalHeader()->setStretchLastSection(true);
-		table_widget_global_->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+		table_widget_global_->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 		
 		//Set Header Label Texts Here
 		table_widget_global_->setHorizontalHeaderLabels(QString("Joint name;Edit Velocity;Max Velocity").split(";"));
