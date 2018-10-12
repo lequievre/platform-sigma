@@ -242,8 +242,6 @@ namespace platform_sigma_plugins_ns {
 		delete position_sliders_;
 		delete velocity_sliders_;
 			
-		//tab_widget_->removeTab(0);
-			
 		delete button_send_positions_;
 		
 		delete button_send_max_velocity_;
