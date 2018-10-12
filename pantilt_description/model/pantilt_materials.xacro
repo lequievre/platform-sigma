@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 	
-  <material name="DarkGrey">
+  <material name="PantiltDarkGrey">
     <color rgba="0.3 0.3 0.3 1.0"/>
   </material>
   
-  <material name="LightGrey">
+  <material name="PantiltLightGrey">
     <color rgba="0.8 0.8 0.8 1.0"/>
   </material>
 
-  <material name="Black">
+  <material name="PantiltBlack">
     <color rgba="0 0 0 1.0"/>
   </material>
 

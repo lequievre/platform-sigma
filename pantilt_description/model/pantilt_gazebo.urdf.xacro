@@ -57,7 +57,7 @@
 				<geometry>
 					<mesh filename="package://pantilt_description/meshes/bati.stl"/>
 				</geometry>
-				<material name="DarkGrey" />
+				<material name="PantiltDarkGrey" />
 			</visual>
 			<!--visual>
 				<origin xyz="0 0 0.1" rpy="0 0 0" /> 
@@ -95,7 +95,7 @@
 				<geometry>
 					<mesh filename="package://pantilt_description/meshes/P1.stl"/>
 				</geometry>
-				<material name="DarkGrey" />
+				<material name="PantiltDarkGrey" />
 			</visual>
 			<!--visual>
 				<origin xyz="0 0 0.10" rpy="0 0 0"/>
@@ -140,7 +140,7 @@
 				<geometry>
 					<mesh filename="package://pantilt_description/meshes/P2.stl"/>
 				</geometry>
-				<material name="DarkGrey" />
+				<material name="PantiltDarkGrey" />
 			</visual>
 			<!--visual>
 				<origin xyz="0 0 0.10" rpy="0 0 0"/>
@@ -187,7 +187,7 @@
 				<geometry>
 					<mesh filename="package://pantilt_description/meshes/cam.stl"/>
 				</geometry>
-				<material name="LightGrey" />
+				<material name="PantiltLightGrey" />
 			</visual>
 
 		</link>
@@ -226,7 +226,7 @@
 				<geometry>
 					<mesh filename="package://pantilt_description/meshes/cam.stl"/>
 				</geometry>
-				<material name="LightGrey" />
+				<material name="PantiltLightGrey" />
 			</visual>
 
 		</link>
