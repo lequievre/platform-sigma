@@ -221,8 +221,6 @@ namespace platform_sigma_plugins_ns {
 		
 		timer_->stop();
 		
-		delete timer_;
-		
 		shutdownROSComponents_();
 		
 		disconnect(this, SIGNAL(updateLabelJs(QVector<double>)), this, SLOT(doUpdateLabelJs(QVector<double>)));
@@ -244,7 +242,7 @@ namespace platform_sigma_plugins_ns {
 		delete position_sliders_;
 		delete velocity_sliders_;
 			
-		tab_widget_->removeTab(0);
+		//tab_widget_->removeTab(0);
 			
 		delete button_send_positions_;
 		
@@ -258,6 +256,8 @@ namespace platform_sigma_plugins_ns {
 			
 		delete widget_positions_;
 		delete widget_velocities_;
+
+		delete timer_;
 	}
 	
 	void JointPositionPlugin::saveSettings(qt_gui_cpp::Settings& plugin_settings,
