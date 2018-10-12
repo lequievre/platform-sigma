@@ -92,7 +92,7 @@ namespace platform_sigma_plugins_ns {
 		
 		slider_j0_ = new QwtSlider(Qt::Horizontal, this);
 		slider_j0_->setScale((0.01), (110 * M_PI / 180));
-		slider_j0_->setScaleStepSize(0.1);
+		//slider_j0_->setScaleStepSize(0.1);
 		slider_j0_->setValue( 0.01 );
 		connect( slider_j0_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ0(double)) );
 		
@@ -100,7 +100,7 @@ namespace platform_sigma_plugins_ns {
 		
 		slider_j1_ = new QwtSlider(Qt::Horizontal, this);
 		slider_j1_->setScale((0.01), (110 * M_PI / 180));
-		slider_j1_->setScaleStepSize(0.1);
+		//slider_j1_->setScaleStepSize(0.1);
 		slider_j1_->setValue( 0.01 );
 		connect( slider_j1_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ1(double)) );
 		
@@ -108,7 +108,7 @@ namespace platform_sigma_plugins_ns {
 		
 		slider_j2_ = new QwtSlider(Qt::Horizontal, this);
 		slider_j2_->setScale((0.01), (128 * M_PI / 180));
-		slider_j2_->setScaleStepSize(0.1);
+		//slider_j2_->setScaleStepSize(0.1);
 		slider_j2_->setValue( 0.01 );
 		connect( slider_j2_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ2(double)) );
 		
@@ -116,7 +116,7 @@ namespace platform_sigma_plugins_ns {
 		
 		slider_j3_ = new QwtSlider(Qt::Horizontal, this);
 		slider_j3_->setScale((0.01), (128 * M_PI / 180));
-		slider_j3_->setScaleStepSize(0.1);
+		//slider_j3_->setScaleStepSize(0.1);
 		slider_j3_->setValue( 0.01 );
 		connect( slider_j3_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ3(double)) );
 		
@@ -124,7 +124,7 @@ namespace platform_sigma_plugins_ns {
 		
 		slider_j4_ = new QwtSlider(Qt::Horizontal, this);
 		slider_j4_->setScale((0.01), (204 * M_PI / 180));
-		slider_j4_->setScaleStepSize(0.1);
+		//slider_j4_->setScaleStepSize(0.1);
 		slider_j4_->setValue( 0.01 );
 		connect( slider_j4_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ4(double)) );
 		
@@ -132,7 +132,7 @@ namespace platform_sigma_plugins_ns {
 		
 		slider_j5_ = new QwtSlider(Qt::Horizontal, this);
 		slider_j5_->setScale((0.01), (184 * M_PI / 180));
-		slider_j5_->setScaleStepSize(0.1);
+		//slider_j5_->setScaleStepSize(0.1);
 		slider_j5_->setValue( 0.01 );
 		connect( slider_j5_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ5(double)) );
 		
@@ -140,7 +140,7 @@ namespace platform_sigma_plugins_ns {
 		
 		slider_j6_ = new QwtSlider(Qt::Horizontal, this);
 		slider_j6_->setScale((0.01), (184 * M_PI / 180));
-		slider_j6_->setScaleStepSize(0.1);
+		//slider_j6_->setScaleStepSize(0.1);
 		slider_j6_->setValue( 0.01 );
 		connect( slider_j6_, SIGNAL(valueChanged(double)), this, SLOT(setValueLineJ6(double)) );
 		
