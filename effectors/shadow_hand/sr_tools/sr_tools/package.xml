@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>sr_tools</name>
+  <version>0.0.0</version>
+  <description>This metapackage contains more advanced tools that might be needed in specific use cases.</description>
+
+  <maintainer email="software@shadowrobot.com">Shadow Robot's software team</maintainer>
+
+  <license>GPL</license>
+
+  <author email="ugo@shadowrobot.com">Ugo Cupcic</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>sr_movements</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+</package>

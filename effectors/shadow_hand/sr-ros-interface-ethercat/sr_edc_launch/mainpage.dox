@@ -1,0 +1,13 @@
+/**
+\mainpage
+\htmlinclude manifest.html
+
+\b sr_edc_launch contains the launch files to start the needed nodes for the Shadow Robot EtherCAT hand.
+
+To start the Hand driver:
+\code{.sh}
+roslaunch sr_edc_launch sr_edc.launch
+\endcode
+
+The actual config to use (etherCAT port, etc...) should be defined in the sr_config/bashrc/env_variables.bashrc file (to ensure you can easily upgrade your different stacks).
+*/

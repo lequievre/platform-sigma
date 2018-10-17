@@ -1,0 +1,16 @@
+<library path="src">
+  <class name="SrGuiJointSlider_rh" type="sr_gui_joint_slider_rh.joint_slider_rh.SrGuiJointSlider_rh"
+         base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A plugin to change the position of the different joints of right hand.
+    </description>
+    <qtgui>
+      <group>
+        <label>Shadow Robot Bi Manual</label>
+      </group>
+      <icon type="file">./icons/hand.png</icon>
+      <label>Joint Slider Right Hand</label>
+      <statustip>A plugin to change the position of the different joints.</statustip>
+    </qtgui>
+  </class>
+</library>
