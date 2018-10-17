@@ -53,7 +53,7 @@
  <xacro:include filename="$(find sr_description)/hand/xacro/full_hand.urdf.xacro"/>
  <xacro:include filename="$(find platform_gazebo)/robot/sr/gazebo.urdf.xacro"/>
  
- <xacro:macro name="shadow_hand" params="parent name namespace prefix *origin">
+ <xacro:macro name="shadow_hand" params="parent name prefix *origin">
 		<joint name="${parent}_${name}_hand_joint" type="fixed">
 		  <parent link="${parent}" />
 		  <child link="${prefix}_forearm" />
@@ -64,17 +64,19 @@
  </xacro:macro>
 
 <!--<xacro:if value="$(arg use_right_hand)">-->
-   <xacro:shadow_hand parent="kuka_lwr_right_7_link" name="shadow_hand_right" namespace="shadow_hand_right" prefix="rh">
+   <xacro:shadow_hand parent="kuka_lwr_right_7_link" name="sh_rh" prefix="rh">
 		<origin xyz="0 0 0" rpy="0 0 0"/>
    </xacro:shadow_hand>
 
-	<xacro:sr_gazebo name="sr_rh" namespace="shadow_hand"/>
+   <xacro:sr_gazebo name="sr_rh" namespace="/rh"/>
 <!--</xacro:if>-->
 
-<!--<xacro:if value="$(arg use_left_hand)">
-  <xacro:shadow_hand parent="kuka_lwr_left_7_link" name="shadow_hand_left" namespace="shadow_hand_left" prefix="lh">
+<!--<xacro:if value="$(arg use_left_hand)">-->
+  <xacro:shadow_hand parent="kuka_lwr_left_7_link" name="sh_lh" prefix="lh">
 		<origin xyz="0 0 0" rpy="0 0 ${pi}"/>
-   </xacro:shadow_hand>
-</xacro:if>-->
+  </xacro:shadow_hand>
+
+  <xacro:sr_gazebo name="sr_lh" namespace="/lh"/>
+<!--</xacro:if>-->
 
 </robot>
