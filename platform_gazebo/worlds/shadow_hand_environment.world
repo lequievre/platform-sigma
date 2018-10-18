@@ -7,6 +7,13 @@
     <include>
       <uri>model://sun</uri>
     </include>
+	<gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>-0.251866 4.79042 1.45692 0 0.164 -1.544</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
     <physics type="ode">
       <gravity>0.000000 0.000000 -9.810000</gravity>
       <ode>
