@@ -33,5 +33,15 @@
       <real_time_update_rate>0.000000</real_time_update_rate>
       <max_step_size>0.001000</max_step_size>
     </physics>
+    <include>
+        <uri>model://table_marble</uri>
+        <name>table_marble</name>
+        <pose>0.0 1.36996 0.648 0 -0 0</pose>
+      </include>
+	  <include>
+        <uri>model://coke_can</uri>
+        <name>coke_can</name>
+        <pose>0.000737 1.071804 0.960624 0 0 0</pose>
+      </include>
   </world>
 </sdf>
