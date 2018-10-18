@@ -25,8 +25,25 @@
 	<param name="kuka_lwr_left/robot_description" command="$(find xacro)/xacro.py '$(find double_lwr_robot)/robot/kuka_lwr_left_robot.urdf.xacro'" />
 	<param name="kuka_lwr_right/robot_description" command="$(find xacro)/xacro.py '$(find double_lwr_robot)/robot/kuka_lwr_right_robot.urdf.xacro'" />
 
-    <param name="rh/robot_description" command="$(find xacro)/xacro.py '$(find platform_gazebo)/robot/rh_shadow_hand.urdf.xacro'" />
+	<!-- Only Left Hand Robot Description -->
 	<param name="lh/robot_description" command="$(find xacro)/xacro.py '$(find platform_gazebo)/robot/lh_shadow_hand.urdf.xacro'" />
+
+	<!-- Only Right Hand Robot Description -->
+	<param name="rh/robot_description" command="$(find xacro)/xacro.py '$(find platform_gazebo)/robot/rh_shadow_hand.urdf.xacro'" />
+
+	<!-- Properties of Left Shadow Hand Controllers -->
+	<rosparam command="load" file="$(find platform_gazebo)/config/lh_controller_gazebo.yaml"/>
+	<rosparam command="load" file="$(find platform_gazebo)/config/lh_joint_state_controller.yaml"/>
+
+	<!-- List of Left Shadow Hand Position Controllers -->
+	<arg name="lh_shadow_hand_controllers" default="sh_lh_ffj0_position_controller sh_lh_ffj3_position_controller sh_lh_ffj4_position_controller sh_lh_mfj0_position_controller sh_lh_mfj3_position_controller sh_lh_mfj4_position_controller sh_lh_rfj0_position_controller sh_lh_rfj3_position_controller sh_lh_rfj4_position_controller sh_lh_lfj0_position_controller sh_lh_lfj3_position_controller sh_lh_lfj4_position_controller sh_lh_lfj5_position_controller sh_lh_thj1_position_controller sh_lh_thj2_position_controller sh_lh_thj3_position_controller sh_lh_thj4_position_controller sh_lh_thj5_position_controller sh_lh_wrj1_position_controller sh_lh_wrj2_position_controller" />
+
+	<!-- Properties of Right Shadow Hand Controllers -->
+	<rosparam command="load" file="$(find platform_gazebo)/config/rh_controller_gazebo.yaml"/>
+	<rosparam command="load" file="$(find platform_gazebo)/config/rh_joint_state_controller.yaml"/>
+
+	<!-- List of Right Shadow Hand Position Controllers -->
+	<arg name="rh_shadow_hand_controllers" default="sh_rh_ffj0_position_controller sh_rh_ffj3_position_controller sh_rh_ffj4_position_controller sh_rh_mfj0_position_controller sh_rh_mfj3_position_controller sh_rh_mfj4_position_controller sh_rh_rfj0_position_controller sh_rh_rfj3_position_controller sh_rh_rfj4_position_controller sh_rh_lfj0_position_controller sh_rh_lfj3_position_controller sh_rh_lfj4_position_controller sh_rh_lfj5_position_controller sh_rh_thj1_position_controller sh_rh_thj2_position_controller sh_rh_thj3_position_controller sh_rh_thj4_position_controller sh_rh_thj5_position_controller sh_rh_wrj1_position_controller sh_rh_wrj2_position_controller" />
 
 	<arg name="paused" default="false"/>
 	<arg name="use_sim_time" default="true"/>
@@ -58,8 +75,18 @@
 			<node name="robot_state_publisher_left" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen"/>
 			<node name="joint_state_publisher_left" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false" output="screen"/>
 		</group>
-	</group>
 
+		<!-- Left Shadow Hand -->
+		<group if="$(arg use_left_hand)">
+			<group ns="lh">
+				<!-- Spawn of Position Controllers -->
+				<node name="controller_spawner_joint_state_sh_lh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
+
+				<node name="controller_spawner_sh_lh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="$(arg lh_shadow_hand_controllers)"/>
+			</group>
+     	</group>
+
+	</group>
 
 	<group if="$(arg use_right_arm)">
 		<!-- namespace of right arm -->
@@ -72,31 +99,17 @@
 			<node name="robot_state_publisher_right" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen"/>
 			<node name="joint_state_publisher_right" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false" output="screen"/>
 		</group>
-	</group>
 
-<!-- Shadow Hand Controllers ******************************************** -->
+		<!-- Right Shadow Hand -->
+		<group if="$(arg use_right_hand)">
+			<group ns="rh">
+				<!-- Spawn of Position Controllers -->
+				<node name="controller_spawner_joint_state_sh_rh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
 
-	<arg name="rh_shadow_hand_controllers" default="sh_rh_ffj0_position_controller sh_rh_ffj3_position_controller sh_rh_ffj4_position_controller sh_rh_mfj0_position_controller sh_rh_mfj3_position_controller sh_rh_mfj4_position_controller sh_rh_rfj0_position_controller sh_rh_rfj3_position_controller sh_rh_rfj4_position_controller sh_rh_lfj0_position_controller sh_rh_lfj3_position_controller sh_rh_lfj4_position_controller sh_rh_lfj5_position_controller sh_rh_thj1_position_controller sh_rh_thj2_position_controller sh_rh_thj3_position_controller sh_rh_thj4_position_controller sh_rh_thj5_position_controller sh_rh_wrj1_position_controller sh_rh_wrj2_position_controller" />
+	 			<node name="controller_spawner_sh_rh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="$(arg rh_shadow_hand_controllers)"/>
+			</group>
+		</group>
 
-	<arg name="lh_shadow_hand_controllers" default="sh_lh_ffj0_position_controller sh_lh_ffj3_position_controller sh_lh_ffj4_position_controller sh_lh_mfj0_position_controller sh_lh_mfj3_position_controller sh_lh_mfj4_position_controller sh_lh_rfj0_position_controller sh_lh_rfj3_position_controller sh_lh_rfj4_position_controller sh_lh_lfj0_position_controller sh_lh_lfj3_position_controller sh_lh_lfj4_position_controller sh_lh_lfj5_position_controller sh_lh_thj1_position_controller sh_lh_thj2_position_controller sh_lh_thj3_position_controller sh_lh_thj4_position_controller sh_lh_thj5_position_controller sh_lh_wrj1_position_controller sh_lh_wrj2_position_controller" />
-
-	<!-- load robotHW configurations to rosparam server -->
-	<rosparam command="load" file="$(find platform_gazebo)/config/rh_controller_gazebo.yaml"/>
-	<rosparam command="load" file="$(find platform_gazebo)/config/rh_joint_state_controller.yaml"/>
-
-	<rosparam command="load" file="$(find platform_gazebo)/config/lh_controller_gazebo.yaml"/>
-	<rosparam command="load" file="$(find platform_gazebo)/config/lh_joint_state_controller.yaml"/>
-	
-    <group ns="lh">
-		<node name="controller_spawner_joint_state_sh_lh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
-
-		<node name="controller_spawner_sh_lh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="$(arg lh_shadow_hand_controllers)"/>
-     </group>
-
-    <group ns="rh">
-         <node name="controller_spawner_joint_state_sh_rh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
-
- 		<node name="controller_spawner_sh_rh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="$(arg rh_shadow_hand_controllers)"/>
 	</group>
 
 	<group if="$(arg use_pantilt)">

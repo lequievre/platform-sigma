@@ -63,20 +63,20 @@
 						  ubi="false" eli="false" reflect="1.0" prefix="${prefix}_" lf="true" />
  </xacro:macro>
 
-<!--<xacro:if value="$(arg use_right_hand)">-->
+<xacro:if value="$(arg use_right_hand)">
    <xacro:shadow_hand parent="kuka_lwr_right_7_link" name="sh_rh" prefix="rh">
 		<origin xyz="0 0 0" rpy="0 0 0"/>
    </xacro:shadow_hand>
 
    <xacro:sr_gazebo name="sr_rh" namespace="/rh"/>
-<!--</xacro:if>-->
+</xacro:if>
 
-<!--<xacro:if value="$(arg use_left_hand)">-->
+<xacro:if value="$(arg use_left_hand)">
   <xacro:shadow_hand parent="kuka_lwr_left_7_link" name="sh_lh" prefix="lh">
 		<origin xyz="0 0 0" rpy="0 0 ${pi}"/>
   </xacro:shadow_hand>
 
   <xacro:sr_gazebo name="sr_lh" namespace="/lh"/>
-<!--</xacro:if>-->
+</xacro:if>
 
 </robot>
