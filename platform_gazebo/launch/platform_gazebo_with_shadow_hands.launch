@@ -73,8 +73,10 @@
 		</group>
 	
 		<group ns="kuka_lwr_left">
-			<node name="robot_state_publisher_left" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen"/>
-			<node name="joint_state_publisher_left" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false" output="screen"/>
+			<node name="robot_state_publisher_left" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+				<remap from="/joint_states" to="/kuka_lwr_left/joint_states" />
+			</node>
+			<!--<node name="joint_state_publisher_left" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false" output="screen"/>-->
 		</group>
 
 		<!-- Left Shadow Hand -->
@@ -84,6 +86,10 @@
 				<node name="controller_spawner_joint_state_sh_lh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
 
 				<node name="controller_spawner_sh_lh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="$(arg lh_shadow_hand_controllers)"/>
+
+				<node name="robot_state_publisher_sh_left" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+					<remap from="/joint_states" to="/lh/joint_states" />
+				</node>
 			</group>
      	</group>
 
@@ -97,8 +103,10 @@
 		</group>
 
 		<group ns="kuka_lwr_right">
-			<node name="robot_state_publisher_right" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen"/>
-			<node name="joint_state_publisher_right" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false" output="screen"/>
+			<node name="robot_state_publisher_right" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+				<remap from="/joint_states" to="/kuka_lwr_right/joint_states" />
+			</node>
+			<!--<node name="joint_state_publisher_right" pkg="joint_state_publisher" type="joint_state_publisher" respawn="false" output="screen"/>-->
 		</group>
 
 		<!-- Right Shadow Hand -->
@@ -108,6 +116,10 @@
 				<node name="controller_spawner_joint_state_sh_rh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller"/>
 
 	 			<node name="controller_spawner_sh_rh" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="$(arg rh_shadow_hand_controllers)"/>
+
+				<node name="robot_state_publisher_sh_right" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+					<remap from="/joint_states" to="/rh/joint_states" />
+				</node>
 			</group>
 		</group>
 
