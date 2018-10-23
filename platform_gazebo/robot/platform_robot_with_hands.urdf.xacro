@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="platform_robot">
+	
+  <!-- define PI variable -->
+  <xacro:property name="pi" value="3.1415926535897931" />
+
+  <!-- Include kuka lwr model -->
+  <xacro:include filename="$(find kuka_lwr_description)/model/kuka_lwr_urdf.xacro"/>
+  
+  <!-- Include trunk model -->
+  <xacro:include filename="$(find trunk_description)/model/trunk.urdf.xacro"/>
+
+  <!-- Include gazebo kuka lwr -->
+  <xacro:include filename="$(find kuka_lwr_description)/model/kuka_lwr.gazebo.xacro"/>
+
+  <!-- Include gazebo trunk -->
+  <xacro:include filename="$(find trunk_description)/model/trunk.gazebo.xacro"/>
+
+  <xacro:if value="$(arg use_pantilt)">
+	<!-- Include pan tilt model -->
+	<xacro:include filename="$(find pantilt_description)/model/pantilt_gazebo.urdf.xacro"/>
+  </xacro:if>
+  
+  <!-- Create Kuka LWR Right -->
+  <xacro:kuka_lwr parent="trunk_link" name="kuka_lwr_right">
+	<origin xyz="-0.17 0 1.45" rpy="0 ${pi/2.0} ${pi}"/>
+  </xacro:kuka_lwr>
+
+  <!-- Create Kuka LWR Left -->
+  <xacro:kuka_lwr parent="trunk_link" name="kuka_lwr_left">
+	<origin xyz="0.17 0 1.45" rpy="0 ${pi/2.0} 0"/>
+  </xacro:kuka_lwr>
+
+ <!-- Create Gazebo Kuka Right -->
+ <xacro:kuka_lwr_gazebo name="kuka_lwr_right" />
+
+ <!-- Create Gazebo Kuka Left -->
+ <xacro:kuka_lwr_gazebo name="kuka_lwr_left" />
+
+ <!-- Create Gazebo Trunk -->
+ <xacro:trunk_gazebo />
+
+ <!-- Create Pantilt -->
+ <xacro:if value="$(arg use_pantilt)">
+	<!-- Pan tilt -->
+	<xacro:pantilt parent="trunk_link" name="pantilt" namespace="pantilt">
+		<origin xyz="0 0 1.695" rpy="0 0 0"/>
+	</xacro:pantilt>
+ </xacro:if>
+
+ <!-- Create shadow hand -->
+ <xacro:include filename="$(find sr_description)/materials.urdf.xacro"/>
+ <xacro:include filename="$(find sr_description)/hand/xacro/full_hand.urdf.xacro"/>
+ <xacro:include filename="$(find platform_gazebo)/robot/sr/sr_gazebo.urdf.xacro"/>
+ 
+ <xacro:macro name="shadow_hand" params="parent name prefix *origin">
+		<joint name="${parent}_${name}_hand_joint" type="fixed">
+		  <parent link="${parent}" />
+		  <child link="${prefix}_forearm" />
+		  <insert_block name="origin"/>
+		</joint>
+		<xacro:shadowhand muscletrans="false" muscle="false" bio="false" bt_sp="false"
+						  ubi="false" eli="false" reflect="1.0" prefix="${prefix}_" lf="true" />
+ </xacro:macro>
+
+<xacro:if value="$(arg use_right_sh)">
+   <xacro:shadow_hand parent="kuka_lwr_right_7_link" name="rsh" prefix="rh">
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+   </xacro:shadow_hand>
+
+   <xacro:sr_gazebo name="rsh_gazebo" namespace="/rsh"/>
+</xacro:if>
+
+<xacro:if value="$(arg use_left_sh)">
+  <xacro:shadow_hand parent="kuka_lwr_left_7_link" name="lsh" prefix="lh">
+		<origin xyz="0 0 0" rpy="0 0 ${pi}"/>
+  </xacro:shadow_hand>
+
+  <xacro:sr_gazebo name="lsh_gazebo" namespace="/lsh"/>
+</xacro:if>
+
+</robot>
