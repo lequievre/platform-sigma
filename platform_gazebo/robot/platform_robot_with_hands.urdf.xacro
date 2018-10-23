@@ -63,20 +63,48 @@
 						  ubi="false" eli="false" reflect="1.0" prefix="${prefix}_" lf="true" />
  </xacro:macro>
 
-<xacro:if value="$(arg use_right_sh)">
+ <xacro:if value="$(arg use_right_sh)">
    <xacro:shadow_hand parent="kuka_lwr_right_7_link" name="rsh" prefix="rh">
 		<origin xyz="0 0 0" rpy="0 0 0"/>
    </xacro:shadow_hand>
 
    <xacro:sr_gazebo name="rsh_gazebo" namespace="/rsh"/>
-</xacro:if>
+ </xacro:if>
 
-<xacro:if value="$(arg use_left_sh)">
+ <xacro:if value="$(arg use_left_sh)">
   <xacro:shadow_hand parent="kuka_lwr_left_7_link" name="lsh" prefix="lh">
 		<origin xyz="0 0 0" rpy="0 0 ${pi}"/>
   </xacro:shadow_hand>
 
   <xacro:sr_gazebo name="lsh_gazebo" namespace="/lsh"/>
-</xacro:if>
+ </xacro:if>
+
+ <!-- Create Barrett Hand -->
+ <!-- Available choices: bh282.urdf.xacro, bh280.urdf.xacro -->	
+ <xacro:include filename="$(find barrett_hand_description)/urdf/bh280.urdf.xacro" />
+ <xacro:include filename="$(find platform_gazebo)/robot/barrett_hand/bh_gazebo.urdf.xacro"/>
+
+ <xacro:macro name="barrett_hand" params="parent name *origin">
+		<xacro:bhand_macro name="${name}" parent="${parent}">
+		    <insert_block name="origin"/>
+	    </xacro:bhand_macro>
+ </xacro:macro>
+
+ <xacro:if value="$(arg use_right_bh)">
+   <xacro:barrett_hand parent="kuka_lwr_right_7_link" name="rbh" >
+		<origin xyz="0 0 0" rpy="0 0 0"/>
+   </xacro:barrett_hand>
+
+   <xacro:bh_ros_control_gazebo name="rbh" namespace="/rbh"/>
+ </xacro:if>
+
+ <xacro:if value="$(arg use_left_bh)">
+   <xacro:barrett_hand parent="kuka_lwr_left_7_link" name="lbh"  >
+		<origin xyz="0 0 0" rpy="0 0 ${pi}"/>
+   </xacro:barrett_hand>
+
+   <xacro:bh_ros_control_gazebo name="lbh" namespace="/lbh"/>
+ </xacro:if>
+ 
 
 </robot>
