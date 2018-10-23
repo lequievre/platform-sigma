@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rh_shadow_hand_robot">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rsh_shadow_hand_robot">
 
  <!-- Create shadow hand -->
  <xacro:include filename="$(find sr_description)/materials.urdf.xacro"/>
