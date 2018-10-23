@@ -213,7 +213,7 @@ class SrGuiJointSlider_rh(Plugin):
         """
         success = True
         list_controllers = rospy.ServiceProxy(
-            '/rh/controller_manager/list_controllers', ListControllers)
+            '/rsh/controller_manager/list_controllers', ListControllers)
         try:
             resp1 = list_controllers()
         except rospy.ServiceException:
@@ -223,7 +223,7 @@ class SrGuiJointSlider_rh(Plugin):
             return [c for c in resp1.controller if c.state == "running"]
         else:
             rospy.loginfo(
-                "Couldn't get list of controllers from /rh/controller_manager/list_controllers service")
+                "Couldn't get list of controllers from /rsh/controller_manager/list_controllers service")
             return []
 
     def _load_robot_description(self):
@@ -300,8 +300,8 @@ class SrGuiJointSlider_rh(Plugin):
                     trajectory_ctrl_joint_names.append(j_name)
 
         for controller in controllers:
-            if rospy.has_param("/rh/" + controller.name):
-                ctrl_params = rospy.get_param("/rh/" + controller.name)
+            if rospy.has_param("/rsh/" + controller.name):
+                ctrl_params = rospy.get_param("/rsh/" + controller.name)
                 controller_type = ctrl_params["type"]
                 if controller_type in self.controller_state_types:
                     controller_state_type = self.controller_state_types[

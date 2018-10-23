@@ -157,14 +157,14 @@ class EtherCATHandSlider(ExtendedSlider):
         self.max_label.setText(str(self.joint.max))
 
         self.pub = rospy.Publisher(
-            "/lh/" + self.joint.controller.name + "/command",
+            "/lsh/" + self.joint.controller.name + "/command",
             Float64,
             queue_size=1,
             latch=True
         )
         self.set_slider_behaviour()
         self.state_sub = rospy.Subscriber(
-            "/lh/" + self.joint.controller.name + "/state", self.joint.controller.controller_state_type, self._state_cb)
+            "/lsh/" + self.joint.controller.name + "/state", self.joint.controller.controller_state_type, self._state_cb)
 
     def _state_cb(self, msg):
         self.state = msg
