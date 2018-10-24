@@ -72,11 +72,11 @@
  </xacro:if>
 
  <xacro:if value="$(arg use_left_sh)">
-  <xacro:shadow_hand parent="kuka_lwr_left_7_link" name="lsh" prefix="lh">
+   <xacro:shadow_hand parent="kuka_lwr_left_7_link" name="lsh" prefix="lh">
 		<origin xyz="0 0 0" rpy="0 0 ${pi}"/>
-  </xacro:shadow_hand>
+   </xacro:shadow_hand>
 
-  <xacro:sr_gazebo name="lsh_gazebo" namespace="/lsh"/>
+   <xacro:sr_gazebo name="lsh_gazebo" namespace="/lsh"/>
  </xacro:if>
 
  <!-- Create Barrett Hand -->
@@ -95,15 +95,15 @@
 		<origin xyz="0 0 0" rpy="0 0 0"/>
    </xacro:barrett_hand>
 
-   <xacro:bh_ros_control_gazebo name="rbh" namespace="/rbh"/>
+   <xacro:bh_ros_control_gazebo name="rbh_gazebo" namespace="/rbh"/>
  </xacro:if>
 
  <xacro:if value="$(arg use_left_bh)">
-   <xacro:barrett_hand parent="kuka_lwr_left_7_link" name="lbh"  >
+   <xacro:barrett_hand parent="kuka_lwr_left_7_link" name="lbh" >
 		<origin xyz="0 0 0" rpy="0 0 ${pi}"/>
    </xacro:barrett_hand>
 
-   <xacro:bh_ros_control_gazebo name="lbh" namespace="/lbh"/>
+   <xacro:bh_ros_control_gazebo name="lbh_gazebo" namespace="/lbh"/>
  </xacro:if>
  
 
