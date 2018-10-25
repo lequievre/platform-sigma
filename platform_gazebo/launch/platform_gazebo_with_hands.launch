@@ -2,13 +2,12 @@
 	<arg name="robot_name" default="platform_robot_with_hands"/>
 	<arg name="robot_urdf_file" default="$(find platform_gazebo)/robot/$(arg robot_name).urdf.xacro"/>
 	 
+	<!-- Kuka Controllers -->
 	<arg name="controllers" default="kuka_group_command_controller_fri" />
 
+    <!-- Use or Not Pantilt -->
 	<arg name="use_pantilt" default="true"/>
 	
-	<arg name="use_left_arm" default="true"/>
-	<arg name="use_right_arm" default="true"/>
-
 	<!-- Use or Not Shadow Hand -->
 	<arg name="use_left_sh" default="false"/>
     <arg name="use_right_sh" default="false"/>
@@ -17,6 +16,7 @@
 	<arg name="use_left_bh" default="false"/>
     <arg name="use_right_bh" default="false"/>
 	
+	<!-- Platform description -->
 	<param name="robot_description" command="$(find xacro)/xacro.py $(arg robot_urdf_file) use_pantilt:=$(arg use_pantilt)  use_left_sh:=$(arg use_left_sh) use_right_sh:=$(arg use_right_sh) use_left_bh:=$(arg use_left_bh) use_right_bh:=$(arg use_right_bh)"/>
 
 	<arg name="paused" default="false"/>
@@ -39,8 +39,7 @@
 
 	<node name="spawn_platform_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -model $(arg robot_name)" respawn="false" output="screen" />
 
-	<group if="$(arg use_left_arm)">
-
+	<!-- START KUKA LEFT *************************************************************  -->
 		<!-- load Kuka Left robotHW configurations to rosparam server -->
 		<rosparam command="load" file="$(find platform_gazebo)/config/lkuka_hw_interface.yaml"/>
 
@@ -51,13 +50,11 @@
 
 		<!-- namespace of left arm -->
 		<group ns="kuka_lwr_left">
-			    <node name="controller_spawner_left" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller $(arg controllers)"/>	
-		</group>
-	
-		<group ns="kuka_lwr_left">
-			<node name="robot_state_publisher_left" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
-				<remap from="/joint_states" to="/kuka_lwr_left/joint_states" />
-			</node>
+			    <node name="controller_spawner_left" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller $(arg controllers)"/>
+
+				<node name="robot_state_publisher_left" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+					<remap from="/joint_states" to="/kuka_lwr_left/joint_states" />
+				</node>
 		</group>
 
 		<!-- Left Shadow Hand -->
@@ -80,6 +77,7 @@
 					<remap from="/joint_states" to="/lsh/joint_states" />
 				</node>
 			</group>
+
      	</group>
 
 		<!-- Left Barrett Hand -->
@@ -103,11 +101,12 @@
 					<remap from="/joint_states" to="/lbh/joint_states" />
 				</node>
 			</group>
+
      	</group>
 
-	</group>
+	<!-- END KUKA LEFT *************************************************************  -->
 
-	<group if="$(arg use_right_arm)">
+	<!-- START KUKA RIGHT *************************************************************  -->
 
 		<!-- load Kuka Right robotHW configurations to rosparam server -->
 		<rosparam command="load" file="$(find platform_gazebo)/config/rkuka_hw_interface.yaml"/>
@@ -120,9 +119,7 @@
 		<!-- namespace of right arm -->
 		<group ns="kuka_lwr_right">
 			<node name="controller_spawner_right" pkg="controller_manager" type="spawner" respawn="true" output="screen" args="joint_state_controller $(arg controllers)"/>
-		</group>
 
-		<group ns="kuka_lwr_right">
 			<node name="robot_state_publisher_right" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
 				<remap from="/joint_states" to="/kuka_lwr_right/joint_states" />
 			</node>
@@ -148,6 +145,7 @@
 					<remap from="/joint_states" to="/rsh/joint_states" />
 				</node>
 			</group>
+
 		</group>
 
         <!-- Right Barrett Hand -->
@@ -171,12 +169,15 @@
 					<remap from="/joint_states" to="/rbh/joint_states" />
 				</node>
 			</group>
+
      	</group>
 
-	</group>
+	<!-- END KUKA RIGHT *************************************************************  -->
+
+	<!-- START PANTILT *************************************************************  -->
 
 	<group if="$(arg use_pantilt)">
-		<!-- pantilt needs ***************************************************************************************************************************************  -->
+
 		<!-- pantilt controllers -->
 		<arg name="pantilt_controllers" default="pantilt_group_position_controller" />
 
@@ -197,7 +198,8 @@
 		<node name="robot_state_publisher_pantilt" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
 				<remap from="/joint_states" to="/pantilt/joint_states" />
 		</node>
-		<!-- ***************************************************************************************************************************************************  -->
+		
 	</group>
+<!-- END PANTILT *************************************************************  -->
 
 </launch>
