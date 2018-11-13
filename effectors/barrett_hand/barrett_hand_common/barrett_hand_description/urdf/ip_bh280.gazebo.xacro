@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="bh_gazebo" params="name namespace">
+
+	<gazebo>
+		<plugin name="${name}_bh_gazebo_ros_control" filename="libgazebo_ros_control.so">
+			<robotNamespace>${namespace}</robotNamespace>
+		</plugin>
+	</gazebo>
+
+	<gazebo reference="${name}_base_link">
+		<material>Gazebo/White</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_31_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_32_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_33_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_11_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_12_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_13_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+		
+	<gazebo reference="${name}_finger_21_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_22_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+	<gazebo reference="${name}_finger_23_link">
+		<material>Gazebo/Grey</material>
+		<turnGravityOff>False</turnGravityOff>
+	</gazebo>
+
+  </xacro:macro>
+</robot>
