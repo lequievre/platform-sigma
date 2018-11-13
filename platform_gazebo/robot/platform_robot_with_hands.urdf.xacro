@@ -81,26 +81,26 @@
 
  <!-- Create Barrett Hand -->
  <!-- Available choices: bh282.urdf.xacro, bh280.urdf.xacro -->	
- <xacro:include filename="$(find barrett_hand_description)/urdf/bh280.urdf.xacro"/>
- <xacro:include filename="$(find platform_gazebo)/robot/barrett_hand/bh_gazebo.urdf.xacro"/>
+ <xacro:include filename="$(find barrett_hand_description)/urdf/ip_bh280.urdf.xacro"/>
+ <!--<xacro:include filename="$(find platform_gazebo)/robot/barrett_hand/bh_gazebo.urdf.xacro"/>-->
 
  <xacro:if value="$(arg use_right_bh)">
 
-	<xacro:bhand_macro name="rbh" parent="kuka_lwr_right_7_link">
+	<xacro:bhand_macro name="rbh" namespace="/rbh" parent="kuka_lwr_right_7_link">
 		<origin xyz="0 0 0" rpy="0 0 0" />
 	</xacro:bhand_macro>
 
-   <xacro:bh_ros_control_gazebo name="rbh_gazebo" namespace="/rbh"/>
+   <!--<xacro:bh_ros_control_gazebo name="rbh_gazebo" namespace="/rbh"/>-->
 
  </xacro:if>
 
  <xacro:if value="$(arg use_left_bh)">
 
-	<xacro:bhand_macro name="lbh" parent="kuka_lwr_left_7_link">
+	<xacro:bhand_macro name="lbh" namespace="/lbh" parent="kuka_lwr_left_7_link">
 		<origin xyz="0 0 0" rpy="0 0 ${pi}" />
 	</xacro:bhand_macro>
 
-   <xacro:bh_ros_control_gazebo name="lbh_gazebo" namespace="/lbh"/>
+   <!--<xacro:bh_ros_control_gazebo name="lbh_gazebo" namespace="/lbh"/>-->
 
  </xacro:if>
  

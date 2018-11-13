@@ -3,17 +3,12 @@
 
   <!-- Create Barrett Hand -->
   <!-- Available choices: bh282.urdf.xacro, bh280.urdf.xacro -->	
-  <xacro:include filename="$(find barrett_hand_description)/urdf/bh280.urdf.xacro" />
-
-  <xacro:macro name="barrett_hand" params="parent name *origin">
-		<xacro:bhand_macro name="${name}" parent="${parent}">
-		    <insert_block name="origin"/>
-	    </xacro:bhand_macro>
-  </xacro:macro>
+  <xacro:include filename="$(find barrett_hand_description)/urdf/ip_bh280.urdf.xacro" />
 
   <link name="kuka_lwr_right_7_link"/>
-  <xacro:barrett_hand parent="kuka_lwr_right_7_link" name="rbh"  >
-	<origin xyz="0 0 0" rpy="0 0 0"/>
-  </xacro:barrett_hand>
+ 
+  <xacro:bhand_macro name="rbh" namespace="/rbh" parent="kuka_lwr_right_7_link">
+		<origin xyz="0 0 0" rpy="0 0 0" />
+  </xacro:bhand_macro>
  
 </robot>

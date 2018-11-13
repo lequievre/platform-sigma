@@ -1,0 +1,15 @@
+lbh:
+  root: lbh_base_link
+  tip: lbh_finger_13_link
+  # joints is not used, since with the robot name and urdf name conventions, the parsing is hardcoded
+  # but as a general solution, joint names could be loaded as well, like controllers do
+  joints: 
+  - lbh_j32_joint
+  - lbh_j33_joint
+  - lbh_j11_joint
+  - lbh_j12_joint
+  - lbh_j13_joint
+  - lbh_j21_joint
+  - lbh_j22_joint
+  - lbh_j23_joint
+
