@@ -210,19 +210,61 @@ namespace barrett_hand_controllers
 		// commands[2] -> j22_joint, mimic j23_joint multiply by 0.344
 		// commands[3] -> j32_joint, mimic j33_joint multiply by 0.344
 		
+		
+		
 		// mimic j11_joint and j21_joint
+		if (commands[0] < joint_limits_.min(0))
+		{
+			commands[0] = joint_limits_.min(0);
+		}
+		
+		if (commands[0] > joint_limits_.max(0))
+		{
+			commands[0] = joint_limits_.max(0);
+		}
+		
 		joint_handles_[0].setCommand(commands[0]); // j11_joint
 		joint_handles_[3].setCommand(commands[0]); // j21_joint
 		
 		// mimic j12_joint and j13_joint
+		if (commands[1] < joint_limits_.min(1))
+		{
+			commands[1] = joint_limits_.min(1);
+		}
+		
+		if (commands[1] > joint_limits_.max(1))
+		{
+			commands[1] = joint_limits_.max(1);
+		}
+		
 		joint_handles_[1].setCommand(commands[1]); // j12_joint
 		joint_handles_[2].setCommand(commands[1]*0.344); // j13_joint
 		
 		// mimic j22_joint and j23_joint
+		if (commands[2] < joint_limits_.min(4))
+		{
+			commands[2] = joint_limits_.min(4);
+		}
+		
+		if (commands[2] > joint_limits_.max(4))
+		{
+			commands[2] = joint_limits_.max(4);
+		}
+		
 		joint_handles_[4].setCommand(commands[2]); // j22_joint
 		joint_handles_[5].setCommand(commands[2]*0.344); // j23_joint
 		
 		// mimic j32_joint and j33_joint
+		if (commands[3] < joint_limits_.min(6))
+		{
+			commands[3] = joint_limits_.min(6);
+		}
+		
+		if (commands[3] > joint_limits_.max(6))
+		{
+			commands[3] = joint_limits_.max(6);
+		}
+		
 		joint_handles_[6].setCommand(commands[3]); // j32_joint
 		joint_handles_[7].setCommand(commands[3]*0.344); // j33_joint
 	}
@@ -237,6 +279,55 @@ namespace barrett_hand_controllers
 		{ 
 			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) Dimension of command (" << msg->data.size() << ") does not match number of degrees of freedom (" << n_dof_ << ")! Not executing!");
 			return; 
+		}
+		
+		if (msg->data[0] < joint_limits_.min(0))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 0 does not match the min limit :" << joint_limits_.min(0));
+			return;
+		}
+		
+		if (msg->data[0] > joint_limits_.max(0))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 0 does not match the max limit :" << joint_limits_.max(0));
+			return;
+		}
+		
+		
+		if (msg->data[1] < joint_limits_.min(1))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the min limit :" << joint_limits_.min(1));
+			return;
+		}
+		
+		if (msg->data[1] > joint_limits_.max(1))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the max limit :" << joint_limits_.max(1));
+			return;
+		}
+		
+		if (msg->data[2] < joint_limits_.min(4))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the min limit :" << joint_limits_.min(4));
+			return;
+		}
+		
+		if (msg->data[2] > joint_limits_.max(4))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the max limit :" << joint_limits_.max(4));
+			return;
+		}
+		
+		if (msg->data[3] < joint_limits_.min(6))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the min limit :" << joint_limits_.min(6));
+			return;
+		}
+		
+		if (msg->data[3] > joint_limits_.max(6))
+		{
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the max limit :" << joint_limits_.max(6));
+			return;
 		}
 		
 		commands_buffer_.writeFromNonRT(msg->data);
