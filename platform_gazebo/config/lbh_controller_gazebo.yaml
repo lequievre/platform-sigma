@@ -31,6 +31,17 @@ lbh:
     type: position_controllers/JointPositionController
     joint: lbh_j33_joint
     pid: {p: 100.0, i: 0.01, d: 10.0}
+  lbh_group_position_controller:
+    type: barrett_hand_controllers/BarrettHandGroupPosition
+    joints:
+        - lbh_j11_joint
+        - lbh_j12_joint
+        - lbh_j13_joint
+        - lbh_j21_joint
+        - lbh_j22_joint
+        - lbh_j23_joint
+        - lbh_j32_joint
+        - lbh_j33_joint
   gazebo_ros_control:
    pid_gains:
       lbh_j11_joint: {p: 100.0, i: 0.01, d: 10.0}

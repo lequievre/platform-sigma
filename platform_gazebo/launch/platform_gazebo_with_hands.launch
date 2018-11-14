@@ -91,7 +91,7 @@
 			<rosparam command="load" file="$(find platform_gazebo)/config/lbh_joint_state_controller.yaml"/>
 
 			<!-- List of Left Barrett Hand Position Controllers -->
-			<arg name="lbh_barrett_hand_controllers" default="lbh_j11_position_controller lbh_j12_position_controller lbh_j13_position_controller lbh_j21_position_controller lbh_j22_position_controller lbh_j23_position_controller lbh_j32_position_controller lbh_j33_position_controller" />
+			<arg name="lbh_barrett_hand_controllers" default="lbh_group_position_controller" />
 
 			<group ns="lbh">
 				<!-- Spawn of Position Controllers -->
@@ -159,7 +159,7 @@
 			<rosparam command="load" file="$(find platform_gazebo)/config/rbh_joint_state_controller.yaml"/>
 
 			<!-- List of Right Barrett Hand Position Controllers -->
-			<arg name="rbh_barrett_hand_controllers" default="rbh_j11_position_controller rbh_j12_position_controller rbh_j13_position_controller rbh_j21_position_controller rbh_j22_position_controller rbh_j23_position_controller rbh_j32_position_controller rbh_j33_position_controller" />
+			<arg name="rbh_barrett_hand_controllers" default="rbh_group_position_controller" />
 
 			<group ns="rbh">
 				<!-- Spawn of Position Controllers -->

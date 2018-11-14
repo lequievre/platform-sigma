@@ -31,6 +31,17 @@ rbh:
     type: position_controllers/JointPositionController
     joint: rbh_j33_joint
     pid: {p: 100.0, i: 0.01, d: 10.0}
+  rbh_group_position_controller:
+    type: barrett_hand_controllers/BarrettHandGroupPosition
+    joints:
+        - rbh_j11_joint
+        - rbh_j12_joint
+        - rbh_j13_joint
+        - rbh_j21_joint
+        - rbh_j22_joint
+        - rbh_j23_joint
+        - rbh_j32_joint
+        - rbh_j33_joint
   gazebo_ros_control:
    pid_gains:
       rbh_j11_joint: {p: 100.0, i: 0.01, d: 10.0}
