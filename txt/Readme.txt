@@ -47,6 +47,12 @@ roslaunch platform_gazebo platform_gazebo.launch use_pantilt:=true
 
 If you don't need the pantilt -> roslaunch platform_gazebo platform_gazebo.launch use_pantilt:=false
 
+How to move Barrett Hand :
+------------------------
+rostopic pub -1 /lbh/lbh_group_position_controller/command std_msgs/Float64MultiArray "data: [0.0,0.0,0.0,0.0]"
+
+break away service -> rosservice call /lbh/lbh_group_position_controller/setBreakAway true
+
 
 How to move the pantilt in position :
 -----------------------------------

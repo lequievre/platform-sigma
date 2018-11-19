@@ -41,7 +41,7 @@ namespace barrett_hand_controllers
 		#endif
 	}
 	
-	std::vector<std::string> BarrettHandGroupPosition::getStrings_(const ros::NodeHandle& nh, const std::string& param_name)
+	std::vector<std::string> BarrettHandGroupPosition::getStrings_(const ros::NodeHandle& nh, const std::string& param_name) const noexcept
 	{
 	  using namespace XmlRpc;
 	  XmlRpcValue xml_array;
@@ -178,14 +178,30 @@ namespace barrett_hand_controllers
         
         // set joint positions, inital values
         commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
+        grasping_mode_buffer_.writeFromNonRT(GraspingMode::Break_Away_Inactive);
         
 		sub_command_ = nh_.subscribe("command", 1, &BarrettHandGroupPosition::commandCB_, this);
+		srv_command_ = nh_.advertiseService("setBreakAway", &BarrettHandGroupPosition::setBreakAwayCB_, this);
 		
 		#if TRACE_ACTIVATED
 			ROS_INFO("Finish BarrettHandGroupPosition::init !");
 		#endif
 		
 		return true;
+	}
+	void BarrettHandGroupPosition::checkLimit_(double &angleValue, const Fingers& index) const noexcept
+	{
+		int limit_index = enum_value(index);
+		
+		if (angleValue < joint_limits_.min(limit_index))
+		{
+			angleValue = joint_limits_.min(limit_index);
+		}
+		
+		if (angleValue > joint_limits_.max(limit_index))
+		{
+			angleValue = joint_limits_.max(limit_index);
+		}
 	}
 	
 	void BarrettHandGroupPosition::update(const ros::Time& time, const ros::Duration& period)
@@ -195,15 +211,17 @@ namespace barrett_hand_controllers
 		#endif
 		
 		std::vector<double> & commands = *commands_buffer_.readFromRT();
+		GraspingMode & currentGrapingMode = *grasping_mode_buffer_.readFromRT();
 		
-		// joint_handles_[0] -> j11_joint
-		// joint_handles_[1] -> j12_joint
-		// joint_handles_[2] -> j13_joint
-		// joint_handles_[3] -> j21_joint
-		// joint_handles_[4] -> j22_joint
-		// joint_handles_[5] -> j23_joint
-		// joint_handles_[6] -> j32_joint
-		// joint_handles_[7] -> j33_joint
+		
+		// joint_handles_[0] -> joint_limits_.min(0) -> j11_joint
+		// joint_handles_[1] -> joint_limits_.min(1) -> j12_joint
+		// joint_handles_[2] -> joint_limits_.min(2) -> j13_joint
+		// joint_handles_[3] -> joint_limits_.min(3) -> j21_joint
+		// joint_handles_[4] -> joint_limits_.min(4) -> j22_joint
+		// joint_handles_[5] -> joint_limits_.min(5) -> j23_joint
+		// joint_handles_[6] -> joint_limits_.min(6) -> j32_joint
+		// joint_handles_[7] -> joint_limits_.min(7) -> j33_joint
 		
 		// commands[0] -> j11_joint, mimic j21_joint multiply by 1
 		// commands[1] -> j12_joint, mimic j13_joint multiply by 0.344
@@ -213,60 +231,77 @@ namespace barrett_hand_controllers
 		
 		
 		// mimic j11_joint and j21_joint
-		if (commands[0] < joint_limits_.min(0))
-		{
-			commands[0] = joint_limits_.min(0);
-		}
-		
-		if (commands[0] > joint_limits_.max(0))
-		{
-			commands[0] = joint_limits_.max(0);
-		}
+		checkLimit_(commands[0], Fingers::Finger1_KNUCKLE);
 		
 		joint_handles_[0].setCommand(commands[0]); // j11_joint
 		joint_handles_[3].setCommand(commands[0]); // j21_joint
 		
-		// mimic j12_joint and j13_joint
-		if (commands[1] < joint_limits_.min(1))
+		switch (currentGrapingMode)
 		{
-			commands[1] = joint_limits_.min(1);
+			case GraspingMode::Break_Away_Inactive:
+			
+				// mimic j12_joint and j13_joint
+				checkLimit_(commands[1], Fingers::Finger1_PROXIMAL);
+				
+				joint_handles_[1].setCommand(commands[1]); // j12_joint
+				joint_handles_[2].setCommand(commands[1]*0.344); // j13_joint
+				
+				// mimic j22_joint and j23_joint
+				checkLimit_(commands[2], Fingers::Finger2_PROXIMAL);
+				
+				joint_handles_[4].setCommand(commands[2]); // j22_joint
+				joint_handles_[5].setCommand(commands[2]*0.344); // j23_joint
+				
+				// mimic j32_joint and j33_joint
+				checkLimit_(commands[3], Fingers::Finger3_PROXIMAL);
+				
+				joint_handles_[6].setCommand(commands[3]); // j32_joint
+				joint_handles_[7].setCommand(commands[3]*0.344); // j33_joint
+				
+				break;
+				
+			case GraspingMode::Break_Away_Active:
+			
+				// move only j13_joint, j12_joint is blocked
+				checkLimit_(commands[1], Fingers::Finger1_DISTAL);
+				joint_handles_[1].setCommand(joint_handles_[1].getPosition()); // j12_joint
+				joint_handles_[2].setCommand(commands[1]); // j13_joint
+				
+				// move only j23_joint, j22_joint is blocked
+				checkLimit_(commands[2], Fingers::Finger2_DISTAL);
+				joint_handles_[4].setCommand(joint_handles_[4].getPosition()); // j22_joint
+				joint_handles_[5].setCommand(commands[2]); // j23_joint
+				
+				// move only j33_joint, j32_joint is blocked
+				checkLimit_(commands[3], Fingers::Finger3_DISTAL);
+				joint_handles_[6].setCommand(joint_handles_[6].getPosition()); // j32_joint
+				joint_handles_[7].setCommand(commands[3]); // j33_joint
+				
+				break;
+		};
+		
+	}
+	
+	bool BarrettHandGroupPosition::setBreakAwayCB_(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+	{
+		#if TRACE_ACTIVATED
+			ROS_INFO("BarrettHandGroupPosition -> (setBreakAwayCB_) Start commandCB of robot %s!  with request data = %d !",robot_namespace_.c_str(),req.data);
+		#endif
+		
+		if (req.data == true)
+		{
+			res.message = "Mode Break Away Active !";
+			grasping_mode_buffer_.writeFromNonRT(GraspingMode::Break_Away_Active);
+		}
+		else
+		{
+			res.message = "Mode Break Away Inactive !";
+			grasping_mode_buffer_.writeFromNonRT(GraspingMode::Break_Away_Inactive);
 		}
 		
-		if (commands[1] > joint_limits_.max(1))
-		{
-			commands[1] = joint_limits_.max(1);
-		}
+		res.success = true;
 		
-		joint_handles_[1].setCommand(commands[1]); // j12_joint
-		joint_handles_[2].setCommand(commands[1]*0.344); // j13_joint
-		
-		// mimic j22_joint and j23_joint
-		if (commands[2] < joint_limits_.min(4))
-		{
-			commands[2] = joint_limits_.min(4);
-		}
-		
-		if (commands[2] > joint_limits_.max(4))
-		{
-			commands[2] = joint_limits_.max(4);
-		}
-		
-		joint_handles_[4].setCommand(commands[2]); // j22_joint
-		joint_handles_[5].setCommand(commands[2]*0.344); // j23_joint
-		
-		// mimic j32_joint and j33_joint
-		if (commands[3] < joint_limits_.min(6))
-		{
-			commands[3] = joint_limits_.min(6);
-		}
-		
-		if (commands[3] > joint_limits_.max(6))
-		{
-			commands[3] = joint_limits_.max(6);
-		}
-		
-		joint_handles_[6].setCommand(commands[3]); // j32_joint
-		joint_handles_[7].setCommand(commands[3]*0.344); // j33_joint
+		return true;
 	}
 	
 	void BarrettHandGroupPosition::commandCB_(const std_msgs::Float64MultiArrayConstPtr& msg) 
