@@ -4,6 +4,32 @@
  *  Institut Pascal UMR6602
  *  laurent.lequievre@uca.fr
  * 
+ * Fingers configuration :
+ * =====================
+ * Finger1_KNUCKLE (j11_joint) <-> Finger1_PROXIMAL (j12_joint) <-> Finger1_DISTAL (j13_joint)
+ * Finger2_KNUCKLE (j21_joint) <-> Finger2_PROXIMAL (j22_joint) <-> Finger2_DISTAL (j23_joint)
+ * Finger3_PROXIMAL (j32_joint) <-> Finger3_DISTAL (j33_joint)
+ * 
+ * Command configuation (4 angle values in radian) : [index0,index1,index2,index3,index4]
+ * ===============================================
+ * For a left barrett hand -> rostopic pub -1 /lbh/lbh_group_position_controller/command std_msgs/Float64MultiArray "data: [0.0,0.0,0.0,0.0]"
+ * For a right barrett hand -> rostopic pub -1 /rbh/rbh_group_position_controller/command std_msgs/Float64MultiArray "data: [0.0,0.0,0.0,0.0]"
+ * 
+ * Without break away (by default)
+ * index 0 (angle0) -> Finger 1 Knuckle  : angle0  && Finger 2 Knuckle : angle0
+ * index 1 (angle1) -> Finger 1 Proximal : angle1  && Finger 1 Distal  : angle1 * 0.344
+ * index 2 (angle2) -> Finger 2 Proximal : angle2  && Finger 2 Distal  : angle2 * 0.344
+ * index 3 (angle3) -> Finger 3 Proximal : angle3  && Finger 3 Distal  : angle3 * 0.344
+ * 
+ * With break away (set by a service)
+ * For a left -> rosservice call /lbh/lbh_group_position_controller/setBreakAway true
+ * For a right -> rosservice call /rbh/rbh_group_position_controller/setBreakAway true
+ * 
+ * index 0 (angle0) -> Finger 1 Knuckle  : angle0                 && Finger 2 Knuckle : angle0
+ * index 1 (angle1) -> Finger 1 Proximal : fixed to current value && Finger 1 Distal  : angle1
+ * index 2 (angle2) -> Finger 2 Proximal : fixed to current value && Finger 2 Distal  : angle2
+ * index 3 (angle3) -> Finger 3 Proximal : fixed to current value && Finger 3 Distal  : angle3
+ * 
 */
 
 #ifndef BARRETT_HAND_GROUP_POSITION_CONTROLLER_H
