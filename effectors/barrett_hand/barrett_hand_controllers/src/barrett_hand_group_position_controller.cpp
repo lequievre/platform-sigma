@@ -45,11 +45,13 @@ namespace barrett_hand_controllers
 	{
 	  using namespace XmlRpc;
 	  XmlRpcValue xml_array;
+	  
 	  if (!nh.getParam(param_name, xml_array))
 	  {
 		ROS_ERROR_STREAM("BarrettHandGroupPosition:: Could not find '" << param_name << "' parameter (namespace: " << nh.getNamespace() << ").");
 		return std::vector<std::string>();
 	  }
+	  
 	  if (xml_array.getType() != XmlRpcValue::TypeArray)
 	  {
 		ROS_ERROR_STREAM("BarrettHandGroupPosition:: The '" << param_name << "' parameter is not an array (namespace: " <<
@@ -68,6 +70,7 @@ namespace barrett_hand_controllers
 		}
 		out.push_back(static_cast<std::string>(xml_array[i]));
 	  }
+	  
 	  return out;
 	}
 	
@@ -177,7 +180,7 @@ namespace barrett_hand_controllers
 		#endif
         
         // set joint positions, inital values
-        commands_buffer_.writeFromNonRT(std::vector<double>(n_joints_, 0.0));
+        commands_buffer_.writeFromNonRT(std::vector<double>(n_dof_, 0.0));
         grasping_mode_buffer_.writeFromNonRT(GraspingMode::Break_Away_Inactive);
         
 		sub_command_ = nh_.subscribe("command", 1, &BarrettHandGroupPosition::commandCB_, this);
@@ -316,53 +319,99 @@ namespace barrett_hand_controllers
 			return; 
 		}
 		
+		GraspingMode & currentGrapingMode = *grasping_mode_buffer_.readFromRT();
+		
 		if (msg->data[0] < joint_limits_.min(0))
 		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 0 does not match the min limit :" << joint_limits_.min(0));
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 0 does not match the min limit Finger 1 Knuckle :" << joint_limits_.min(0));
 			return;
 		}
 		
 		if (msg->data[0] > joint_limits_.max(0))
 		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 0 does not match the max limit :" << joint_limits_.max(0));
+			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 0 does not match the max limit Finger 1 Knuckle :" << joint_limits_.max(0));
 			return;
 		}
 		
 		
-		if (msg->data[1] < joint_limits_.min(1))
+		switch (currentGrapingMode)
 		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the min limit :" << joint_limits_.min(1));
-			return;
-		}
-		
-		if (msg->data[1] > joint_limits_.max(1))
-		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the max limit :" << joint_limits_.max(1));
-			return;
-		}
-		
-		if (msg->data[2] < joint_limits_.min(4))
-		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the min limit :" << joint_limits_.min(4));
-			return;
-		}
-		
-		if (msg->data[2] > joint_limits_.max(4))
-		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the max limit :" << joint_limits_.max(4));
-			return;
-		}
-		
-		if (msg->data[3] < joint_limits_.min(6))
-		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the min limit :" << joint_limits_.min(6));
-			return;
-		}
-		
-		if (msg->data[3] > joint_limits_.max(6))
-		{
-			ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the max limit :" << joint_limits_.max(6));
-			return;
+			case GraspingMode::Break_Away_Inactive:
+				if (msg->data[1] < joint_limits_.min(1))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the min limit Finger 1 Proximal :" << joint_limits_.min(1));
+					return;
+				}
+				
+				if (msg->data[1] > joint_limits_.max(1))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the max limit Finger 1 Proximal :" << joint_limits_.max(1));
+					return;
+				}
+				
+				if (msg->data[2] < joint_limits_.min(4))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the min limit Finger 2 Proximal :" << joint_limits_.min(4));
+					return;
+				}
+				
+				if (msg->data[2] > joint_limits_.max(4))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the max limit Finger 2 Proximal :" << joint_limits_.max(4));
+					return;
+				}
+				
+				if (msg->data[3] < joint_limits_.min(6))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the min limit Finger 3 Proximal :" << joint_limits_.min(6));
+					return;
+				}
+				
+				if (msg->data[3] > joint_limits_.max(6))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the max limit Finger 3 Proximal :" << joint_limits_.max(6));
+					return;
+				}
+			break;
+			
+			case GraspingMode::Break_Away_Active:
+				if (msg->data[1] < joint_limits_.min(2))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the min limit Finger 1 Distal :" << joint_limits_.min(2));
+					return;
+				}
+				
+				if (msg->data[1] > joint_limits_.max(2))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 1 does not match the max limit Finger 1 Distal :" << joint_limits_.max(2));
+					return;
+				}
+				
+				if (msg->data[2] < joint_limits_.min(5))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the min limit Finger 2 Distal :" << joint_limits_.min(5));
+					return;
+				}
+				
+				if (msg->data[2] > joint_limits_.max(5))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 2 does not match the max limit Finger 2 Distal :" << joint_limits_.max(5));
+					return;
+				}
+				
+				if (msg->data[3] < joint_limits_.min(7))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the min limit Finger 3 Distal :" << joint_limits_.min(7));
+					return;
+				}
+				
+				if (msg->data[3] > joint_limits_.max(7))
+				{
+					ROS_ERROR_STREAM("BarrettHandGroupPosition -> (commandCB) angle value of index 3 does not match the max limit Finger 3 Distal :" << joint_limits_.max(7));
+					return;
+				}
+			
+			break;
 		}
 		
 		commands_buffer_.writeFromNonRT(msg->data);

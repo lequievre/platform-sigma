@@ -103,31 +103,32 @@ namespace barrett_hand_controllers
 				Finger3_DISTAL = 7
 			};
 		
-			std::string robot_namespace_;
+			std::string robot_namespace_; // name of namespace
 			ros::NodeHandle nh_; // Node Handle of controller
 			
 			// configuration
 			int n_joints_ = 8; // the barret hand has 8 joints maximum
-			int n_dof_ = 4; // 4 degrees of freedom
-			std::vector<std::string> joint_names_; // vector of joints names
+			int n_dof_ = 4; // 4 degrees of freedom (for command)
+			std::vector<std::string> joint_names_; // vector of joint names
 			
-			std::vector<hardware_interface::PositionJointInterface::ResourceHandleType> joint_handles_;
+			std::vector<hardware_interface::PositionJointInterface::ResourceHandleType> joint_handles_; // Vector of Joint HW Handles
 			
+			// KDL structures to store limits min, max of each joint
 			struct limits_
 			{
 				KDL::JntArray min;
 				KDL::JntArray max;
-			} joint_limits_; // KDL structures to store limits min, max each joint
+			} joint_limits_; 
 			
 			void commandCB_(const std_msgs::Float64MultiArrayConstPtr& msg); // function associate to a subscribe command topic
-			bool setBreakAwayCB_(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
-			void checkLimit_(double &value, const Fingers& index) const noexcept;
-			std::vector<std::string> getStrings_(const ros::NodeHandle& nh, const std::string& param_name) const noexcept;
+			bool setBreakAwayCB_(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res); // service function to set the break away mode
+			void checkLimit_(double &value, const Fingers& index) const noexcept; // function to verify joint limit
+			std::vector<std::string> getStrings_(const ros::NodeHandle& nh, const std::string& param_name) const noexcept; // function to get the name of joints by reading rosparam param of controller
 			
-			ros::Subscriber sub_command_;
-			ros::ServiceServer srv_command_;
-			realtime_tools::RealtimeBuffer<std::vector<double> > commands_buffer_; // the vector of desired joint values
-			realtime_tools::RealtimeBuffer<GraspingMode> grasping_mode_buffer_;
+			ros::Subscriber sub_command_; // ros subsciber for topic command
+			ros::ServiceServer srv_command_; // ros service server for service command 
+			realtime_tools::RealtimeBuffer<std::vector<double> > commands_buffer_; // buffer of desired joint values
+			realtime_tools::RealtimeBuffer<GraspingMode> grasping_mode_buffer_; // buffer of grasping mode (Break Away active or not)
 	}; // End of class BarrettHandGroupPosition
 }
 
